@@ -12,9 +12,17 @@
   "app": {
     "windows": [
       {
+        "label": "island",
         "title": "isla-desk",
-        "width": 800,
-        "height": 600
+        "width": 760,
+        "height": 420,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "focus": false
       }
     ],
     "security": {

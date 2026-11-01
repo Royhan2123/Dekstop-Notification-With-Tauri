@@ -1,0 +1,14 @@
+use super::state::Content;
+
+impl Content {
+    /// Makin besar makin penting: ReviewResult > ReviewRunning > HealthAlert > Notice > Media.
+    pub fn priority(&self) -> u8 {
+        match self {
+            Content::ReviewResult(_) => 5,
+            Content::ReviewRunning(_) => 4,
+            Content::HealthAlert(_) => 3,
+            Content::Notice(_) => 2,
+            Content::Media => 1,
+        }
+    }
+}

@@ -5,3 +5,4 @@ gen
 pnpm-lock.yaml
 Cargo.lock
 *.md
+apps/desktop/src/bindings.ts

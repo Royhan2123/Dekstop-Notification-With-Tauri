@@ -1,0 +1,9 @@
+{
+  "name": "isla-link",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "lint": "echo skip",
+    "test": "echo skip"
+  }
+}

@@ -117,6 +117,28 @@ async openReview() : Promise<void> {
 },
 async closeReview() : Promise<void> {
     await TAURI_INVOKE("close_review");
+},
+/**
+ * Ringkasan hari ini dan tujuh hari terakhir untuk grafik di Setelan.
+ */
+async healthSummary() : Promise<Result<HealthSummaryDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("health_summary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Klik pulau saat idle: tampilkan ringkasan hari ini.
+ */
+async healthPeek() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("health_peek") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -142,6 +164,7 @@ settingsChangedEvent: "settings-changed-event"
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice"
+export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
 export type Decision = 
 /**
  * Minta AI membuat patch perbaikan.
@@ -156,13 +179,26 @@ export type Decision =
  */
 "apply_patch" | "reject_patch"
 export type FindingDto = { file: string; line: number | null; severity: Severity; title: string; detail: string; suggestion: string | null }
+/**
+ * Aturan pengingat kesehatan yang aktif.
+ */
+export type HealthRules = { continuous: boolean; twenty_twenty_twenty: boolean; bright_night: boolean; late_night: boolean }
+export type HealthSummaryDto = { today_active_min: number; brightness: number | null; 
+/**
+ * Tujuh hari terakhir, terlama dulu.
+ */
+days: DayUsageDto[] }
 export type IslandContent = { kind: ContentKind; text: string; detail: string | null }
 export type IslandMode = "hidden" | "idle" | "compact" | "expanded"
 export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; media: MediaDto | null; 
 /**
  * Laporan lengkap bila pulau menampilkan hasil review.
  */
-review: ReviewDto | null; hovered: boolean }
+review: ReviewDto | null; 
+/**
+ * Ekspresi Lumi untuk keadaan pulau saat ini.
+ */
+mood: Mood; hovered: boolean }
 /**
  * Dikirim setiap state pulau berubah.
  */
@@ -173,6 +209,7 @@ export type MediaCommandDto = "previous" | "toggle_play" | "next"
  * Data tambahan saat pulau menampilkan media.
  */
 export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
+export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy"
 export type Rect = { x: number; y: number; width: number; height: number }
 /**
  * Laporan review untuk kartu di pulau dan jendela rincian.
@@ -190,7 +227,7 @@ display_seconds: number; autostart: boolean; ai_provider: AiProvider; ai_model: 
 /**
  * Akar repo yang diawasi (hook `pre-push` terpasang).
  */
-watched_repos: string[]; review_timeout_action: ReviewTimeoutAction }
+watched_repos: string[]; review_timeout_action: ReviewTimeoutAction; health_enabled: boolean; health_rules: HealthRules }
 /**
  * Dikirim ke semua jendela setiap setelan berubah.
  */

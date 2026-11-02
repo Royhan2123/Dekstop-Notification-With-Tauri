@@ -263,51 +263,14 @@ impl ReviewService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_support::services;
     use crate::domain::error::GitError;
-    use crate::domain::island::state::{IslandState, View};
+    use crate::domain::island::state::View;
     use crate::domain::model::review::Diff;
     use crate::domain::model::settings::Settings;
-    use crate::domain::ports::{
-        AiClient, Autostart, SecretStore, SettingsRepository, SettingsSink, SnapshotSink,
-    };
+    use crate::domain::ports::AiClient;
     use crate::infrastructure::security::regex_scanner::RegexScanner;
     use std::thread;
-
-    struct NullSink;
-    impl SnapshotSink for NullSink {
-        fn publish(&self, _: &IslandState) {}
-    }
-    impl SettingsSink for NullSink {
-        fn publish(&self, _: &Settings) {}
-    }
-    struct MemRepo(Mutex<Settings>);
-    impl SettingsRepository for MemRepo {
-        fn load(&self) -> Settings {
-            self.0.lock().unwrap().clone()
-        }
-        fn save(&self, s: &Settings) -> Result<(), SettingsError> {
-            *self.0.lock().unwrap() = s.clone();
-            Ok(())
-        }
-    }
-    struct NoSecrets;
-    impl SecretStore for NoSecrets {
-        fn get(&self, _: &str) -> Result<Option<String>, SettingsError> {
-            Ok(None)
-        }
-        fn set(&self, _: &str, _: &str) -> Result<(), SettingsError> {
-            Ok(())
-        }
-        fn delete(&self, _: &str) -> Result<(), SettingsError> {
-            Ok(())
-        }
-    }
-    struct NoAutostart;
-    impl Autostart for NoAutostart {
-        fn set(&self, _: bool) -> Result<(), SettingsError> {
-            Ok(())
-        }
-    }
 
     struct FakeGit {
         diff: String,
@@ -384,20 +347,12 @@ mod tests {
         timeout_action: ReviewTimeoutAction,
         timeout_ms: u64,
     ) -> Fixture {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let island = IslandService::new(Arc::new(NullSink), rt.handle().clone());
         let initial = Settings {
             watched_repos: vec!["/repo".into()],
             review_timeout_action: timeout_action,
             ..Default::default()
         };
-        let settings = SettingsService::new(
-            Arc::new(MemRepo(Mutex::new(initial))),
-            Arc::new(NoSecrets),
-            Arc::new(NoAutostart),
-            Arc::new(NullSink),
-            island.clone(),
-        );
+        let (settings, island, rt) = services(initial);
         let git = Arc::new(FakeGit {
             diff: diff.into(),
             committed: Mutex::new(vec![]),

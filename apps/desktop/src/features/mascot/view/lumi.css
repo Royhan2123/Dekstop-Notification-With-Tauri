@@ -1,0 +1,189 @@
+.island {
+  position: relative;
+}
+
+.lumi {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.island[data-mode="idle"] .lumi {
+  top: 3px;
+  left: calc(50% - 13px);
+}
+
+.island[data-mode="compact"] .lumi {
+  top: 5px;
+  right: 10px;
+}
+
+.island[data-mode="expanded"] .lumi {
+  top: 12px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+}
+
+.island[data-mode="compact"] .island-body {
+  padding-right: 44px;
+}
+
+.lumi-line {
+  fill: none;
+  stroke: #111;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.lumi-bob,
+.lumi-eyes,
+.lumi-dots,
+.lumi-sweat,
+.lumi-sparkle,
+.lumi-note,
+.lumi-zzz {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.lumi:not(.calm) .lumi-bob {
+  animation: lumi-breathe 3.2s ease-in-out infinite;
+}
+
+.lumi:not(.calm) .lumi-blink {
+  animation: lumi-blink 4s infinite;
+}
+
+.lumi:not(.calm) .lumi-look {
+  animation: lumi-look 1.6s ease-in-out infinite alternate;
+}
+
+.lumi:not(.calm) .lumi-dots {
+  animation: lumi-fade 1.2s ease-in-out infinite alternate;
+}
+
+.lumi:not(.calm) .lumi-sweat {
+  animation: lumi-drip 1.4s ease-in infinite;
+}
+
+.lumi:not(.calm) .lumi-sparkle {
+  animation: lumi-twinkle 0.8s ease-in-out infinite alternate;
+}
+
+.lumi:not(.calm) .lumi-note,
+.lumi:not(.calm) .lumi-zzz {
+  animation: lumi-float 2s ease-in-out infinite;
+}
+
+.lumi:not(.calm).mood-happy .lumi-bob {
+  animation: lumi-hop 0.7s ease-in-out infinite;
+}
+
+.lumi:not(.calm).mood-listening .lumi-bob {
+  animation: lumi-nod 0.6s ease-in-out infinite alternate;
+}
+
+.lumi:not(.calm).mood-panic .lumi-bob {
+  animation: lumi-shake 0.25s linear infinite;
+}
+
+.lumi.poked .lumi-bob {
+  animation: lumi-roll 0.7s ease-in-out !important;
+}
+
+@keyframes lumi-breathe {
+  50% {
+    transform: scale(1.04, 1.08);
+  }
+}
+
+@keyframes lumi-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes lumi-look {
+  to {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes lumi-fade {
+  from {
+    opacity: 0.25;
+  }
+}
+
+@keyframes lumi-drip {
+  from {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes lumi-twinkle {
+  to {
+    opacity: 0.4;
+    transform: scale(0.7) rotate(20deg);
+  }
+}
+
+@keyframes lumi-float {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes lumi-hop {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes lumi-nod {
+  to {
+    transform: rotate(6deg) translateY(1px);
+  }
+}
+
+@keyframes lumi-shake {
+  25% {
+    transform: translateX(-1.5px);
+  }
+  75% {
+    transform: translateX(1.5px);
+  }
+}
+
+@keyframes lumi-roll {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumi * {
+    animation: none !important;
+  }
+}

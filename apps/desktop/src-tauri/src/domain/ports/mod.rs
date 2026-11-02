@@ -2,7 +2,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::domain::error::{AiError, GitError, MediaError, SettingsError};
+use crate::domain::error::{AiError, GitError, MediaError, SettingsError, UsageError};
+use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
 use crate::domain::model::review::{Diff, PushRef, SecretHit};
 use crate::domain::model::settings::{AiProvider, Settings};
@@ -73,4 +74,27 @@ pub trait AiClient: Send + Sync {
 
 pub trait AiProviderFactory: Send + Sync {
     fn build(&self, provider: AiProvider, model: &str) -> Result<Arc<dyn AiClient>, AiError>;
+}
+
+/// Waktu sejak input terakhir (keyboard/mouse). `None` bila sistem tidak bisa mengetahuinya.
+pub trait IdleDetector: Send + Sync {
+    fn idle_seconds(&self) -> Option<u64>;
+}
+
+/// Kecerahan layar internal 0-100; `None` bila tidak tersedia (mis. monitor eksternal).
+pub trait BrightnessReader: Send + Sync {
+    fn read(&self) -> Option<u8>;
+}
+
+/// Catatan pemakaian per menit.
+pub trait UsageStore: Send + Sync {
+    fn record(
+        &self,
+        date: &str,
+        minute: u32,
+        active: bool,
+        brightness: Option<u8>,
+    ) -> Result<(), UsageError>;
+    /// Ringkasan harian untuk `dates` (urutan sama; hari kosong tetap ada dengan nol).
+    fn days(&self, dates: &[String]) -> Result<Vec<DayUsage>, UsageError>;
 }

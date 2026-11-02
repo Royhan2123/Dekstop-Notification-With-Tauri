@@ -1,6 +1,7 @@
 import { useT } from "../../../shared/i18n";
 import type { Language } from "../../../bindings";
 import { useSettingsVM } from "../viewmodel/useSettingsVM";
+import { HealthSettings } from "../../health/view/HealthSettings";
 import { AiBrainPicker } from "./AiBrainPicker";
 import { ReviewSettings } from "./ReviewSettings";
 
@@ -62,6 +63,8 @@ export function SettingsForm() {
       <AiBrainPicker />
 
       <ReviewSettings />
+
+      <HealthSettings />
 
       {vm.error && (
         <p role="alert" className="error">

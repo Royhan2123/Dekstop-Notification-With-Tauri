@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
 
+use crate::application::health_service::HealthSummary;
+use crate::domain::health::DayUsage;
 use crate::domain::island::state::{Content, IslandState, View};
+use crate::domain::mascot::{Mood, mood_for};
 use crate::domain::model::review::Severity;
 use crate::domain::model::settings::Settings;
 use crate::domain::model::{MediaCommand, ReviewReport};
@@ -72,6 +75,8 @@ pub struct IslandSnapshot {
     pub media: Option<MediaDto>,
     /// Laporan lengkap bila pulau menampilkan hasil review.
     pub review: Option<ReviewDto>,
+    /// Ekspresi Lumi untuk keadaan pulau saat ini.
+    pub mood: Mood,
     pub hovered: bool,
 }
 
@@ -110,6 +115,41 @@ impl From<&ReviewReport> for ReviewDto {
                 })
                 .collect(),
             patch_ready: r.patch_ready,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct DayUsageDto {
+    pub date: String,
+    pub active_min: u32,
+    pub avg_brightness: Option<u8>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct HealthSummaryDto {
+    pub today_active_min: u32,
+    pub brightness: Option<u8>,
+    /// Tujuh hari terakhir, terlama dulu.
+    pub days: Vec<DayUsageDto>,
+}
+
+impl From<&DayUsage> for DayUsageDto {
+    fn from(d: &DayUsage) -> Self {
+        Self {
+            date: d.date.clone(),
+            active_min: d.active_min,
+            avg_brightness: d.avg_brightness,
+        }
+    }
+}
+
+impl From<&HealthSummary> for HealthSummaryDto {
+    fn from(s: &HealthSummary) -> Self {
+        Self {
+            today_active_min: s.today_active_min,
+            brightness: s.brightness,
+            days: s.days.iter().map(Into::into).collect(),
         }
     }
 }
@@ -186,6 +226,7 @@ impl From<&IslandState> for IslandSnapshot {
             content,
             media,
             review,
+            mood: mood_for(s),
             hovered: s.hovered,
         }
     }

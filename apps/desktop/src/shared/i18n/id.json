@@ -63,5 +63,15 @@
   "settings.review.none": "Belum ada repo yang diawasi",
   "settings.review.timeout": "Bila review tidak dijawab",
   "settings.review.timeout.continue": "Lanjutkan push",
-  "settings.review.timeout.cancel": "Batalkan push"
+  "settings.review.timeout.cancel": "Batalkan push",
+  "settings.health": "Kesehatan layar",
+  "settings.health.enabled": "Aktifkan pengingat kesehatan",
+  "settings.health.rule.continuous": "Istirahat setelah 2 jam nonstop",
+  "settings.health.rule.twenty_twenty_twenty": "Aturan 20-20-20 (lihat jauh tiap 20 menit)",
+  "settings.health.rule.bright_night": "Saran turunkan kecerahan di malam hari",
+  "settings.health.rule.late_night": "Alarm lembur setelah jam 22.00",
+  "settings.health.today": "Aktif hari ini (jam:menit)",
+  "settings.health.brightness": "kecerahan",
+  "settings.health.week": "Jam aktif 7 hari terakhir",
+  "settings.health.week_brightness": "Rata-rata kecerahan minggu ini: {0}%"
 }

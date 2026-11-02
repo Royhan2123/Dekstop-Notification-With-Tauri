@@ -8,6 +8,7 @@ use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{Builder, collect_commands, collect_events};
 
+use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_snapshot,
 };
@@ -44,7 +45,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
             review_watch,
             review_unwatch,
             open_review,
-            close_review
+            close_review,
+            health_summary,
+            health_peek
         ])
         .events(collect_events![IslandSnapshotEvent, SettingsChangedEvent])
 }

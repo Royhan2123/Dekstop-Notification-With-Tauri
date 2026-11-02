@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use tauri::{App, Manager};
 
+use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
 use crate::application::review::service::ReviewService;
@@ -18,7 +19,10 @@ use crate::infrastructure::security::regex_scanner::RegexScanner;
 use crate::infrastructure::storage::keyring_store::KeyringStore;
 use crate::infrastructure::storage::settings_store::JsonSettingsStore;
 use crate::infrastructure::storage::sqlite::Database;
+use crate::infrastructure::storage::usage_store::SqliteUsageStore;
 use crate::infrastructure::system::autostart::TauriAutostart;
+use crate::infrastructure::system::brightness::SystemBrightness;
+use crate::infrastructure::system::idle::SystemIdle;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
 use crate::interface::ipc;
 use crate::interface::window::hit_test::{self, Hitbox};
@@ -48,7 +52,17 @@ pub fn assemble(app: &App) {
     // Tanpa database, fitur riwayat (kesehatan, review) nonaktif; pulau tetap jalan.
     match Database::open(&data_dir.join("isla.db")) {
         Ok(db) => {
-            app.manage(Arc::new(db));
+            let db = Arc::new(db);
+            app.manage(db.clone());
+            let health = HealthService::new(
+                Arc::new(SystemIdle),
+                Arc::new(SystemBrightness),
+                Arc::new(SqliteUsageStore(db)),
+                settings.clone(),
+                island.clone(),
+            );
+            app.manage(health.clone());
+            spawn_health_ticker(health);
         }
         Err(e) => tracing::error!("gagal membuka database: {e}"),
     }
@@ -85,4 +99,19 @@ pub fn assemble(app: &App) {
     if !settings.get().onboarded {
         settings_window::show(&handle);
     }
+}
+
+/// Satu-satunya timer berkala aplikasi: satu ketukan per menit untuk pencatatan dan pengingat.
+fn spawn_health_ticker(health: Arc<HealthService>) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+            let svc = health.clone();
+            let _ = tauri::async_runtime::spawn_blocking(move || {
+                svc.tick(chrono::Local::now().naive_local());
+            })
+            .await;
+        }
+    });
 }

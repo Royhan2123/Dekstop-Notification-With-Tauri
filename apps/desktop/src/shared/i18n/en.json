@@ -63,5 +63,15 @@
   "settings.review.none": "No watched repos yet",
   "settings.review.timeout": "When a review goes unanswered",
   "settings.review.timeout.continue": "Continue the push",
-  "settings.review.timeout.cancel": "Cancel the push"
+  "settings.review.timeout.cancel": "Cancel the push",
+  "settings.health": "Screen health",
+  "settings.health.enabled": "Enable health reminders",
+  "settings.health.rule.continuous": "Break after 2 hours nonstop",
+  "settings.health.rule.twenty_twenty_twenty": "20-20-20 rule (look away every 20 minutes)",
+  "settings.health.rule.bright_night": "Suggest lowering brightness at night",
+  "settings.health.rule.late_night": "Late-night alarm after 10 PM",
+  "settings.health.today": "Active today (h:mm)",
+  "settings.health.brightness": "brightness",
+  "settings.health.week": "Active hours, last 7 days",
+  "settings.health.week_brightness": "Average brightness this week: {0}%"
 }

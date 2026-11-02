@@ -46,7 +46,9 @@ export function useIslandVM() {
     content: snapshot.content,
     hasFindings: (snapshot.review?.findings.length ?? 0) > 0,
     onHover: (hovered: boolean) => void commands.islandHover(hovered),
-    onClick: () => void commands.islandClick(),
+    // Klik pulau kosong menampilkan ringkasan kesehatan hari ini.
+    onClick: () =>
+      void (snapshot.mode === "idle" ? commands.healthPeek() : commands.islandClick()),
     onDismiss: () => void commands.islandDismiss(),
     // shortcut: klik kanan langsung membuka Setelan; menu cepat (Fokus, Jeda notifikasi) menyusul.
     onOpenSettings: () => void commands.openSettings(),

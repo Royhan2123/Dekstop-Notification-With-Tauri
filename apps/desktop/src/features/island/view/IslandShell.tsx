@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
+import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
 import { ReviewCard } from "../../review/view/ReviewCard";
@@ -31,6 +32,7 @@ export function IslandShell() {
     <motion.div
       ref={ref}
       className="island"
+      data-mode={mode}
       initial={false}
       animate={{
         width: shape.width,
@@ -85,6 +87,7 @@ export function IslandShell() {
           </motion.div>
         )}
       </AnimatePresence>
+      {mode !== "hidden" && <LumiCanvas />}
     </motion.div>
   );
 }

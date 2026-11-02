@@ -39,3 +39,9 @@ pub enum AiError {
     #[error("jawaban AI tidak bisa dibaca")]
     BadResponse,
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum UsageError {
+    #[error("gagal menyimpan pemakaian: {0}")]
+    Storage(String),
+}

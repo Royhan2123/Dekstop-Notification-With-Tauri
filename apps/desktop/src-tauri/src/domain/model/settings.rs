@@ -31,6 +31,27 @@ pub enum ReviewTimeoutAction {
     Cancel,
 }
 
+/// Aturan pengingat kesehatan yang aktif.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(default)]
+pub struct HealthRules {
+    pub continuous: bool,
+    pub twenty_twenty_twenty: bool,
+    pub bright_night: bool,
+    pub late_night: bool,
+}
+
+impl Default for HealthRules {
+    fn default() -> Self {
+        Self {
+            continuous: true,
+            twenty_twenty_twenty: false,
+            bright_night: true,
+            late_night: true,
+        }
+    }
+}
+
 pub const MIN_DISPLAY_SECONDS: u32 = 2;
 pub const MAX_DISPLAY_SECONDS: u32 = 60;
 
@@ -48,6 +69,8 @@ pub struct Settings {
     /// Akar repo yang diawasi (hook `pre-push` terpasang).
     pub watched_repos: Vec<String>,
     pub review_timeout_action: ReviewTimeoutAction,
+    pub health_enabled: bool,
+    pub health_rules: HealthRules,
 }
 
 impl Default for Settings {
@@ -62,6 +85,8 @@ impl Default for Settings {
             onboarded: false,
             watched_repos: Vec::new(),
             review_timeout_action: ReviewTimeoutAction::default(),
+            health_enabled: true,
+            health_rules: HealthRules::default(),
         }
     }
 }

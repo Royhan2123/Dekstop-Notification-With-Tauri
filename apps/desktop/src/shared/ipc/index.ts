@@ -1,16 +1,29 @@
 import {
   commands,
   events,
+  type DayUsageDto,
   type Decision,
   type FindingDto,
+  type HealthSummaryDto,
   type IslandSnapshot,
   type MediaDto,
+  type Mood,
   type ReviewDto,
   type Settings,
 } from "../../bindings";
 
 export { commands };
-export type { Decision, FindingDto, IslandSnapshot, MediaDto, ReviewDto, Settings };
+export type {
+  DayUsageDto,
+  Decision,
+  FindingDto,
+  HealthSummaryDto,
+  IslandSnapshot,
+  MediaDto,
+  Mood,
+  ReviewDto,
+  Settings,
+};
 
 /** Ambil snapshot awal lalu dengarkan perubahan. Mengembalikan fungsi untuk berhenti. */
 export async function subscribeIsland(

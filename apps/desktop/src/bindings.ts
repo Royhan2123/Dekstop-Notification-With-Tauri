@@ -28,6 +28,20 @@ async islandHitbox(rect: Rect) : Promise<void> {
  */
 async devSimulate(kind: string) : Promise<void> {
     await TAURI_INVOKE("dev_simulate", { kind });
+},
+async mediaControl(cmd: MediaCommandDto) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("media_control", { cmd }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Pindah sesi media (`delta` > 0 berikutnya, < 0 sebelumnya).
+ */
+async mediaCycle(delta: number) : Promise<void> {
+    await TAURI_INVOKE("media_cycle", { delta });
 }
 }
 
@@ -49,11 +63,16 @@ islandSnapshotEvent: "island-snapshot-event"
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice"
 export type IslandContent = { kind: ContentKind; text: string; detail: string | null }
 export type IslandMode = "hidden" | "idle" | "compact" | "expanded"
-export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; hovered: boolean }
+export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; media: MediaDto | null; hovered: boolean }
 /**
  * Dikirim setiap state pulau berubah.
  */
 export type IslandSnapshotEvent = IslandSnapshot
+export type MediaCommandDto = "previous" | "toggle_play" | "next"
+/**
+ * Data tambahan saat pulau menampilkan media.
+ */
+export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
 export type Rect = { x: number; y: number; width: number; height: number }
 
 /** tauri-specta globals **/

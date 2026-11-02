@@ -4,5 +4,9 @@
   "island.review_result": "Hasil review",
   "island.health_alert": "Kesehatan",
   "island.notice": "Info",
-  "island.dismiss": "Tutup"
+  "island.dismiss": "Tutup",
+  "media.previous": "Sebelumnya",
+  "media.play": "Putar",
+  "media.pause": "Jeda",
+  "media.next": "Berikutnya"
 }

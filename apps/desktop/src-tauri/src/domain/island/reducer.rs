@@ -141,6 +141,7 @@ mod tests {
         Some(MediaInfo {
             title: "t".into(),
             artist: "a".into(),
+            ..Default::default()
         })
     }
     fn health() -> IslandAction {

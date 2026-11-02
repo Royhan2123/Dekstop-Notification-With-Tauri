@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { t } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
+import { MediaCompact } from "../../media/view/MediaCompact";
+import { MediaExpanded } from "../../media/view/MediaExpanded";
 import { useIslandVM } from "../viewmodel/useIslandVM";
 
 export function IslandShell() {
@@ -39,29 +41,35 @@ export function IslandShell() {
       <AnimatePresence mode="popLayout" initial={false}>
         {content && (
           <motion.div
-            key={content.kind}
-            className={mode === "expanded" ? "island-body expanded" : "island-body"}
+            key={`${content.kind}-${mode}`}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={reduceMotion ? instant : { duration: 0.15 }}
           >
-            <span className="island-label">{t(`island.${content.kind}`)}</span>
-            {content.text && <span className="island-text">{content.text}</span>}
-            {mode === "expanded" && content.detail && (
-              <span className="island-detail">{content.detail}</span>
-            )}
-            {mode === "expanded" && content.kind !== "media" && (
-              <button
-                type="button"
-                className="island-dismiss"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  vm.onDismiss();
-                }}
-              >
-                {t("island.dismiss")}
-              </button>
+            {content.kind === "media" ? (
+              mode === "expanded" ? (
+                <MediaExpanded />
+              ) : (
+                <MediaCompact />
+              )
+            ) : (
+              <div className={mode === "expanded" ? "island-body expanded" : "island-body"}>
+                <span className="island-label">{t(`island.${content.kind}`)}</span>
+                {content.text && <span className="island-text">{content.text}</span>}
+                {mode === "expanded" && (
+                  <button
+                    type="button"
+                    className="island-dismiss"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      vm.onDismiss();
+                    }}
+                  >
+                    {t("island.dismiss")}
+                  </button>
+                )}
+              </div>
             )}
           </motion.div>
         )}

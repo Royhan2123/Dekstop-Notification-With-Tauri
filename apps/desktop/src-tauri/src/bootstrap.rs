@@ -4,13 +4,20 @@ use std::sync::Arc;
 use tauri::{App, Manager};
 
 use crate::application::island_service::IslandService;
+use crate::application::media_service::MediaService;
+use crate::infrastructure::media::default_source;
 use crate::interface::events::TauriSnapshotSink;
 use crate::interface::window::hit_test::{self, Hitbox};
 
 pub fn assemble(app: &App) {
     let sink = Arc::new(TauriSnapshotSink(app.handle().clone()));
     let rt = tauri::async_runtime::handle().inner().clone();
-    app.manage(IslandService::new(sink, rt));
+    let island = IslandService::new(sink, rt);
+    app.manage(island.clone());
+
+    let media = MediaService::new(default_source(), island);
+    app.manage(media.clone());
+    media.start();
 
     let hitbox = Arc::new(Hitbox::default());
     app.manage(hitbox.clone());

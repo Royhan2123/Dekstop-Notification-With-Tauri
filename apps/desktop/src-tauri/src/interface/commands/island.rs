@@ -52,6 +52,13 @@ pub fn dev_simulate(svc: Svc, kind: String) {
         "media" => IslandAction::MediaChanged(Some(MediaInfo {
             title: "Lagu contoh".into(),
             artist: "Artis contoh".into(),
+            playing: true,
+            position_ms: 30_000,
+            duration_ms: 180_000,
+            rate: 1.0,
+            color: Some("#7c5cff".into()),
+            session_count: 1,
+            ..Default::default()
         })),
         "media_off" => IslandAction::MediaChanged(None),
         "review" => IslandAction::ReviewStarted(ReviewId(1)),

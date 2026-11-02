@@ -9,6 +9,7 @@ use tauri_specta::{Builder, collect_commands, collect_events};
 use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_snapshot,
 };
+use interface::commands::media::{media_control, media_cycle};
 use interface::dto::IslandSnapshotEvent;
 
 fn specta_builder() -> Builder<tauri::Wry> {
@@ -19,7 +20,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
             island_click,
             island_dismiss,
             island_hitbox,
-            dev_simulate
+            dev_simulate,
+            media_control,
+            media_cycle
         ])
         .events(collect_events![IslandSnapshotEvent])
 }

@@ -4,6 +4,7 @@ use specta::Type;
 use tauri_specta::Event;
 
 use crate::domain::island::state::{Content, IslandState, View};
+use crate::domain::model::MediaCommand;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
 #[serde(rename_all = "snake_case")]
@@ -31,10 +32,42 @@ pub struct IslandContent {
     pub detail: Option<String>,
 }
 
+/// Data tambahan saat pulau menampilkan media.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct MediaDto {
+    pub playing: bool,
+    pub position_ms: u32,
+    pub duration_ms: u32,
+    pub rate: f64,
+    pub thumbnail: Option<String>,
+    pub color: Option<String>,
+    pub session_index: u32,
+    pub session_count: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum MediaCommandDto {
+    Previous,
+    TogglePlay,
+    Next,
+}
+
+impl From<MediaCommandDto> for MediaCommand {
+    fn from(c: MediaCommandDto) -> Self {
+        match c {
+            MediaCommandDto::Previous => MediaCommand::Previous,
+            MediaCommandDto::TogglePlay => MediaCommand::TogglePlay,
+            MediaCommandDto::Next => MediaCommand::Next,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
 pub struct IslandSnapshot {
     pub mode: IslandMode,
     pub content: Option<IslandContent>,
+    pub media: Option<MediaDto>,
     pub hovered: bool,
 }
 
@@ -84,9 +117,23 @@ impl From<&IslandState> for IslandSnapshot {
                 detail: None,
             },
         });
+        let media = match (s.view.content(), &s.media) {
+            (Some(Content::Media), Some(m)) => Some(MediaDto {
+                playing: m.playing,
+                position_ms: m.position_ms,
+                duration_ms: m.duration_ms,
+                rate: m.rate,
+                thumbnail: m.thumbnail.clone(),
+                color: m.color.clone(),
+                session_index: m.session_index,
+                session_count: m.session_count,
+            }),
+            _ => None,
+        };
         Self {
             mode,
             content,
+            media,
             hovered: s.hovered,
         }
     }

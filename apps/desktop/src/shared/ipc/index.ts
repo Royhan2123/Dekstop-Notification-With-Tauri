@@ -1,7 +1,7 @@
-import { commands, events, type IslandSnapshot } from "../../bindings";
+import { commands, events, type IslandSnapshot, type MediaDto } from "../../bindings";
 
 export { commands };
-export type { IslandSnapshot };
+export type { IslandSnapshot, MediaDto };
 
 /** Ambil snapshot awal lalu dengarkan perubahan. Mengembalikan fungsi untuk berhenti. */
 export async function subscribeIsland(

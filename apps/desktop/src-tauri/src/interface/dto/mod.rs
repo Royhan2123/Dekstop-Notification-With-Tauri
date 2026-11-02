@@ -4,8 +4,9 @@ use specta::Type;
 use tauri_specta::Event;
 
 use crate::domain::island::state::{Content, IslandState, View};
-use crate::domain::model::MediaCommand;
+use crate::domain::model::review::Severity;
 use crate::domain::model::settings::Settings;
+use crate::domain::model::{MediaCommand, ReviewReport};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
 #[serde(rename_all = "snake_case")]
@@ -69,7 +70,48 @@ pub struct IslandSnapshot {
     pub mode: IslandMode,
     pub content: Option<IslandContent>,
     pub media: Option<MediaDto>,
+    /// Laporan lengkap bila pulau menampilkan hasil review.
+    pub review: Option<ReviewDto>,
     pub hovered: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct FindingDto {
+    pub file: String,
+    pub line: Option<u32>,
+    pub severity: Severity,
+    pub title: String,
+    pub detail: String,
+    pub suggestion: Option<String>,
+}
+
+/// Laporan review untuk kartu di pulau dan jendela rincian.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct ReviewDto {
+    pub summary: String,
+    pub findings: Vec<FindingDto>,
+    pub patch_ready: bool,
+}
+
+impl From<&ReviewReport> for ReviewDto {
+    fn from(r: &ReviewReport) -> Self {
+        Self {
+            summary: r.summary.clone(),
+            findings: r
+                .findings
+                .iter()
+                .map(|f| FindingDto {
+                    file: f.file.clone(),
+                    line: f.line,
+                    severity: f.severity,
+                    title: f.title.clone(),
+                    detail: f.detail.clone(),
+                    suggestion: f.suggestion.clone(),
+                })
+                .collect(),
+            patch_ready: r.patch_ready,
+        }
+    }
 }
 
 /// Dikirim ke semua jendela setiap setelan berubah.
@@ -135,10 +177,15 @@ impl From<&IslandState> for IslandSnapshot {
             }),
             _ => None,
         };
+        let review = match s.view.content() {
+            Some(Content::ReviewResult(r)) => Some(r.into()),
+            _ => None,
+        };
         Self {
             mode,
             content,
             media,
+            review,
             hovered: s.hovered,
         }
     }

@@ -22,6 +22,15 @@ pub enum AiProvider {
     ClaudeCli,
 }
 
+/// Yang dilakukan bila pengguna tidak merespons review dalam batas waktu.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewTimeoutAction {
+    #[default]
+    Continue,
+    Cancel,
+}
+
 pub const MIN_DISPLAY_SECONDS: u32 = 2;
 pub const MAX_DISPLAY_SECONDS: u32 = 60;
 
@@ -36,6 +45,9 @@ pub struct Settings {
     pub ai_provider: AiProvider,
     pub ai_model: String,
     pub onboarded: bool,
+    /// Akar repo yang diawasi (hook `pre-push` terpasang).
+    pub watched_repos: Vec<String>,
+    pub review_timeout_action: ReviewTimeoutAction,
 }
 
 impl Default for Settings {
@@ -48,6 +60,8 @@ impl Default for Settings {
             ai_provider: AiProvider::default(),
             ai_model: String::new(),
             onboarded: false,
+            watched_repos: Vec::new(),
+            review_timeout_action: ReviewTimeoutAction::default(),
         }
     }
 }

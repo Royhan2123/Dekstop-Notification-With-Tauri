@@ -4,6 +4,7 @@ import { useT } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
+import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
 import { useIslandVM } from "../viewmodel/useIslandVM";
 
@@ -61,6 +62,8 @@ export function IslandShell() {
               ) : (
                 <MediaCompact />
               )
+            ) : content.kind === "review_result" && vm.hasFindings && mode === "expanded" ? (
+              <ReviewCard />
             ) : (
               <div className={mode === "expanded" ? "island-body expanded" : "island-body"}>
                 <span className="island-label">{t(`island.${content.kind}`)}</span>

@@ -18,7 +18,10 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         IslandAction::ReviewFinished(id, report) => {
             s.queue.retain(|c| *c != Content::ReviewRunning(id));
             let result = Content::ReviewResult(report);
-            if s.view.content() == Some(&Content::ReviewRunning(id)) {
+            // Hasil yang sedang tampil diperbarui di tempat (mis. setelah patch siap).
+            if matches!(s.view.content(), Some(Content::ReviewResult(_)))
+                || s.view.content() == Some(&Content::ReviewRunning(id))
+            {
                 show(&mut s, result, ctx, &mut fx);
             } else {
                 offer(&mut s, result, ctx, &mut fx);
@@ -53,9 +56,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
             if token == s.token {
                 match s.view {
                     View::Expanded(Content::Media) => s.view = View::Compact(Content::Media),
-                    View::Expanded(Content::HealthAlert(_) | Content::Notice(_)) => {
-                        settle(&mut s, ctx, &mut fx)
-                    }
+                    View::Expanded(ref c) if is_soft(c) => settle(&mut s, ctx, &mut fx),
                     _ => {}
                 }
             }
@@ -74,9 +75,14 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
     (s, fx)
 }
 
-/// Konten yang boleh ditahan oleh Jangan Ganggu.
+/// Konten informatif: boleh ditahan Jangan Ganggu dan menutup sendiri. Hasil review yang
+/// bersih (tanpa temuan) juga begini; yang berisi temuan menunggu keputusan pengguna.
 fn is_soft(c: &Content) -> bool {
-    matches!(c, Content::HealthAlert(_) | Content::Notice(_))
+    match c {
+        Content::HealthAlert(_) | Content::Notice(_) => true,
+        Content::ReviewResult(r) => r.findings.is_empty(),
+        _ => false,
+    }
 }
 
 /// Tampilkan `c` bila lebih penting dari yang sedang tampil; kalau tidak, antrikan.
@@ -152,6 +158,7 @@ mod tests {
     fn report() -> ReviewReport {
         ReviewReport {
             summary: "ok".into(),
+            ..Default::default()
         }
     }
 

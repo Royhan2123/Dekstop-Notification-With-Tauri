@@ -66,6 +66,7 @@ pub fn dev_simulate(svc: Svc, kind: String) {
             ReviewId(1),
             ReviewReport {
                 summary: "Tidak ada masalah".into(),
+                ..Default::default()
             },
         ),
         "health" => IslandAction::HealthAlert(HealthAlert {

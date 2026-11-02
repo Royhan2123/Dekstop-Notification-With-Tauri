@@ -31,6 +31,14 @@
         "height": 680,
         "center": true,
         "visible": false
+      },
+      {
+        "label": "review",
+        "title": "Isla Desk - Review",
+        "width": 640,
+        "height": 560,
+        "center": true,
+        "visible": false
       }
     ],
     "security": {

@@ -1,5 +1,8 @@
 //! Model domain. Field akan bertambah seiring fitur (review, kesehatan).
+pub mod review;
 pub mod settings;
+
+pub use review::ReviewReport;
 
 /// Satu sesi media dari OS. `session_index`/`session_count` diisi `MediaService`.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -30,11 +33,6 @@ pub enum MediaCommand {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ReviewId(pub u64);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct ReviewReport {
-    pub summary: String,
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HealthAlert {

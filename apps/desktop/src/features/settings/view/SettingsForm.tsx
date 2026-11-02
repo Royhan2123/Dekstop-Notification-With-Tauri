@@ -2,6 +2,7 @@ import { useT } from "../../../shared/i18n";
 import type { Language } from "../../../bindings";
 import { useSettingsVM } from "../viewmodel/useSettingsVM";
 import { AiBrainPicker } from "./AiBrainPicker";
+import { ReviewSettings } from "./ReviewSettings";
 
 const LANGUAGES: Language[] = ["id", "en"];
 
@@ -59,6 +60,8 @@ export function SettingsForm() {
       </label>
 
       <AiBrainPicker />
+
+      <ReviewSettings />
 
       {vm.error && (
         <p role="alert" className="error">

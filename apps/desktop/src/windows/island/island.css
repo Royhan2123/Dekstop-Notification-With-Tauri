@@ -206,3 +206,99 @@ html[data-window="island"] #root {
     transition: none !important;
   }
 }
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 250px;
+  padding: 14px 22px;
+  box-sizing: border-box;
+}
+
+.review-counts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.review-counts-label {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.review-card .sev-critical {
+  color: #ff6b6b;
+}
+
+.review-card .sev-important {
+  color: #ffb84d;
+}
+
+.review-card .sev-suggestion {
+  color: #7db2ff;
+}
+
+.review-summary {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.review-list li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.review-where {
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.review-more {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.review-card .review-actions button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #333;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.review-card .review-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.review-card .review-actions .review-primary {
+  background: #4a6cf7;
+}

@@ -21,6 +21,10 @@ export function shapeFor(s: IslandSnapshot): Shape {
     case "compact":
       return { width: 240, height: 36, radius: 18, opacity: 1 };
     case "expanded":
+      // Kartu review berisi temuan butuh ruang untuk daftar dan tombol keputusan.
+      if (s.review && s.review.findings.length > 0) {
+        return { width: 480, height: 250, radius: 28, opacity: 1 };
+      }
       return { width: 420, height: 140, radius: 28, opacity: 1 };
   }
 }
@@ -40,6 +44,7 @@ export function useIslandVM() {
     mode: snapshot.mode,
     shape: shapeFor(snapshot),
     content: snapshot.content,
+    hasFindings: (snapshot.review?.findings.length ?? 0) > 0,
     onHover: (hovered: boolean) => void commands.islandHover(hovered),
     onClick: () => void commands.islandClick(),
     onDismiss: () => void commands.islandDismiss(),

@@ -86,6 +86,37 @@ async openSettings() : Promise<void> {
 },
 async closeSettings() : Promise<void> {
     await TAURI_INVOKE("close_settings");
+},
+/**
+ * Jawaban pengguna pada kartu review (Perbaiki, Lanjut, Batal, setujui/tolak patch).
+ */
+async reviewDecide(decision: Decision) : Promise<void> {
+    await TAURI_INVOKE("review_decide", { decision });
+},
+/**
+ * Awasi repo: pasang hook `pre-push`. Memanggil git, jadi dijalankan di luar thread UI.
+ */
+async reviewWatch(path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("review_watch", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async reviewUnwatch(path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("review_unwatch", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async openReview() : Promise<void> {
+    await TAURI_INVOKE("open_review");
+},
+async closeReview() : Promise<void> {
+    await TAURI_INVOKE("close_review");
 }
 }
 
@@ -111,9 +142,27 @@ settingsChangedEvent: "settings-changed-event"
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice"
+export type Decision = 
+/**
+ * Minta AI membuat patch perbaikan.
+ */
+"fix" | 
+/**
+ * Lanjutkan push apa adanya.
+ */
+"continue" | "cancel" | 
+/**
+ * Setujui patch lalu commit.
+ */
+"apply_patch" | "reject_patch"
+export type FindingDto = { file: string; line: number | null; severity: Severity; title: string; detail: string; suggestion: string | null }
 export type IslandContent = { kind: ContentKind; text: string; detail: string | null }
 export type IslandMode = "hidden" | "idle" | "compact" | "expanded"
-export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; media: MediaDto | null; hovered: boolean }
+export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; media: MediaDto | null; 
+/**
+ * Laporan lengkap bila pulau menampilkan hasil review.
+ */
+review: ReviewDto | null; hovered: boolean }
 /**
  * Dikirim setiap state pulau berubah.
  */
@@ -125,15 +174,32 @@ export type MediaCommandDto = "previous" | "toggle_play" | "next"
  */
 export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
 export type Rect = { x: number; y: number; width: number; height: number }
+/**
+ * Laporan review untuk kartu di pulau dan jendela rincian.
+ */
+export type ReviewDto = { summary: string; findings: FindingDto[]; patch_ready: boolean }
+/**
+ * Yang dilakukan bila pengguna tidak merespons review dalam batas waktu.
+ */
+export type ReviewTimeoutAction = "continue" | "cancel"
 export type Settings = { language: Language; reduce_motion: boolean; 
 /**
  * Lama notifikasi (kesehatan/info) tampil sebelum menutup sendiri.
  */
-display_seconds: number; autostart: boolean; ai_provider: AiProvider; ai_model: string; onboarded: boolean }
+display_seconds: number; autostart: boolean; ai_provider: AiProvider; ai_model: string; onboarded: boolean; 
+/**
+ * Akar repo yang diawasi (hook `pre-push` terpasang).
+ */
+watched_repos: string[]; review_timeout_action: ReviewTimeoutAction }
 /**
  * Dikirim ke semua jendela setiap setelan berubah.
  */
 export type SettingsChangedEvent = Settings
+export type Severity = "critical" | "important" | 
+/**
+ * Nilai tak dikenal dari AI jatuh ke sini.
+ */
+"suggestion"
 
 /** tauri-specta globals **/
 

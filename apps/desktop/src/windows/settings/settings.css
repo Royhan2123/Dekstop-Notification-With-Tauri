@@ -81,3 +81,23 @@ html[data-window="settings"] body {
   opacity: 0.5;
   cursor: default;
 }
+
+.repo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.repo-list li {
+  justify-content: space-between;
+}
+
+.repo-list code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

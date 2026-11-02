@@ -1,0 +1,104 @@
+html[data-window="review"] {
+  color-scheme: light dark;
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+
+html[data-window="review"] body {
+  margin: 0;
+}
+
+.review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.review-panel h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.review-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finding {
+  padding: 10px 12px;
+  border: 1px solid #8884;
+  border-left: 4px solid currentColor;
+  border-radius: 6px;
+}
+
+.finding header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.finding .badge {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.finding strong,
+.finding p,
+.finding code,
+.finding pre {
+  color: CanvasText;
+}
+
+.finding p {
+  margin: 4px 0;
+}
+
+.finding pre {
+  margin: 4px 0 0;
+  padding: 8px;
+  overflow-x: auto;
+  border-radius: 4px;
+  background: #8882;
+  white-space: pre-wrap;
+}
+
+.review-panel .muted {
+  padding: 24px;
+}
+
+.review-actions button {
+  padding: 6px 10px;
+  border: 1px solid #8886;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.review-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.review-actions .review-primary {
+  border-color: transparent;
+  background: #4a6cf7;
+  color: #fff;
+}
+
+.finding.sev-critical {
+  color: #e5484d;
+}
+
+.finding.sev-important {
+  color: #d98a00;
+}
+
+.finding.sev-suggestion {
+  color: #3b82f6;
+}

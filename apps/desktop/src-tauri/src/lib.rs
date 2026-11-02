@@ -12,12 +12,15 @@ use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_snapshot,
 };
 use interface::commands::media::{media_control, media_cycle};
+use interface::commands::review::{
+    close_review, open_review, review_decide, review_unwatch, review_watch,
+};
 use interface::commands::settings::{
     api_key_clear, api_key_set, api_key_status, close_settings, open_settings, settings_get,
     settings_update,
 };
 use interface::dto::{IslandSnapshotEvent, SettingsChangedEvent};
-use interface::window::settings_window;
+use interface::window::{review_window, settings_window};
 
 fn specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
@@ -36,7 +39,12 @@ fn specta_builder() -> Builder<tauri::Wry> {
             api_key_set,
             api_key_clear,
             open_settings,
-            close_settings
+            close_settings,
+            review_decide,
+            review_watch,
+            review_unwatch,
+            open_review,
+            close_review
         ])
         .events(collect_events![IslandSnapshotEvent, SettingsChangedEvent])
 }
@@ -62,9 +70,12 @@ pub fn run() {
         ))
         .invoke_handler(builder.invoke_handler())
         .on_window_event(|window, event| {
-            // Menutup Setelan hanya menyembunyikannya; aplikasi hidup di pulau.
+            // Menutup Setelan/Review hanya menyembunyikannya; aplikasi hidup di pulau.
             if let WindowEvent::CloseRequested { api, .. } = event
-                && window.label() == settings_window::LABEL
+                && matches!(
+                    window.label(),
+                    settings_window::LABEL | review_window::LABEL
+                )
             {
                 api.prevent_close();
                 let _ = window.hide();

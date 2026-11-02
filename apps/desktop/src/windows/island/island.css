@@ -1,6 +1,6 @@
-html,
-body,
-#root {
+html[data-window="island"],
+html[data-window="island"] body,
+html[data-window="island"] #root {
   margin: 0;
   height: 100%;
   background: transparent;

@@ -1,0 +1,83 @@
+html[data-window="settings"] {
+  color-scheme: light dark;
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+}
+
+html[data-window="settings"] body {
+  margin: 0;
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.settings h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #8884;
+  border-radius: 8px;
+}
+
+.muted {
+  margin: 0;
+  opacity: 0.6;
+  font-size: 13px;
+}
+
+.error {
+  margin: 0;
+  color: #d33;
+}
+
+.actions {
+  justify-content: flex-end;
+}
+
+.settings input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.settings select,
+.settings button {
+  padding: 6px 10px;
+  border: 1px solid #8886;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.settings button {
+  cursor: pointer;
+}
+
+.settings button.primary {
+  border-color: transparent;
+  background: #4a6cf7;
+  color: #fff;
+}
+
+.settings button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

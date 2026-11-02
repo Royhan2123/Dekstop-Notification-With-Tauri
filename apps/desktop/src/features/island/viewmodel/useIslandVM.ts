@@ -43,6 +43,8 @@ export function useIslandVM() {
     onHover: (hovered: boolean) => void commands.islandHover(hovered),
     onClick: () => void commands.islandClick(),
     onDismiss: () => void commands.islandDismiss(),
+    // shortcut: klik kanan langsung membuka Setelan; menu cepat (Fokus, Jeda notifikasi) menyusul.
+    onOpenSettings: () => void commands.openSettings(),
     reportHitbox: (r: DOMRect) =>
       void commands.islandHitbox({ x: r.x, y: r.y, width: r.width, height: r.height }),
   };

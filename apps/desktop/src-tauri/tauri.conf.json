@@ -23,6 +23,14 @@
         "resizable": false,
         "shadow": false,
         "focus": false
+      },
+      {
+        "label": "settings",
+        "title": "Isla Desk",
+        "width": 560,
+        "height": 680,
+        "center": true,
+        "visible": false
       }
     ],
     "security": {

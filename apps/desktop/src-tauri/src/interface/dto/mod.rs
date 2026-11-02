@@ -5,6 +5,7 @@ use tauri_specta::Event;
 
 use crate::domain::island::state::{Content, IslandState, View};
 use crate::domain::model::MediaCommand;
+use crate::domain::model::settings::Settings;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
 #[serde(rename_all = "snake_case")]
@@ -70,6 +71,10 @@ pub struct IslandSnapshot {
     pub media: Option<MediaDto>,
     pub hovered: bool,
 }
+
+/// Dikirim ke semua jendela setiap setelan berubah.
+#[derive(Serialize, Deserialize, Clone, Debug, Type, Event)]
+pub struct SettingsChangedEvent(pub Settings);
 
 /// Dikirim setiap state pulau berubah.
 #[derive(Serialize, Deserialize, Clone, Debug, Type, Event)]

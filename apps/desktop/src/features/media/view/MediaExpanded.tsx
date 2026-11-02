@@ -1,10 +1,11 @@
-import { t } from "../../../shared/i18n";
+import { useT } from "../../../shared/i18n";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "../../../shared/ui/icons";
 import { useIslandStore } from "../../island/store";
 import { formatTime, useMediaVM } from "../viewmodel/useMediaVM";
 import { Visualizer } from "./Visualizer";
 
 export function MediaExpanded() {
+  const t = useT();
   const vm = useMediaVM(true);
   const content = useIslandStore((s) => s.snapshot.content);
   const { media } = vm;

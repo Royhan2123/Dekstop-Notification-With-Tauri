@@ -11,7 +11,7 @@ use crate::domain::ports::SnapshotSink;
 /// Pemegang state pulau: menjalankan reducer, menjadwalkan timer, dan mempublikasikan snapshot.
 pub struct IslandService {
     state: Mutex<IslandState>,
-    ctx: Ctx,
+    ctx: Mutex<Ctx>,
     sink: Arc<dyn SnapshotSink>,
     rt: Handle,
 }
@@ -20,10 +20,18 @@ impl IslandService {
     pub fn new(sink: Arc<dyn SnapshotSink>, rt: Handle) -> Arc<Self> {
         Arc::new(Self {
             state: Mutex::new(IslandState::default()),
-            ctx: Ctx::default(),
+            ctx: Mutex::new(Ctx::default()),
             sink,
             rt,
         })
+    }
+
+    /// Lama notifikasi tampil sebelum menutup sendiri; berlaku untuk yang berikutnya.
+    pub fn set_auto_dismiss_ms(&self, ms: u64) {
+        self.ctx
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .auto_dismiss_ms = ms;
     }
 
     pub fn snapshot(&self) -> IslandState {
@@ -33,7 +41,8 @@ impl IslandService {
     pub fn dispatch(self: &Arc<Self>, action: IslandAction) {
         let effects = {
             let mut guard = self.lock();
-            let (next, effects) = reduce(&guard, action, &self.ctx);
+            let ctx = self.ctx.lock().unwrap_or_else(|e| e.into_inner());
+            let (next, effects) = reduce(&guard, action, &ctx);
             if next != *guard {
                 *guard = next;
                 self.sink.publish(&guard);

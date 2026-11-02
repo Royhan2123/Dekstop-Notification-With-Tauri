@@ -1,4 +1,5 @@
 //! Model domain. Field akan bertambah seiring fitur (review, kesehatan).
+pub mod settings;
 
 /// Satu sesi media dari OS. `session_index`/`session_count` diisi `MediaService`.
 #[derive(Clone, Debug, Default, PartialEq)]

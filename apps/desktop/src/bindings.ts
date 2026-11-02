@@ -42,6 +42,50 @@ async mediaControl(cmd: MediaCommandDto) : Promise<Result<null, string>> {
  */
 async mediaCycle(delta: number) : Promise<void> {
     await TAURI_INVOKE("media_cycle", { delta });
+},
+async settingsGet() : Promise<Settings> {
+    return await TAURI_INVOKE("settings_get");
+},
+async settingsUpdate(settings: Settings) : Promise<Result<Settings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("settings_update", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async apiKeyStatus() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("api_key_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * API Key hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
+ */
+async apiKeySet(key: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("api_key_set", { key }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async apiKeyClear() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("api_key_clear") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async openSettings() : Promise<void> {
+    await TAURI_INVOKE("open_settings");
+},
+async closeSettings() : Promise<void> {
+    await TAURI_INVOKE("close_settings");
 }
 }
 
@@ -49,9 +93,11 @@ async mediaCycle(delta: number) : Promise<void> {
 
 
 export const events = __makeEvents__<{
-islandSnapshotEvent: IslandSnapshotEvent
+islandSnapshotEvent: IslandSnapshotEvent,
+settingsChangedEvent: SettingsChangedEvent
 }>({
-islandSnapshotEvent: "island-snapshot-event"
+islandSnapshotEvent: "island-snapshot-event",
+settingsChangedEvent: "settings-changed-event"
 })
 
 /** user-defined constants **/
@@ -60,6 +106,10 @@ islandSnapshotEvent: "island-snapshot-event"
 
 /** user-defined types **/
 
+/**
+ * "Otak" AI untuk review kode (dipakai mulai Fase 4).
+ */
+export type AiProvider = "claude_api" | "ollama" | "claude_cli"
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice"
 export type IslandContent = { kind: ContentKind; text: string; detail: string | null }
 export type IslandMode = "hidden" | "idle" | "compact" | "expanded"
@@ -68,12 +118,22 @@ export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; 
  * Dikirim setiap state pulau berubah.
  */
 export type IslandSnapshotEvent = IslandSnapshot
+export type Language = "id" | "en"
 export type MediaCommandDto = "previous" | "toggle_play" | "next"
 /**
  * Data tambahan saat pulau menampilkan media.
  */
 export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
 export type Rect = { x: number; y: number; width: number; height: number }
+export type Settings = { language: Language; reduce_motion: boolean; 
+/**
+ * Lama notifikasi (kesehatan/info) tampil sebelum menutup sendiri.
+ */
+display_seconds: number; autostart: boolean; ai_provider: AiProvider; ai_model: string; onboarded: boolean }
+/**
+ * Dikirim ke semua jendela setiap setelan berubah.
+ */
+export type SettingsChangedEvent = Settings
 
 /** tauri-specta globals **/
 

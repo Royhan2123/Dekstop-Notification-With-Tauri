@@ -1,15 +1,19 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { t } from "../../../shared/i18n";
+import { useT } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
+import { useSettingsStore } from "../../settings/store";
 import { useIslandVM } from "../viewmodel/useIslandVM";
 
 export function IslandShell() {
   const vm = useIslandVM();
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
+  const systemReduce = useReducedMotion();
+  const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
+  const reduceMotion = systemReduce || settingReduce;
   const { reportHitbox } = vm;
 
   // Lapor hitbox setiap ukuran berubah (selama animasi juga) agar klik tembus akurat.
@@ -37,6 +41,10 @@ export function IslandShell() {
       onHoverStart={() => vm.onHover(true)}
       onHoverEnd={() => vm.onHover(false)}
       onClick={vm.onClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        vm.onOpenSettings();
+      }}
     >
       <AnimatePresence mode="popLayout" initial={false}>
         {content && (

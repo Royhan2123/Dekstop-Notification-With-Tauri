@@ -37,6 +37,8 @@ pub struct IslandState {
     pub hovered: bool,
     pub fullscreen: bool,
     pub dnd: bool,
+    /// Ekstensi Isla Link sedang tersambung (tombol kecepatan/cari tampil).
+    pub extension: bool,
     pub token: u64,
 }
 

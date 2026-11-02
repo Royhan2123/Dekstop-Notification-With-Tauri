@@ -1,5 +1,7 @@
+pub mod bridge;
 pub mod health;
 pub mod island;
 pub mod media;
+pub mod pomodoro;
 pub mod review;
 pub mod settings;

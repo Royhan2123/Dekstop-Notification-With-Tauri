@@ -1,5 +1,6 @@
 //! Infrastructure: adapter yang mengimplementasikan port dari `domain`.
 pub mod ai;
+pub mod bridge;
 pub mod git;
 pub mod media;
 pub mod security;

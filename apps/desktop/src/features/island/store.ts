@@ -7,6 +7,7 @@ export const idleSnapshot: IslandSnapshot = {
   media: null,
   review: null,
   mood: "idle",
+  extension_connected: false,
   hovered: false,
 };
 

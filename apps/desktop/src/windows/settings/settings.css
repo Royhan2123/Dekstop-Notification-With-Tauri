@@ -101,3 +101,8 @@ html[data-window="settings"] body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.pair-code {
+  font-weight: 600;
+  letter-spacing: 1px;
+}

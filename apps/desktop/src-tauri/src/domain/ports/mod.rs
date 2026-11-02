@@ -2,7 +2,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::domain::error::{AiError, GitError, MediaError, SettingsError, UsageError};
+use crate::domain::bridge::BridgeCommand;
+use crate::domain::error::{AiError, BridgeError, GitError, MediaError, SettingsError, UsageError};
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
 use crate::domain::model::review::{Diff, PushRef, SecretHit};
@@ -97,4 +98,19 @@ pub trait UsageStore: Send + Sync {
     ) -> Result<(), UsageError>;
     /// Ringkasan harian untuk `dates` (urutan sama; hari kosong tetap ada dengan nol).
     fn days(&self, dates: &[String]) -> Result<Vec<DayUsage>, UsageError>;
+}
+
+/// Saluran ke ekstensi browser. `send` gagal bila belum ada ekstensi yang tersambung.
+pub trait BrowserBridge: Send + Sync {
+    fn send(&self, cmd: &BridgeCommand) -> Result<(), BridgeError>;
+    /// Putuskan sambungan yang ada (mis. setelah pairing dicabut).
+    fn disconnect(&self);
+}
+
+/// Keputusan aplikasi atas sambungan yang masuk dari ekstensi.
+pub trait BridgeHandler: Send + Sync {
+    /// Tukar kode pairing dengan token; `None` bila kode salah/kedaluwarsa.
+    fn pair(&self, origin: &str, code: &str) -> Option<String>;
+    fn authenticate(&self, origin: &str, token: &str) -> bool;
+    fn connection_changed(&self, connected: bool);
 }

@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Isla Link",
+  "version": "0.1.0",
+  "description": "Hubungkan browser ke Isla Desk: atur kecepatan putar dan cari lagu dari pulau.",
+  "permissions": ["tabs", "storage", "alarms"],
+  "host_permissions": ["ws://127.0.0.1/*"],
+  "background": {
+    "service_worker": "dist/background.js",
+    "scripts": ["dist/background.js"],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*", "*://music.youtube.com/*"],
+      "js": ["dist/content-youtube.js"]
+    }
+  ],
+  "action": { "default_popup": "popup.html" },
+  "browser_specific_settings": { "gecko": { "id": "isla-link@isla-desk.app" } }
+}

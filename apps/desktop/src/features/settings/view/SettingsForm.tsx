@@ -1,6 +1,8 @@
 import { useT } from "../../../shared/i18n";
 import type { Language } from "../../../bindings";
 import { useSettingsVM } from "../viewmodel/useSettingsVM";
+import { PomodoroSettings } from "../../pomodoro/view/PomodoroSettings";
+import { LinkSettings } from "../../link/view/LinkSettings";
 import { HealthSettings } from "../../health/view/HealthSettings";
 import { AiBrainPicker } from "./AiBrainPicker";
 import { ReviewSettings } from "./ReviewSettings";
@@ -63,6 +65,10 @@ export function SettingsForm() {
       <AiBrainPicker />
 
       <ReviewSettings />
+
+      <PomodoroSettings />
+
+      <LinkSettings />
 
       <HealthSettings />
 

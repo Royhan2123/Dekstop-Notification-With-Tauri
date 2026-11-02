@@ -8,11 +8,15 @@ use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{Builder, collect_commands, collect_events};
 
+use interface::commands::bridge::{
+    bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
+};
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_snapshot,
 };
 use interface::commands::media::{media_control, media_cycle};
+use interface::commands::pomodoro::{pomodoro_start, pomodoro_status, pomodoro_stop};
 use interface::commands::review::{
     close_review, open_review, review_decide, review_unwatch, review_watch,
 };
@@ -47,7 +51,15 @@ fn specta_builder() -> Builder<tauri::Wry> {
             open_review,
             close_review,
             health_summary,
-            health_peek
+            health_peek,
+            bridge_pair,
+            bridge_paired,
+            bridge_unpair,
+            bridge_set_rate,
+            bridge_search,
+            pomodoro_status,
+            pomodoro_start,
+            pomodoro_stop
         ])
         .events(collect_events![IslandSnapshotEvent, SettingsChangedEvent])
 }

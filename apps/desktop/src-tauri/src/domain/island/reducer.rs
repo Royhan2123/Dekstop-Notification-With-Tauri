@@ -62,6 +62,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
             }
         }
         IslandAction::HideForFullscreen(b) => s.fullscreen = b,
+        IslandAction::ExtensionConnected(b) => s.extension = b,
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
             if b {

@@ -4,14 +4,17 @@ use std::time::Duration;
 
 use tauri::{App, Manager};
 
+use crate::application::bridge_service::BridgeService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
+use crate::application::pomodoro_service::PomodoroService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
 use crate::domain::model::review::PushRef;
 use crate::domain::ports::SecretStore;
 use crate::infrastructure::ai::DefaultAiFactory;
+use crate::infrastructure::bridge::ws_server::WsBridge;
 use crate::infrastructure::git::cli_git::CliGit;
 use crate::infrastructure::git::hook::GitHookInstaller;
 use crate::infrastructure::media::default_source;
@@ -48,6 +51,28 @@ pub fn assemble(app: &App) {
         island.clone(),
     );
     app.manage(settings.clone());
+
+    // shortcut: durasi tetap 25/5 menit, belum bisa diatur; jadikan setelan bila diminta.
+    app.manage(PomodoroService::new(
+        island.clone(),
+        settings.clone(),
+        tauri::async_runtime::handle().inner().clone(),
+        Duration::from_secs(25 * 60),
+        Duration::from_secs(5 * 60),
+    ));
+
+    let ws = WsBridge::new();
+    let bridge = BridgeService::new(
+        ws.clone(),
+        secrets.clone(),
+        island.clone(),
+        settings.clone(),
+    );
+    app.manage(bridge.clone());
+    match ws.start(bridge) {
+        Ok(port) => tracing::info!("Isla Link mendengarkan di 127.0.0.1:{port}"),
+        Err(e) => tracing::error!("gagal membuka server Isla Link: {e}"),
+    }
 
     // Tanpa database, fitur riwayat (kesehatan, review) nonaktif; pulau tetap jalan.
     match Database::open(&data_dir.join("isla.db")) {

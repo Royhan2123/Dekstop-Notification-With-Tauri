@@ -45,3 +45,13 @@ pub enum UsageError {
     #[error("gagal menyimpan pemakaian: {0}")]
     Storage(String),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum BridgeError {
+    #[error("ekstensi Isla Link belum tersambung")]
+    NotConnected,
+    #[error("perintah tidak valid")]
+    Invalid,
+    #[error("gagal mengirim ke ekstensi: {0}")]
+    Failed(String),
+}

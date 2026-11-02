@@ -21,6 +21,7 @@ export function formatTime(ms: number): string {
 export function useMediaVM(ticking: boolean) {
   const media = useIslandStore((s) => s.snapshot.media);
   const receivedAt = useIslandStore((s) => s.receivedAt);
+  const extensionConnected = useIslandStore((s) => s.snapshot.extension_connected);
   const [now, setNow] = useState(() => Date.now());
   const lastWheel = useRef(0);
 
@@ -33,6 +34,9 @@ export function useMediaVM(ticking: boolean) {
 
   return {
     media,
+    extensionConnected,
+    onRate: (rate: number) => void commands.bridgeSetRate(rate),
+    onSearch: (query: string) => void commands.bridgeSearch(query),
     positionMs: media ? progressAt(media, receivedAt, running ? now : receivedAt) : 0,
     onPrevious: () => void commands.mediaControl("previous"),
     onToggle: () => void commands.mediaControl("toggle_play"),

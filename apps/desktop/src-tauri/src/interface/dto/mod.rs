@@ -77,6 +77,7 @@ pub struct IslandSnapshot {
     pub review: Option<ReviewDto>,
     /// Ekspresi Lumi untuk keadaan pulau saat ini.
     pub mood: Mood,
+    pub extension_connected: bool,
     pub hovered: bool,
 }
 
@@ -227,6 +228,7 @@ impl From<&IslandState> for IslandSnapshot {
             media,
             review,
             mood: mood_for(s),
+            extension_connected: s.extension,
             hovered: s.hovered,
         }
     }

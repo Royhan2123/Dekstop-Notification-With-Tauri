@@ -64,3 +64,20 @@ pub fn services(initial: Settings) -> (Arc<SettingsService>, Arc<IslandService>,
     );
     (settings, island, rt)
 }
+
+/// Brankas rahasia di memori untuk tes.
+#[derive(Default)]
+pub struct MemSecrets(pub Mutex<std::collections::HashMap<String, String>>);
+impl SecretStore for MemSecrets {
+    fn get(&self, key: &str) -> Result<Option<String>, SettingsError> {
+        Ok(self.0.lock().unwrap().get(key).cloned())
+    }
+    fn set(&self, key: &str, value: &str) -> Result<(), SettingsError> {
+        self.0.lock().unwrap().insert(key.into(), value.into());
+        Ok(())
+    }
+    fn delete(&self, key: &str) -> Result<(), SettingsError> {
+        self.0.lock().unwrap().remove(key);
+        Ok(())
+    }
+}

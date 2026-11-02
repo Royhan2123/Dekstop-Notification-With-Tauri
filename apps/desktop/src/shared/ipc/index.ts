@@ -8,6 +8,7 @@ import {
   type IslandSnapshot,
   type MediaDto,
   type Mood,
+  type PomodoroStatusDto,
   type ReviewDto,
   type Settings,
 } from "../../bindings";
@@ -21,6 +22,7 @@ export type {
   IslandSnapshot,
   MediaDto,
   Mood,
+  PomodoroStatusDto,
   ReviewDto,
   Settings,
 };

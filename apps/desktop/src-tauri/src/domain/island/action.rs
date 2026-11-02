@@ -13,6 +13,7 @@ pub enum IslandAction {
     Timeout(u64),
     HideForFullscreen(bool),
     DoNotDisturb(bool),
+    ExtensionConnected(bool),
 }
 
 #[derive(Debug, PartialEq)]

@@ -2,8 +2,15 @@
   "name": "isla-link",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
-    "lint": "echo skip",
-    "test": "echo skip"
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
   }
 }

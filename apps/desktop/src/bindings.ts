@@ -139,6 +139,56 @@ async healthPeek() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Buat kode pairing baru; kodenya juga tampil di pulau.
+ */
+async bridgePair() : Promise<string> {
+    return await TAURI_INVOKE("bridge_pair");
+},
+async bridgePaired() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("bridge_paired") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async bridgeUnpair() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("bridge_unpair") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Kecepatan putar 0,25x-2x untuk video/musik di browser.
+ */
+async bridgeSetRate(rate: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("bridge_set_rate", { rate }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async bridgeSearch(query: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("bridge_search", { query }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async pomodoroStatus() : Promise<PomodoroStatusDto> {
+    return await TAURI_INVOKE("pomodoro_status");
+},
+async pomodoroStart() : Promise<void> {
+    await TAURI_INVOKE("pomodoro_start");
+},
+async pomodoroStop() : Promise<void> {
+    await TAURI_INVOKE("pomodoro_stop");
 }
 }
 
@@ -198,7 +248,7 @@ review: ReviewDto | null;
 /**
  * Ekspresi Lumi untuk keadaan pulau saat ini.
  */
-mood: Mood; hovered: boolean }
+mood: Mood; extension_connected: boolean; hovered: boolean }
 /**
  * Dikirim setiap state pulau berubah.
  */
@@ -210,6 +260,8 @@ export type MediaCommandDto = "previous" | "toggle_play" | "next"
  */
 export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
 export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy"
+export type PomodoroPhaseDto = "idle" | "focus" | "break"
+export type PomodoroStatusDto = { phase: PomodoroPhaseDto; remaining_secs: number }
 export type Rect = { x: number; y: number; width: number; height: number }
 /**
  * Laporan review untuk kartu di pulau dan jendela rincian.

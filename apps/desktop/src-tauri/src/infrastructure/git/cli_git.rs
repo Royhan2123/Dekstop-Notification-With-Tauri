@@ -100,6 +100,20 @@ fn excludes(repo: &Path) -> Vec<String> {
         .collect()
 }
 
+/// Potong diff yang melewati batas ukuran pada akhir baris terakhir yang masih muat.
+fn capped(mut text: String) -> Diff {
+    let truncated = text.len() > MAX_DIFF_BYTES;
+    if truncated {
+        let mut cut = MAX_DIFF_BYTES;
+        while !text.is_char_boundary(cut) {
+            cut -= 1;
+        }
+        text.truncate(text[..cut].rfind('\n').unwrap_or(cut));
+        text.push('\n');
+    }
+    Diff { text, truncated }
+}
+
 impl GitRepo for CliGit {
     fn diff_for_push(&self, repo: &Path, refs: &[PushRef]) -> Result<Diff, GitError> {
         let mut text = String::new();
@@ -123,16 +137,14 @@ impl GitRepo for CliGit {
             args.extend(ex.iter().map(String::as_str));
             text.push_str(&must(repo, &args)?);
         }
-        let truncated = text.len() > MAX_DIFF_BYTES;
-        if truncated {
-            let mut cut = MAX_DIFF_BYTES;
-            while !text.is_char_boundary(cut) {
-                cut -= 1;
-            }
-            text.truncate(text[..cut].rfind('\n').unwrap_or(cut));
-            text.push('\n');
-        }
-        Ok(Diff { text, truncated })
+        Ok(capped(text))
+    }
+
+    fn staged_diff(&self, repo: &Path) -> Result<Diff, GitError> {
+        let ex = excludes(repo);
+        let mut args = vec!["diff", "--cached", "--no-color", "--no-ext-diff", "--", "."];
+        args.extend(ex.iter().map(String::as_str));
+        Ok(capped(must(repo, &args)?))
     }
 
     fn toplevel(&self, path: &Path) -> Result<String, GitError> {
@@ -205,6 +217,25 @@ pub mod tests {
             remote_ref: "refs/heads/main".into(),
             remote_sha: remote.into(),
         }
+    }
+
+    #[test]
+    fn diff_staged_hanya_memuat_yang_sudah_di_add_tanpa_lockfile() {
+        let dir = temp_repo("staged");
+        commit_file(&dir, "a.txt", "satu\n");
+        assert!(CliGit.staged_diff(&dir).unwrap().text.is_empty());
+        std::fs::write(dir.join("a.txt"), "satu\ndua\n").unwrap();
+        assert!(
+            CliGit.staged_diff(&dir).unwrap().text.is_empty(),
+            "belum di-add"
+        );
+        std::fs::write(dir.join("Cargo.lock"), "kunci\n").unwrap();
+        must(&dir, &["add", "-A"]).unwrap();
+        let diff = CliGit.staged_diff(&dir).unwrap();
+        assert!(diff.text.contains("+dua"));
+        assert!(!diff.text.contains("Cargo.lock"));
+        assert!(!diff.truncated);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

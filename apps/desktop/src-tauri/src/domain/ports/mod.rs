@@ -55,6 +55,8 @@ pub trait Autostart: Send + Sync {
 pub trait GitRepo: Send + Sync {
     /// Diff dari semua commit yang akan di-push, tanpa lockfile dan pola `.islaignore`.
     fn diff_for_push(&self, repo: &Path, refs: &[PushRef]) -> Result<Diff, GitError>;
+    /// Diff perubahan yang sudah di-`git add`, dengan penyaringan yang sama seperti `diff_for_push`.
+    fn staged_diff(&self, repo: &Path) -> Result<Diff, GitError>;
     /// Normalisasi dan validasi `path` sebagai repo git; mengembalikan akar repo.
     fn toplevel(&self, path: &Path) -> Result<String, GitError>;
     fn check_patch(&self, repo: &Path, patch: &str) -> Result<(), GitError>;

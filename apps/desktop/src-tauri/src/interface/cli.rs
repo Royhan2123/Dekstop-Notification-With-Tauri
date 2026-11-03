@@ -42,14 +42,7 @@ pub fn run_notify(args: &[String]) -> i32 {
         Some("--ipc") if args.len() >= 2 => (Some(PathBuf::from(&args[1])), args[2..].join(" ")),
         _ => (None, args.join(" ")),
     };
-    // shortcut: berkas bawaan hanya dikenal di Windows (%APPDATA%); platform lain pakai --ipc.
-    let ipc_file = ipc_file.or_else(|| {
-        std::env::var_os("APPDATA").map(|d| {
-            PathBuf::from(d)
-                .join("com.royhan.isladesk")
-                .join("ipc.json")
-        })
-    });
+    let ipc_file = ipc_file.or_else(default_ipc_file);
     let (Some(ipc_file), Some(text)) = (ipc_file, clean_query(&text)) else {
         eprintln!("Pemakaian: isla-desk notify [--ipc <berkas>] <teks>");
         return 1;
@@ -62,6 +55,99 @@ pub fn run_notify(args: &[String]) -> i32 {
     }
 }
 
+/// `isla-desk commit-msg [--ipc <berkas>]`: cetak saran pesan commit untuk perubahan staged di folder
+/// saat ini, mis. `git commit -m "$(isla-desk commit-msg)"`. Hanya pesannya yang ke stdout.
+pub fn run_commit_msg(args: &[String]) -> i32 {
+    attach_parent_console();
+    let ipc_file = match args.first().map(String::as_str) {
+        Some("--ipc") if args.len() >= 2 => Some(PathBuf::from(&args[1])),
+        _ => None,
+    };
+    let (Some(ipc_file), Ok(repo)) = (ipc_file.or_else(default_ipc_file), std::env::current_dir())
+    else {
+        eprintln!("Pemakaian: isla-desk commit-msg [--ipc <berkas>]");
+        return 1;
+    };
+    match ipc::commit_message(&ipc_file, &repo.to_string_lossy()) {
+        Some(res) if res.allow => {
+            println!("{}", res.message);
+            0
+        }
+        Some(res) => {
+            eprintln!("Isla: {}", res.message);
+            1
+        }
+        None => {
+            eprintln!("Isla: aplikasi tidak berjalan");
+            1
+        }
+    }
+}
+
+/// `isla-desk run [--ipc <berkas>] <perintah...>`: jalankan perintah seperti biasa lalu kabari pulau
+/// berhasil atau gagal beserta lamanya (mis. `isla-desk run cargo build`). Kode keluar = kode perintahnya.
+pub fn run_run(args: &[String]) -> i32 {
+    attach_parent_console();
+    let (ipc_file, command) = match args.first().map(String::as_str) {
+        Some("--ipc") if args.len() >= 3 => (Some(PathBuf::from(&args[1])), &args[2..]),
+        _ => (None, args),
+    };
+    if command.is_empty() {
+        eprintln!("Pemakaian: isla-desk run [--ipc <berkas>] <perintah...>");
+        return 1;
+    }
+    let started = std::time::Instant::now();
+    // shortcut: di Windows lewat cmd /C supaya npm.cmd dan sejenisnya ketemu; argumen berspasi perlu diberi tanda kutip sendiri.
+    let mut child = if cfg!(windows) {
+        let mut c = std::process::Command::new("cmd");
+        c.arg("/C").args(command);
+        c
+    } else {
+        let mut c = std::process::Command::new(&command[0]);
+        c.args(&command[1..]);
+        c
+    };
+    let code = match child.status() {
+        Ok(status) => status.code(),
+        Err(e) => {
+            eprintln!("Isla: perintah tidak bisa dijalankan: {e}");
+            None
+        }
+    };
+    let text = describe_run(command, code, started.elapsed());
+    if let Some(ipc_file) = ipc_file.or_else(default_ipc_file) {
+        let _ = ipc::notify(&ipc_file, &text);
+    }
+    code.unwrap_or(1)
+}
+
+/// Kalimat untuk pulau: `✓ cargo build selesai (2 mnt 3 dtk)` atau `✕ cargo build gagal, kode 101 (12 dtk)`.
+fn describe_run(command: &[String], code: Option<i32>, elapsed: std::time::Duration) -> String {
+    let name: Vec<&str> = command.iter().take(3).map(String::as_str).collect();
+    let name = name.join(" ");
+    let secs = elapsed.as_secs();
+    let took = if secs >= 60 {
+        format!("{} mnt {} dtk", secs / 60, secs % 60)
+    } else {
+        format!("{secs} dtk")
+    };
+    match code {
+        Some(0) => format!("✓ {name} selesai ({took})"),
+        Some(c) => format!("✕ {name} gagal, kode {c} ({took})"),
+        None => format!("✕ {name} tidak berjalan"),
+    }
+}
+
+/// Berkas IPC bawaan aplikasi.
+/// shortcut: hanya dikenal di Windows (%APPDATA%); platform lain pakai --ipc.
+fn default_ipc_file() -> Option<PathBuf> {
+    std::env::var_os("APPDATA").map(|d| {
+        PathBuf::from(d)
+            .join("com.royhan.isladesk")
+            .join("ipc.json")
+    })
+}
+
 /// Build rilis berjenis aplikasi GUI; tanpa ini `eprintln!` tidak terlihat di terminal pemanggil.
 fn attach_parent_console() {
     #[cfg(windows)]
@@ -69,5 +155,42 @@ fn attach_parent_console() {
     unsafe {
         use windows::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
         let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::describe_run;
+    use std::time::Duration;
+
+    fn cmd(parts: &[&str]) -> Vec<String> {
+        parts.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn ringkasan_perintah_berhasil_gagal_dan_tidak_jalan() {
+        let c = cmd(&["cargo", "build"]);
+        assert_eq!(
+            describe_run(&c, Some(0), Duration::from_secs(12)),
+            "✓ cargo build selesai (12 dtk)"
+        );
+        assert_eq!(
+            describe_run(&c, Some(0), Duration::from_secs(123)),
+            "✓ cargo build selesai (2 mnt 3 dtk)"
+        );
+        assert_eq!(
+            describe_run(&c, Some(101), Duration::from_secs(5)),
+            "✕ cargo build gagal, kode 101 (5 dtk)"
+        );
+        assert_eq!(
+            describe_run(&c, None, Duration::ZERO),
+            "✕ cargo build tidak berjalan"
+        );
+    }
+
+    #[test]
+    fn nama_perintah_dipotong_tiga_kata() {
+        let c = cmd(&["npm", "run", "build", "--", "--watch"]);
+        assert!(describe_run(&c, Some(0), Duration::ZERO).starts_with("✓ npm run build selesai"));
     }
 }

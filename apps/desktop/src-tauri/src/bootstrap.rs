@@ -9,6 +9,7 @@ use crate::application::bridge_service::BridgeService;
 use crate::application::brightness_service::BrightnessService;
 use crate::application::charger_service::ChargerService;
 use crate::application::clipboard_service::ClipboardService;
+use crate::application::commit_service::CommitService;
 use crate::application::fullscreen_service::FullscreenService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
@@ -135,6 +136,14 @@ pub fn assemble(app: &App) {
     app.manage(ask.clone());
     register_ask_shortcut(app, ask);
 
+    let commit = CommitService::new(
+        Arc::new(CliGit),
+        Arc::new(RegexScanner),
+        Arc::new(DefaultAiFactory::new(secrets.clone())),
+        settings.clone(),
+    );
+    let on_suggest: ipc::Suggester =
+        Arc::new(move |repo| commit.suggest(repo).map_err(|e| e.to_string()));
     let on_push = Arc::new(move |repo: &str, refs: &[PushRef]| review.review_push(repo, refs));
     let notice_island = island.clone();
     let on_notify: ipc::Notifier = Arc::new(move |text| {
@@ -142,7 +151,7 @@ pub fn assemble(app: &App) {
             notice_island.dispatch(IslandAction::Notice(text));
         }
     });
-    if let Err(e) = ipc::serve(&ipc_file, on_push, on_notify) {
+    if let Err(e) = ipc::serve(&ipc_file, on_push, on_notify, on_suggest) {
         tracing::error!("gagal membuka jalur IPC hook: {e}");
     }
 

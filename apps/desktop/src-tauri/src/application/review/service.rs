@@ -283,6 +283,9 @@ mod tests {
                 truncated: false,
             })
         }
+        fn staged_diff(&self, _: &Path) -> Result<Diff, GitError> {
+            unreachable!("review tidak memakai diff staged")
+        }
         fn toplevel(&self, p: &Path) -> Result<String, GitError> {
             Ok(p.to_string_lossy().into_owned())
         }

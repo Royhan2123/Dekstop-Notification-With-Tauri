@@ -30,6 +30,9 @@ struct Request {
     /// Bila ada, ini pemberitahuan dari terminal, bukan permintaan review.
     #[serde(default)]
     notify: Option<String>,
+    /// Bila benar, minta saran pesan commit untuk diff staged di `repo`.
+    #[serde(default)]
+    commit_message: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -40,10 +43,17 @@ pub struct Response {
 
 pub type Handler = Arc<dyn Fn(&str, &[PushRef]) -> Verdict + Send + Sync>;
 pub type Notifier = Arc<dyn Fn(&str) + Send + Sync>;
+/// Saran pesan commit untuk sebuah repo, atau teks galat untuk pengguna.
+pub type Suggester = Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
 
 /// Buka pendengar di port acak dan tulis `ipc_file`; tiap sambungan dilayani thread sendiri
 /// karena jawaban baru ada setelah pengguna memutuskan.
-pub fn serve(ipc_file: &Path, handler: Handler, notifier: Notifier) -> std::io::Result<()> {
+pub fn serve(
+    ipc_file: &Path,
+    handler: Handler,
+    notifier: Notifier,
+    suggester: Suggester,
+) -> std::io::Result<()> {
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let endpoint = Endpoint {
         port: listener.local_addr()?.port(),
@@ -56,9 +66,14 @@ pub fn serve(ipc_file: &Path, handler: Handler, notifier: Notifier) -> std::io::
     let token = endpoint.token;
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
-            let (handler, notifier, token) = (handler.clone(), notifier.clone(), token.clone());
+            let (handler, notifier, suggester, token) = (
+                handler.clone(),
+                notifier.clone(),
+                suggester.clone(),
+                token.clone(),
+            );
             thread::spawn(move || {
-                let _ = serve_one(stream, &token, &handler, &notifier);
+                let _ = serve_one(stream, &token, &handler, &notifier, &suggester);
             });
         }
     });
@@ -70,6 +85,7 @@ fn serve_one(
     token: &str,
     handler: &Handler,
     notifier: &Notifier,
+    suggester: &Suggester,
 ) -> std::io::Result<()> {
     let mut line = String::new();
     BufReader::new((&stream).take(MAX_REQUEST_BYTES)).read_line(&mut line)?;
@@ -86,6 +102,21 @@ fn serve_one(
             b"{\"allow\":true,\"message\":\"\"}
 ",
         );
+    }
+    if req.commit_message {
+        let res = match suggester(&req.repo) {
+            Ok(message) => Response {
+                allow: true,
+                message,
+            },
+            Err(message) => Response {
+                allow: false,
+                message,
+            },
+        };
+        let mut out = serde_json::to_vec(&res)?;
+        out.push(b'\n');
+        return (&stream).write_all(&out);
     }
     let refs: Vec<PushRef> = req.refs.iter().filter_map(|l| PushRef::parse(l)).collect();
     let res = match handler(&req.repo, &refs) {
@@ -110,6 +141,18 @@ pub fn ask(ipc_file: &Path, repo: &str, refs: Vec<String>) -> Option<Response> {
         repo: repo.into(),
         refs,
         notify: None,
+        commit_message: false,
+    })
+}
+
+/// Minta saran pesan commit; `None` bila aplikasi tidak berjalan.
+pub fn commit_message(ipc_file: &Path, repo: &str) -> Option<Response> {
+    exchange(ipc_file, |token| Request {
+        token,
+        repo: repo.into(),
+        refs: Vec::new(),
+        notify: None,
+        commit_message: true,
     })
 }
 
@@ -120,6 +163,7 @@ pub fn notify(ipc_file: &Path, text: &str) -> bool {
         repo: String::new(),
         refs: Vec::new(),
         notify: Some(text.into()),
+        commit_message: false,
     })
     .is_some()
 }
@@ -141,6 +185,10 @@ fn exchange(ipc_file: &Path, build: impl FnOnce(String) -> Request) -> Option<Re
 mod tests {
     use super::*;
 
+    fn no_suggest() -> Suggester {
+        Arc::new(|_| Err("tidak dipakai".into()))
+    }
+
     fn temp_file() -> std::path::PathBuf {
         std::env::temp_dir().join(format!("isla-ipc-{}.json", uuid::Uuid::new_v4()))
     }
@@ -155,7 +203,7 @@ mod tests {
                 Verdict::Allow
             }
         });
-        serve(&file, handler, Arc::new(|_| {})).unwrap();
+        serve(&file, handler, Arc::new(|_| {}), no_suggest()).unwrap();
         let line = "refs/heads/m aaa refs/heads/m bbb".to_string();
         let ok = ask(&file, "/ok", vec![line.clone()]).unwrap();
         assert_eq!(
@@ -183,7 +231,7 @@ mod tests {
         let sink = got.clone();
         let handler: Handler = Arc::new(|_, _| Verdict::Block("bukan review".into()));
         let notifier: Notifier = Arc::new(move |t| sink.lock().unwrap().push(t.to_string()));
-        serve(&file, handler, notifier).unwrap();
+        serve(&file, handler, notifier, no_suggest()).unwrap();
         assert!(notify(&file, "build selesai"));
         assert_eq!(*got.lock().unwrap(), vec!["build selesai".to_string()]);
         assert!(!notify(&temp_file(), "x"), "aplikasi mati");
@@ -191,10 +239,40 @@ mod tests {
     }
 
     #[test]
+    fn saran_pesan_commit_dan_galatnya_sampai_ke_terminal() {
+        let file = temp_file();
+        let handler: Handler = Arc::new(|_, _| Verdict::Block("bukan review".into()));
+        let suggester: Suggester = Arc::new(|repo| {
+            if repo == "/ada" {
+                Ok("feat: sesuatu".into())
+            } else {
+                Err("tidak ada perubahan staged".into())
+            }
+        });
+        serve(&file, handler, Arc::new(|_| {}), suggester).unwrap();
+        let ok = commit_message(&file, "/ada").unwrap();
+        assert_eq!(
+            ok,
+            Response {
+                allow: true,
+                message: "feat: sesuatu".into()
+            }
+        );
+        let err = commit_message(&file, "/kosong").unwrap();
+        assert!(!err.allow);
+        assert_eq!(err.message, "tidak ada perubahan staged");
+        assert!(
+            commit_message(&temp_file(), "/ada").is_none(),
+            "aplikasi mati"
+        );
+        let _ = std::fs::remove_file(&file);
+    }
+
+    #[test]
     fn token_salah_dan_aplikasi_mati_tidak_menghasilkan_jawaban() {
         let file = temp_file();
         let handler: Handler = Arc::new(|_, _| Verdict::Block("harusnya tak dipanggil".into()));
-        serve(&file, handler, Arc::new(|_| {})).unwrap();
+        serve(&file, handler, Arc::new(|_| {}), no_suggest()).unwrap();
         let mut e: Endpoint = serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
         e.token = "salah".into();
         std::fs::write(&file, serde_json::to_vec(&e).unwrap()).unwrap();

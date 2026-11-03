@@ -189,6 +189,20 @@ async pomodoroStart() : Promise<void> {
 },
 async pomodoroStop() : Promise<void> {
     await TAURI_INVOKE("pomodoro_stop");
+},
+async clipboardList(query: string) : Promise<ClipEntryDto[]> {
+    return await TAURI_INVOKE("clipboard_list", { query });
+},
+async clipboardCopy(id: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clipboard_copy", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clipboardClear() : Promise<void> {
+    await TAURI_INVOKE("clipboard_clear");
 }
 }
 
@@ -213,6 +227,7 @@ settingsChangedEvent: "settings-changed-event"
  * "Otak" AI untuk review kode (dipakai mulai Fase 4).
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
+export type ClipEntryDto = { id: number; text: string }
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice"
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
 export type Decision = 
@@ -279,7 +294,11 @@ display_seconds: number; autostart: boolean; ai_provider: AiProvider; ai_model: 
 /**
  * Akar repo yang diawasi (hook `pre-push` terpasang).
  */
-watched_repos: string[]; review_timeout_action: ReviewTimeoutAction; health_enabled: boolean; health_rules: HealthRules }
+watched_repos: string[]; review_timeout_action: ReviewTimeoutAction; health_enabled: boolean; health_rules: HealthRules; 
+/**
+ * Riwayat clipboard (di memori saja); mati secara bawaan karena clipboard bisa memuat rahasia.
+ */
+clipboard_enabled: boolean }
 /**
  * Dikirim ke semua jendela setiap setelan berubah.
  */

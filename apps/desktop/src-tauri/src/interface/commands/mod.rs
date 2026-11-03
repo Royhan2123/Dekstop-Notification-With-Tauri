@@ -1,4 +1,5 @@
 pub mod bridge;
+pub mod clipboard;
 pub mod health;
 pub mod island;
 pub mod media;

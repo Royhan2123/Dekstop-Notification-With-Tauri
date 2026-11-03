@@ -71,6 +71,8 @@ pub struct Settings {
     pub review_timeout_action: ReviewTimeoutAction,
     pub health_enabled: bool,
     pub health_rules: HealthRules,
+    /// Riwayat clipboard (di memori saja); mati secara bawaan karena clipboard bisa memuat rahasia.
+    pub clipboard_enabled: bool,
 }
 
 impl Default for Settings {
@@ -87,6 +89,7 @@ impl Default for Settings {
             review_timeout_action: ReviewTimeoutAction::default(),
             health_enabled: true,
             health_rules: HealthRules::default(),
+            clipboard_enabled: false,
         }
     }
 }

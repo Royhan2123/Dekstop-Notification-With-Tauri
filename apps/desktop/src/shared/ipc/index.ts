@@ -1,6 +1,7 @@
 import {
   commands,
   events,
+  type ClipEntryDto,
   type DayUsageDto,
   type Decision,
   type FindingDto,
@@ -15,6 +16,7 @@ import {
 
 export { commands };
 export type {
+  ClipEntryDto,
   DayUsageDto,
   Decision,
   FindingDto,

@@ -1,6 +1,7 @@
 import { useT } from "../../../shared/i18n";
 import type { Language } from "../../../bindings";
 import { useSettingsVM } from "../viewmodel/useSettingsVM";
+import { ClipboardSettings } from "../../clipboard/view/ClipboardSettings";
 import { TerminalNotifyHint } from "./TerminalNotifyHint";
 import { PomodoroSettings } from "../../pomodoro/view/PomodoroSettings";
 import { LinkSettings } from "../../link/view/LinkSettings";
@@ -70,6 +71,8 @@ export function SettingsForm() {
       <PomodoroSettings />
 
       <TerminalNotifyHint />
+
+      <ClipboardSettings />
 
       <LinkSettings />
 

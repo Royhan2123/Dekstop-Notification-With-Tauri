@@ -6,6 +6,7 @@ use tauri::{App, Manager};
 
 use crate::application::bridge_service::BridgeService;
 use crate::application::charger_service::ChargerService;
+use crate::application::clipboard_service::ClipboardService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
@@ -28,6 +29,7 @@ use crate::infrastructure::storage::sqlite::Database;
 use crate::infrastructure::storage::usage_store::SqliteUsageStore;
 use crate::infrastructure::system::autostart::TauriAutostart;
 use crate::infrastructure::system::brightness::SystemBrightness;
+use crate::infrastructure::system::clipboard::SystemClipboard;
 use crate::infrastructure::system::idle::SystemIdle;
 use crate::infrastructure::system::power::SystemPower;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
@@ -126,6 +128,10 @@ pub fn assemble(app: &App) {
         island.clone(),
     ));
 
+    let clipboard = ClipboardService::new(Arc::new(SystemClipboard), settings.clone());
+    app.manage(clipboard.clone());
+    spawn_clipboard_watch(clipboard);
+
     let media = MediaService::new(default_source(), island);
     app.manage(media.clone());
     media.start();
@@ -149,6 +155,18 @@ fn spawn_charger_watch(charger: Arc<ChargerService>) {
         loop {
             interval.tick().await;
             charger.tick();
+        }
+    });
+}
+
+/// Periksa clipboard tiap detik; tanpa izin di setelan, layanan hanya membuang riwayat.
+fn spawn_clipboard_watch(clipboard: Arc<ClipboardService>) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(1));
+        loop {
+            interval.tick().await;
+            let svc = clipboard.clone();
+            let _ = tauri::async_runtime::spawn_blocking(move || svc.tick()).await;
         }
     });
 }

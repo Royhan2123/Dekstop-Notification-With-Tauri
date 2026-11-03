@@ -87,6 +87,12 @@ pub trait BrightnessReader: Send + Sync {
     fn read(&self) -> Option<u8>;
 }
 
+/// Baca/tulis teks clipboard sistem.
+pub trait ClipboardAccess: Send + Sync {
+    fn read_text(&self) -> Option<String>;
+    fn write_text(&self, text: &str) -> bool;
+}
+
 /// Keadaan daya laptop.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PowerStatus {

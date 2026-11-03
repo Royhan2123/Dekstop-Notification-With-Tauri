@@ -11,6 +11,7 @@ use tauri_specta::{Builder, collect_commands, collect_events};
 use interface::commands::bridge::{
     bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
 };
+use interface::commands::clipboard::{clipboard_clear, clipboard_copy, clipboard_list};
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_snapshot,
@@ -59,7 +60,10 @@ fn specta_builder() -> Builder<tauri::Wry> {
             bridge_search,
             pomodoro_status,
             pomodoro_start,
-            pomodoro_stop
+            pomodoro_stop,
+            clipboard_list,
+            clipboard_copy,
+            clipboard_clear
         ])
         .events(collect_events![IslandSnapshotEvent, SettingsChangedEvent])
 }

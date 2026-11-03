@@ -27,11 +27,20 @@ export function IslandMenu({
 
   return (
     <div className="island-menu" role="menu" onContextMenu={(e) => e.preventDefault()}>
-      <button type="button" role="menuitemcheckbox" aria-checked={dnd} onClick={run(() => void commands.islandSetDnd(!dnd))}>
+      <button
+        type="button"
+        role="menuitemcheckbox"
+        aria-checked={dnd}
+        onClick={run(() => void commands.islandSetDnd(!dnd))}
+      >
         <span>{t("menu.dnd")}</span>
         <span>{dnd ? "✓" : ""}</span>
       </button>
-      <button type="button" role="menuitem" onClick={run(focusing ? pomodoro.stop : pomodoro.start)}>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={run(focusing ? pomodoro.stop : pomodoro.start)}
+      >
         <span>{focusing ? t("menu.focus_stop") : t("menu.focus_start")}</span>
         <span>{focusing ? formatRemaining(pomodoro.status.remaining_secs) : ""}</span>
       </button>

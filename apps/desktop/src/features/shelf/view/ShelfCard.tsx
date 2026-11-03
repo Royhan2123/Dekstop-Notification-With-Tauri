@@ -23,7 +23,11 @@ export function ShelfCard() {
         <button type="button" onClick={() => void commands.shelfClear()} disabled={!items.length}>
           {t("shelf.clear")}
         </button>
-        <button type="button" aria-label={t("island.dismiss")} onClick={() => void commands.islandDismiss()}>
+        <button
+          type="button"
+          aria-label={t("island.dismiss")}
+          onClick={() => void commands.islandDismiss()}
+        >
           ×
         </button>
       </div>

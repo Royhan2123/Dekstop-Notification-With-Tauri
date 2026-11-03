@@ -45,5 +45,14 @@ export function useSettingsVM() {
     await commands.closeSettings();
   }
 
-  return { settings, apiKeySaved, error, update, saveApiKey, removeApiKey, finishOnboarding };
+  return {
+    settings,
+    apiKeySaved,
+    error,
+    fail: setError,
+    update,
+    saveApiKey,
+    removeApiKey,
+    finishOnboarding,
+  };
 }

@@ -43,3 +43,44 @@ export function accentOf(theme: string, custom: string): string {
   if (/^#[0-9a-fA-F]{6}$/.test(custom)) return custom;
   return (THEMES.find((t) => t.id === theme) ?? THEMES[0]).accent;
 }
+
+export const MASCOTS = ["mino", "kiko", "puff"] as const;
+
+function hex(h: number, s: number, l: number): string {
+  const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(c * 255)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/** Warna aksen dari piksel RGBA sebuah foto: rata-rata berbobot kejenuhan, lalu dibuat cukup terang dan hidup. */
+export function accentFromPixels(data: Uint8ClampedArray): string {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let w = 0;
+  for (let i = 0; i + 3 < data.length; i += 4) {
+    const max = Math.max(data[i], data[i + 1], data[i + 2]);
+    const min = Math.min(data[i], data[i + 1], data[i + 2]);
+    const weight = (max - min) / 255 + 0.02;
+    r += data[i] * weight;
+    g += data[i + 1] * weight;
+    b += data[i + 2] * weight;
+    w += weight;
+  }
+  if (w === 0) return THEMES[0].accent;
+  const avg = `#${[r, g, b]
+    .map((v) =>
+      Math.round(v / w)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+  const [h, s] = hslOf(avg);
+  return hex(h, Math.max(s, 60), 58);
+}

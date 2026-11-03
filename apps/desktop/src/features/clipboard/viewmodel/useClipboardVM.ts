@@ -9,10 +9,7 @@ export function useClipboardVM(enabled: boolean) {
   const [items, setItems] = useState<ClipEntryDto[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(
-    () => void commands.clipboardList(query).then(setItems),
-    [query],
-  );
+  const refresh = useCallback(() => void commands.clipboardList(query).then(setItems), [query]);
 
   useEffect(() => {
     if (!enabled) {

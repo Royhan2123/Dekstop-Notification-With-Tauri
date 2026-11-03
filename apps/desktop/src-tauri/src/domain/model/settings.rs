@@ -77,6 +77,10 @@ pub struct Settings {
     pub theme: String,
     /// Warna aksen buatan sendiri (`#rrggbb`); bila terisi menggantikan `theme`.
     pub custom_accent: String,
+    /// Id maskot (`mino`, `kiko`, `puff`).
+    pub mascot: String,
+    /// Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
+    pub background: String,
 }
 
 impl Default for Settings {
@@ -96,8 +100,25 @@ impl Default for Settings {
             clipboard_enabled: false,
             theme: "mint".into(),
             custom_accent: String::new(),
+            mascot: "mino".into(),
+            background: String::new(),
         }
     }
+}
+
+pub const MAX_BACKGROUND_BYTES: usize = 400_000;
+
+fn is_image_data_url(s: &str) -> bool {
+    let Some(rest) = ["jpeg", "png", "webp"]
+        .iter()
+        .find_map(|t| s.strip_prefix(&format!("data:image/{t};base64,")))
+    else {
+        return false;
+    };
+    s.len() <= MAX_BACKGROUND_BYTES
+        && rest
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '/' | '='))
 }
 
 fn is_hex_color(s: &str) -> bool {
@@ -111,8 +132,13 @@ impl Settings {
             .display_seconds
             .clamp(MIN_DISPLAY_SECONDS, MAX_DISPLAY_SECONDS);
         self.ai_model = self.ai_model.trim().chars().take(100).collect();
-        self.theme.retain(|c| c.is_ascii_alphanumeric() || c == '-');
-        self.theme.truncate(32);
+        for id in [&mut self.theme, &mut self.mascot] {
+            id.retain(|c| c.is_ascii_alphanumeric() || c == '-');
+            id.truncate(32);
+        }
+        if !is_image_data_url(&self.background) {
+            self.background.clear();
+        }
         if !is_hex_color(&self.custom_accent) {
             self.custom_accent.clear();
         }
@@ -158,6 +184,37 @@ mod tests {
         }
         .sanitized();
         assert_eq!(s.custom_accent, "#A1b2C3");
+    }
+
+    #[test]
+    fn sanitized_hanya_menerima_latar_data_url_gambar_berukuran_wajar() {
+        let ok = "data:image/jpeg;base64,/9j/4AAQ==";
+        let s = Settings {
+            background: ok.into(),
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(s.background, ok);
+        for bad in [
+            "https://x.test/a.png",
+            "data:text/html;base64,PHNjcmlwdD4=",
+            "data:image/svg+xml;base64,PHN2Zz4=",
+            "data:image/png;base64,AA\")}body{x:url(",
+        ] {
+            let s = Settings {
+                background: bad.into(),
+                ..Default::default()
+            }
+            .sanitized();
+            assert!(s.background.is_empty(), "{bad}");
+        }
+        let big = format!("data:image/png;base64,{}", "A".repeat(MAX_BACKGROUND_BYTES));
+        let s = Settings {
+            background: big,
+            ..Default::default()
+        }
+        .sanitized();
+        assert!(s.background.is_empty());
     }
 
     #[test]

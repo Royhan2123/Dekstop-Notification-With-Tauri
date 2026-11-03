@@ -17,7 +17,8 @@ export function MediaExpanded() {
   return (
     <div
       className={`media-expanded${vm.extensionConnected ? " with-extras" : ""}`}
-      onWheel={(e) => vm.onWheel(e.deltaY)}>
+      onWheel={(e) => vm.onWheel(e.deltaY)}
+    >
       {media.thumbnail ? (
         <img className="media-thumb" src={media.thumbnail} alt="" />
       ) : (

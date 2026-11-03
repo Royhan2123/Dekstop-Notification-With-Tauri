@@ -12,6 +12,18 @@ export function useSettingsSync() {
     s.settings ? accentOf(s.settings.theme, s.settings.custom_accent) : null,
   );
 
+  const background = useSettingsStore((s) => s.settings?.background ?? "");
+
+  useEffect(() => {
+    const root = document.documentElement.style;
+    if (background) {
+      root.setProperty(
+        "--island-bg",
+        `linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.62)), url("${background}")`,
+      );
+    } else root.removeProperty("--island-bg");
+  }, [background]);
+
   useEffect(() => {
     if (!accent) return;
     for (const [k, v] of Object.entries(paletteFor(accent))) {

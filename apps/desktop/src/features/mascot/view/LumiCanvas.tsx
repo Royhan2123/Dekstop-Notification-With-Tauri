@@ -1,5 +1,6 @@
 import "./lumi.css";
 import type { Mood } from "../../../shared/ipc";
+import { useSettingsStore } from "../../settings/store";
 import { useLumiVM } from "../viewmodel/useLumiVM";
 
 const fill = (v: string) => ({ fill: `var(${v})` });
@@ -97,26 +98,103 @@ function Moon({ moving }: { moving: boolean }) {
   );
 }
 
-/** Mino: robot bulat mint dengan visor, mata piksel, dan cincin berbulan. SVG supaya ringan dan bisa dijeda total. */
+const accent = { stroke: "var(--accent)" };
+
+const Visor = () => (
+  <>
+    <rect x="25" y="44" width="50" height="27" rx="9" style={fill("--m-visor")} />
+    <path
+      d="M31 49q19-4 38 0"
+      stroke="#fff"
+      opacity=".22"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+    />
+  </>
+);
+
+const Shine = () => (
+  <ellipse cx="34" cy="38" rx="9" ry="4.5" transform="rotate(-25 34 38)" fill="#fff" opacity=".7" />
+);
+
+/** Mino: robot bulat dengan antena dan cincin berbulan. */
+function MinoBody({ moving }: { moving: boolean }) {
+  return (
+    <>
+      <g transform="rotate(-14 50 60)">
+        <path d="M4 60A46 12 0 0 1 96 60" fill="none" style={accent} strokeWidth="3" opacity=".9" />
+      </g>
+      <path d="M50 28V14" stroke="#7f9d95" strokeWidth="3" strokeLinecap="round" />
+      <rect x="45.5" y="5" width="9" height="9" rx="2.5" fill="#ffb347" />
+      <ellipse cx="50" cy="59" rx="34" ry="31" fill="url(#m-body)" />
+      <rect x="12" y="52" width="6" height="14" rx="3" style={fill("--accent")} />
+      <rect x="82" y="52" width="6" height="14" rx="3" style={fill("--accent")} />
+      <Visor />
+      <g transform="rotate(-14 50 60)">
+        <path d="M4 60A46 12 0 0 0 96 60" fill="none" style={accent} strokeWidth="3" />
+        <Moon moving={moving} />
+      </g>
+      <Shine />
+    </>
+  );
+}
+
+/** Kiko: kucing bulat bertelinga dan berkumis. */
+function KikoBody() {
+  return (
+    <>
+      <path d="M18 44L22 12L46 30Z M82 44L78 12L54 30Z" fill="url(#m-body)" />
+      <path d="M26 36L27 21L39 31Z M74 36L73 21L61 31Z" style={fill("--accent")} />
+      <ellipse cx="50" cy="59" rx="35" ry="30" fill="url(#m-body)" />
+      <Visor />
+      <g style={accent} strokeWidth="2" strokeLinecap="round">
+        <path d="M8 56L20 58M8 66L20 64M92 56L80 58M92 66L80 64" />
+      </g>
+      <Shine />
+    </>
+  );
+}
+
+/** Puff: hantu empuk dengan tunas di kepala. */
+function PuffBody() {
+  return (
+    <>
+      <path d="M50 26q-2-12 10-16q2 10-10 16Z" style={fill("--accent")} />
+      <path
+        d="M16 62C16 34 30 26 50 26S84 34 84 62V86Q76 80 68 87Q59 80 50 87Q41 80 32 87Q24 80 16 86Z"
+        fill="url(#m-body)"
+      />
+      <Visor />
+      <ellipse cx="22" cy="68" rx="5" ry="3.4" style={fill("--accent")} opacity=".5" />
+      <ellipse cx="78" cy="68" rx="5" ry="3.4" style={fill("--accent")} opacity=".5" />
+      <Shine />
+    </>
+  );
+}
+
+/** Maskot dipilih dari Setelan; semuanya SVG supaya ringan dan bisa dijeda total. */
 export function LumiCanvas() {
   const vm = useLumiVM();
+  const mascot = useSettingsStore((s) => s.settings?.mascot ?? "mino");
   const cls = ["lumi", `mood-${vm.mood}`, vm.calm && "calm", vm.poked && "poked"]
     .filter(Boolean)
     .join(" ");
+  const name = mascot === "kiko" ? "Kiko" : mascot === "puff" ? "Puff" : "Mino";
   return (
     <svg
       ref={vm.ref}
       className={cls}
       viewBox="0 0 100 100"
       role="img"
-      aria-label={`Mino (${vm.mood})`}
+      aria-label={`${name} (${vm.mood})`}
       onClick={(e) => {
         e.stopPropagation();
         vm.poke();
       }}
     >
       <defs>
-        <radialGradient id="mino-body" cx="35%" cy="25%" r="90%">
+        <radialGradient id="m-body" cx="35%" cy="25%" r="90%">
           <stop offset="0" style={{ stopColor: "var(--m-hi)" }} />
           <stop offset=".55" style={{ stopColor: "var(--m-mid)" }} />
           <stop offset="1" style={{ stopColor: "var(--m-lo)" }} />
@@ -124,47 +202,13 @@ export function LumiCanvas() {
       </defs>
       <ellipse cx="50" cy="95" rx="28" ry="3.4" fill="#000" opacity=".18" />
       <g className="lumi-bob">
-        <g transform="rotate(-14 50 60)">
-          <path
-            d="M4 60A46 12 0 0 1 96 60"
-            fill="none"
-            style={{ stroke: "var(--accent)" }}
-            strokeWidth="3"
-            opacity=".9"
-          />
-        </g>
-        <path d="M50 28V14" stroke="#7f9d95" strokeWidth="3" strokeLinecap="round" />
-        <rect x="45.5" y="5" width="9" height="9" rx="2.5" fill="#ffb347" />
-        <ellipse cx="50" cy="59" rx="34" ry="31" fill="url(#mino-body)" />
-        <rect x="12" y="52" width="6" height="14" rx="3" style={fill("--accent")} />
-        <rect x="82" y="52" width="6" height="14" rx="3" style={fill("--accent")} />
-        <rect x="25" y="44" width="50" height="27" rx="9" style={fill("--m-visor")} />
-        <path
-          d="M31 49q19-4 38 0"
-          stroke="#fff"
-          opacity=".22"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <g transform="rotate(-14 50 60)">
-          <path
-            d="M4 60A46 12 0 0 0 96 60"
-            fill="none"
-            style={{ stroke: "var(--accent)" }}
-            strokeWidth="3"
-          />
-          <Moon moving={!vm.calm} />
-        </g>
-        <ellipse
-          cx="34"
-          cy="38"
-          rx="9"
-          ry="4.5"
-          transform="rotate(-25 34 38)"
-          fill="#fff"
-          opacity=".7"
-        />
+        {mascot === "kiko" ? (
+          <KikoBody />
+        ) : mascot === "puff" ? (
+          <PuffBody />
+        ) : (
+          <MinoBody moving={!vm.calm} />
+        )}
         <Eyes mood={vm.mood} />
       </g>
       <Extras mood={vm.mood} />

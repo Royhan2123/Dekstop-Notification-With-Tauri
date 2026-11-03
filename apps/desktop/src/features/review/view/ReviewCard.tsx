@@ -21,7 +21,9 @@ export function ReviewCard() {
           {t("review.counts", counts.critical, counts.important, counts.suggestion)}
         </span>
       </div>
-      <p className="review-summary">{review.patch_ready ? t("review.patch_ready") : review.summary}</p>
+      <p className="review-summary">
+        {review.patch_ready ? t("review.patch_ready") : review.summary}
+      </p>
       <ul className="review-list">
         {findings.slice(0, SHOWN).map((f, i) => (
           <li key={`${f.file}:${f.line}:${i}`} className={`sev-${f.severity}`}>

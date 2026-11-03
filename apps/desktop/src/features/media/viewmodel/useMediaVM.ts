@@ -17,7 +17,7 @@ export function formatTime(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-/** `ticking`: perbarui progress terus-menerus (hanya saat tampilan lebar, agar CPU idle tetap rendah). */
+/** `ticking`: perbarui progress terus-menerus (saat tampilan lebar atau ada lirik, agar CPU idle tetap rendah). */
 export function useMediaVM(ticking: boolean) {
   const media = useIslandStore((s) => s.snapshot.media);
   const receivedAt = useIslandStore((s) => s.receivedAt);

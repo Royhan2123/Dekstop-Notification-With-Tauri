@@ -18,6 +18,7 @@ use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_set_dnd,
     island_snapshot,
 };
+use interface::commands::lyrics::lyrics_fetch;
 use interface::commands::media::{media_control, media_cycle};
 use interface::commands::net::net_rate;
 use interface::commands::pomodoro::{pomodoro_start, pomodoro_status, pomodoro_stop};
@@ -64,6 +65,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             health_summary,
             health_peek,
             net_rate,
+            lyrics_fetch,
             tasks_list,
             tasks_add,
             tasks_set_done,

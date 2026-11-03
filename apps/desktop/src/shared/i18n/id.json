@@ -31,6 +31,7 @@
   "settings.theme.export": "Ekspor tema",
   "settings.theme.import": "Impor tema...",
   "settings.theme.file_error": "Berkas tema tidak valid.",
+  "settings.lyrics": "Tampilkan lirik lagu (judul dan artis dikirim ke lrclib.net)",
   "settings.language": "Bahasa",
   "settings.language.id": "Indonesia",
   "settings.language.en": "English",

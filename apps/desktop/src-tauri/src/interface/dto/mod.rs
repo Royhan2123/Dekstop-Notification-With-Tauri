@@ -172,6 +172,12 @@ impl From<&HealthSummary> for HealthSummaryDto {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct LyricLineDto {
+    pub ms: u32,
+    pub text: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
 pub struct NetRateDto {
     pub down_bps: u32,

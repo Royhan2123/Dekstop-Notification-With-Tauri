@@ -871,3 +871,8 @@ html[data-window="island"] #root {
   opacity: 0.4;
   cursor: default;
 }
+
+.lyric-line {
+  color: var(--accent, #2fcf9c);
+  font-weight: 600;
+}

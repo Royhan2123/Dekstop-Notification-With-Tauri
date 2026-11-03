@@ -2,17 +2,20 @@ import { useT } from "../../../shared/i18n";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "../../../shared/ui/icons";
 import { useState } from "react";
 import { useIslandStore } from "../../island/store";
+import { currentLyric, useLyricsVM } from "../viewmodel/useLyricsVM";
 import { formatTime, useMediaVM } from "../viewmodel/useMediaVM";
 import { Visualizer } from "./Visualizer";
 
 export function MediaExpanded() {
   const t = useT();
   const vm = useMediaVM(true);
+  const lyrics = useLyricsVM();
   const content = useIslandStore((s) => s.snapshot.content);
   const { media } = vm;
   const [rate, setRate] = useState(1);
   const [query, setQuery] = useState("");
   if (!media || !content) return null;
+  const lyric = media.playing ? currentLyric(lyrics, vm.positionMs) : null;
   const ratio = media.duration_ms > 0 ? vm.positionMs / media.duration_ms : 0;
   return (
     <div
@@ -29,10 +32,14 @@ export function MediaExpanded() {
           <span className="island-text">{content.text}</span>
           <Visualizer color={media.color} playing={media.playing} />
         </div>
-        <span className="island-detail">
-          {content.detail}
-          {media.session_count > 1 && ` · ${media.session_index + 1}/${media.session_count}`}
-        </span>
+        {lyric ? (
+          <span className="island-detail lyric-line">{lyric}</span>
+        ) : (
+          <span className="island-detail">
+            {content.detail}
+            {media.session_count > 1 && ` · ${media.session_index + 1}/${media.session_count}`}
+          </span>
+        )}
         {media.duration_ms > 0 && (
           <div className="media-progress">
             <span>{formatTime(vm.positionMs)}</span>

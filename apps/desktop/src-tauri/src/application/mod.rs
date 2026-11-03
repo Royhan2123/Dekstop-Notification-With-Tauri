@@ -6,6 +6,7 @@ pub mod clipboard_service;
 pub mod fullscreen_service;
 pub mod health_service;
 pub mod island_service;
+pub mod lyrics_service;
 pub mod media_service;
 pub mod net_service;
 pub mod pomodoro_service;

@@ -5,6 +5,7 @@ pub mod diff;
 pub mod error;
 pub mod health;
 pub mod island;
+pub mod lyrics;
 pub mod mascot;
 pub mod model;
 pub mod ports;

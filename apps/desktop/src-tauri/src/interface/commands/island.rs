@@ -66,6 +66,18 @@ pub fn dev_simulate(svc: Svc, kind: String) {
             session_count: 1,
             ..Default::default()
         })),
+        // Lagu nyata yang punya lirik berwaktu di LRCLIB, untuk mencoba tampilan lirik.
+        "media_lyrics" => IslandAction::MediaChanged(Some(MediaInfo {
+            title: "Blinding Lights".into(),
+            artist: "The Weeknd".into(),
+            playing: true,
+            position_ms: 30_000,
+            duration_ms: 200_000,
+            rate: 1.0,
+            color: Some("#e0245e".into()),
+            session_count: 1,
+            ..Default::default()
+        })),
         "media_off" => IslandAction::MediaChanged(None),
         "review" => IslandAction::ReviewStarted(ReviewId(1)),
         "review_done" => IslandAction::ReviewFinished(

@@ -55,6 +55,15 @@ export function SettingsForm() {
         {t("settings.hide_on_fullscreen")}
       </label>
 
+      <label className="row">
+        <input
+          type="checkbox"
+          checked={settings.lyrics_enabled}
+          onChange={(e) => void vm.update({ lyrics_enabled: e.currentTarget.checked })}
+        />
+        {t("settings.lyrics")}
+      </label>
+
       <label className="column">
         {t("settings.display_seconds")}: {settings.display_seconds}
         <input

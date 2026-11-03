@@ -90,6 +90,8 @@ pub struct Settings {
     pub hide_on_fullscreen: bool,
     /// Bunyikan nada saat fase Pomodoro selesai.
     pub sound_enabled: bool,
+    /// Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
+    pub lyrics_enabled: bool,
 }
 
 impl Default for Settings {
@@ -115,6 +117,7 @@ impl Default for Settings {
             break_minutes: 5,
             hide_on_fullscreen: true,
             sound_enabled: true,
+            lyrics_enabled: true,
         }
     }
 }

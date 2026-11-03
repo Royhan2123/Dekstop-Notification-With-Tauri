@@ -12,6 +12,7 @@ use crate::application::clipboard_service::ClipboardService;
 use crate::application::fullscreen_service::FullscreenService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
+use crate::application::lyrics_service::LyricsService;
 use crate::application::media_service::MediaService;
 use crate::application::net_service::NetService;
 use crate::application::pomodoro_service::PomodoroService;
@@ -28,6 +29,7 @@ use crate::infrastructure::ai::DefaultAiFactory;
 use crate::infrastructure::bridge::ws_server::WsBridge;
 use crate::infrastructure::git::cli_git::CliGit;
 use crate::infrastructure::git::hook::GitHookInstaller;
+use crate::infrastructure::lyrics::Lrclib;
 use crate::infrastructure::media::default_source;
 use crate::infrastructure::security::regex_scanner::RegexScanner;
 use crate::infrastructure::storage::keyring_store::KeyringStore;
@@ -148,6 +150,7 @@ pub fn assemble(app: &App) {
     ));
 
     app.manage(NetService::new(Arc::new(SystemNet)));
+    app.manage(LyricsService::new(Arc::new(Lrclib), settings.clone()));
 
     spawn_brightness_watch(BrightnessService::new(
         Arc::new(SystemBrightness),

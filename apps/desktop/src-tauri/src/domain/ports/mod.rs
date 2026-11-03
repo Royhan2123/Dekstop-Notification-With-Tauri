@@ -4,10 +4,11 @@ use std::sync::Arc;
 
 use crate::domain::bridge::BridgeCommand;
 use crate::domain::error::{
-    AiError, BridgeError, GitError, MediaError, SettingsError, TaskError, UsageError,
+    AiError, BridgeError, GitError, LyricsError, MediaError, SettingsError, TaskError, UsageError,
 };
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
+use crate::domain::lyrics::Candidate;
 use crate::domain::model::review::{Diff, PushRef, SecretHit};
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, MediaInfo};
@@ -113,6 +114,11 @@ pub struct PowerStatus {
 /// Status charger/baterai; `None` bila tidak ada baterai atau OS tidak mendukung.
 pub trait PowerReader: Send + Sync {
     fn status(&self) -> Option<PowerStatus>;
+}
+
+/// Sumber lirik berwaktu (pencarian teks bebas).
+pub trait LyricsSource: Send + Sync {
+    fn search(&self, query: &str) -> Result<Vec<Candidate>, LyricsError>;
 }
 
 /// Memutar bunyi notifikasi (tidak menunggu bunyinya selesai).

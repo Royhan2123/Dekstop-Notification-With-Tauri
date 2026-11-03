@@ -47,6 +47,12 @@ pub enum UsageError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum LyricsError {
+    #[error("layanan lirik tidak tersedia: {0}")]
+    Unavailable(String),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum TaskError {
     #[error("judul tugas kosong")]
     EmptyTitle,

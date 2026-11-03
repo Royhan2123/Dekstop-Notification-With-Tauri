@@ -31,6 +31,7 @@
   "settings.theme.export": "Export theme",
   "settings.theme.import": "Import theme...",
   "settings.theme.file_error": "Invalid theme file.",
+  "settings.lyrics": "Show song lyrics (title and artist are sent to lrclib.net)",
   "settings.language": "Language",
   "settings.language.id": "Indonesia",
   "settings.language.en": "English",

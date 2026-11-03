@@ -3,6 +3,7 @@ pub mod bridge;
 pub mod clipboard;
 pub mod health;
 pub mod island;
+pub mod lyrics;
 pub mod media;
 pub mod net;
 pub mod pomodoro;

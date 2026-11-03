@@ -713,3 +713,97 @@ html[data-window="island"] #root {
   border-radius: 4px;
   background: var(--accent, #2fcf9c);
 }
+
+.net-panel,
+.tasks-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  font-size: 12px;
+}
+
+.net-rates {
+  display: flex;
+  gap: 24px;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.net-down {
+  color: var(--accent, #2fcf9c);
+}
+
+.net-up {
+  color: #ffb347;
+}
+
+.net-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 48px;
+}
+
+.net-spark i {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--accent, #2fcf9c);
+  opacity: 0.8;
+}
+
+.tasks-input {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.tasks-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  max-height: 130px;
+  list-style: none;
+}
+
+.tasks-rows li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tasks-rows label {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.tasks-rows label span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tasks-rows li.done span {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.tasks-rows li > button {
+  border: 0;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+}

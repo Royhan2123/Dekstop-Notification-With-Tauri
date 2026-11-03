@@ -10,15 +10,24 @@ type DbResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub struct Database(Mutex<Connection>);
 
 fn migrations() -> Migrations<'static> {
-    Migrations::new(vec![M::up(
-        "CREATE TABLE usage_minutes (
+    Migrations::new(vec![
+        M::up(
+            "CREATE TABLE usage_minutes (
             date TEXT NOT NULL,
             minute INTEGER NOT NULL,
             active INTEGER NOT NULL,
             brightness INTEGER,
             PRIMARY KEY (date, minute)
         );",
-    )])
+        ),
+        M::up(
+            "CREATE TABLE tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                done INTEGER NOT NULL DEFAULT 0
+            );",
+        ),
+    ])
 }
 
 impl Database {

@@ -12,6 +12,7 @@ import {
   type PomodoroStatusDto,
   type ReviewDto,
   type Settings,
+  type TaskDto,
 } from "../../bindings";
 
 export { commands };
@@ -27,6 +28,7 @@ export type {
   PomodoroStatusDto,
   ReviewDto,
   Settings,
+  TaskDto,
 };
 
 /** Ambil snapshot awal lalu dengarkan perubahan. Mengembalikan fungsi untuk berhenti. */

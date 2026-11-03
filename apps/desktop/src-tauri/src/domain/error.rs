@@ -47,6 +47,16 @@ pub enum UsageError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum TaskError {
+    #[error("judul tugas kosong")]
+    EmptyTitle,
+    #[error("terlalu banyak tugas, hapus yang selesai dulu")]
+    TooMany,
+    #[error("gagal menyimpan tugas: {0}")]
+    Storage(String),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum BridgeError {
     #[error("ekstensi Isla Link belum tersambung")]
     NotConnected,

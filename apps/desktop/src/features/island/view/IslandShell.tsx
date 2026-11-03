@@ -9,6 +9,8 @@ import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
 import { ClipboardPanel } from "../../clipboard/view/ClipboardPanel";
 import { HealthPanel } from "../../health/view/HealthPanel";
+import { NetPanel } from "../../net/view/NetPanel";
+import { TasksPanel } from "../../tasks/view/TasksPanel";
 import { IslandDock, type Panel } from "./IslandDock";
 import { IslandMenu, menuShape } from "./IslandMenu";
 import { ShelfCard } from "../../shelf/view/ShelfCard";
@@ -19,6 +21,8 @@ import { useIslandVM } from "../viewmodel/useIslandVM";
 const panelShapes = {
   clipboard: { width: 440, height: 240, radius: 26, opacity: 1 },
   health: { width: 440, height: 210, radius: 26, opacity: 1 },
+  net: { width: 440, height: 200, radius: 26, opacity: 1 },
+  tasks: { width: 440, height: 290, radius: 26, opacity: 1 },
 };
 
 export function IslandShell() {
@@ -88,6 +92,10 @@ export function IslandShell() {
             ) : panelOpen ? (
               panel === "health" ? (
                 <HealthPanel onClose={() => setPanel(null)} />
+              ) : panel === "net" ? (
+                <NetPanel onClose={() => setPanel(null)} />
+              ) : panel === "tasks" ? (
+                <TasksPanel onClose={() => setPanel(null)} />
               ) : (
                 <ClipboardPanel onClose={() => setPanel(null)} />
               )

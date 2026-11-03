@@ -3,12 +3,15 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::domain::bridge::BridgeCommand;
-use crate::domain::error::{AiError, BridgeError, GitError, MediaError, SettingsError, UsageError};
+use crate::domain::error::{
+    AiError, BridgeError, GitError, MediaError, SettingsError, TaskError, UsageError,
+};
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
 use crate::domain::model::review::{Diff, PushRef, SecretHit};
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, MediaInfo};
+use crate::domain::task::Task;
 
 /// Penerima snapshot state pulau (mis. emit event ke frontend).
 pub trait SnapshotSink: Send + Sync {
@@ -110,6 +113,20 @@ pub struct PowerStatus {
 /// Status charger/baterai; `None` bila tidak ada baterai atau OS tidak mendukung.
 pub trait PowerReader: Send + Sync {
     fn status(&self) -> Option<PowerStatus>;
+}
+
+/// Total byte jaringan fisik sejak boot (unduh, unggah); `None` bila OS tidak mendukung.
+pub trait NetCounters: Send + Sync {
+    fn totals(&self) -> Option<(u64, u64)>;
+}
+
+/// Penyimpanan daftar tugas.
+pub trait TaskStore: Send + Sync {
+    fn list(&self) -> Result<Vec<Task>, TaskError>;
+    fn add(&self, title: &str) -> Result<(), TaskError>;
+    fn set_done(&self, id: i32, done: bool) -> Result<(), TaskError>;
+    fn remove(&self, id: i32) -> Result<(), TaskError>;
+    fn clear_done(&self) -> Result<(), TaskError>;
 }
 
 /// Catatan pemakaian per menit.

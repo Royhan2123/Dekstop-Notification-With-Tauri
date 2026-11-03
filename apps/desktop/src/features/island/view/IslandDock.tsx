@@ -4,9 +4,11 @@ import { commands } from "../../../shared/ipc";
 import { usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
 import { useIslandStore } from "../store";
 
-export type Panel = "clipboard" | "health" | null;
+export type Panel = "clipboard" | "health" | "net" | "tasks" | null;
 
 const ICONS = {
+  net: <path d="M12 4v13m0 0-4-4m4 4 4-4M5 20h14" />,
+  tasks: <path d="m4 7 2 2 3-4M12 7h8M4 16l2 2 3-4M12 16h8" />,
   health: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />,
   dnd: <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z" />,
   focus: (
@@ -98,6 +100,18 @@ export function IslandDock({
       label: focusing ? "dock.focus_stop" : "dock.focus",
       active: focusing,
       run: focusing ? pomodoro.stop : pomodoro.start,
+    },
+    {
+      id: "tasks",
+      label: "dock.tasks",
+      active: panel === "tasks",
+      run: () => onPanel(panel === "tasks" ? null : "tasks"),
+    },
+    {
+      id: "net",
+      label: "dock.net",
+      active: panel === "net",
+      run: () => onPanel(panel === "net" ? null : "net"),
     },
     {
       id: "ask",

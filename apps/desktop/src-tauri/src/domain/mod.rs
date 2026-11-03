@@ -8,3 +8,4 @@ pub mod island;
 pub mod mascot;
 pub mod model;
 pub mod ports;
+pub mod task;

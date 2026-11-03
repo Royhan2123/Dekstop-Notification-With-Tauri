@@ -19,6 +19,7 @@ use interface::commands::island::{
     island_snapshot,
 };
 use interface::commands::media::{media_control, media_cycle};
+use interface::commands::net::net_rate;
 use interface::commands::pomodoro::{pomodoro_start, pomodoro_status, pomodoro_stop};
 use interface::commands::review::{
     close_review, open_review, review_decide, review_unwatch, review_watch,
@@ -29,6 +30,9 @@ use interface::commands::settings::{
 };
 use interface::commands::shelf::{
     shelf_add, shelf_clear, shelf_copy, shelf_open_file, shelf_remove, shelf_reveal, shelf_show,
+};
+use interface::commands::tasks::{
+    tasks_add, tasks_clear_done, tasks_list, tasks_remove, tasks_set_done,
 };
 use interface::dto::{IslandSnapshotEvent, SettingsChangedEvent};
 use interface::window::{review_window, settings_window};
@@ -59,6 +63,12 @@ fn specta_builder() -> Builder<tauri::Wry> {
             close_review,
             health_summary,
             health_peek,
+            net_rate,
+            tasks_list,
+            tasks_add,
+            tasks_set_done,
+            tasks_remove,
+            tasks_clear_done,
             bridge_pair,
             bridge_paired,
             bridge_unpair,

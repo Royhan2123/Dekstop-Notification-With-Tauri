@@ -143,6 +143,57 @@ export const commands = {
     }
   },
   /**
+   * Kecepatan jaringan saat ini (dipanggil panel tiap detik selama terbuka).
+   */
+  async netRate(): Promise<Result<NetRateDto, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("net_rate") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksList(): Promise<Result<TaskDto[], string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_list") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksAdd(title: string): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_add", { title }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksSetDone(id: number, done: boolean): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_set_done", { id, done }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksRemove(id: number): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_remove", { id }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksClearDone(): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_clear_done") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
    * Buat kode pairing baru; kodenya juga tampil di pulau.
    */
   async bridgePair(): Promise<string> {
@@ -365,6 +416,7 @@ export type MediaDto = {
   session_count: number;
 };
 export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy";
+export type NetRateDto = { down_bps: number; up_bps: number };
 export type PomodoroPhaseDto = "idle" | "focus" | "break";
 export type PomodoroStatusDto = { phase: PomodoroPhaseDto; remaining_secs: number };
 export type Rect = { x: number; y: number; width: number; height: number };
@@ -427,6 +479,7 @@ export type Severity =
    */
   | "suggestion";
 export type ShelfItemDto = { path: string; name: string };
+export type TaskDto = { id: number; title: string; done: boolean };
 
 /** tauri-specta globals **/
 

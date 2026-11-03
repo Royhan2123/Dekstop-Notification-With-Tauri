@@ -12,6 +12,7 @@ use crate::domain::mascot::{Mood, mood_for};
 use crate::domain::model::review::Severity;
 use crate::domain::model::settings::Settings;
 use crate::domain::model::{MediaCommand, ReviewReport};
+use crate::domain::task::Task;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
 #[serde(rename_all = "snake_case")]
@@ -166,6 +167,29 @@ impl From<&HealthSummary> for HealthSummaryDto {
             today_active_min: s.today_active_min,
             brightness: s.brightness,
             days: s.days.iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
+pub struct NetRateDto {
+    pub down_bps: u32,
+    pub up_bps: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct TaskDto {
+    pub id: i32,
+    pub title: String,
+    pub done: bool,
+}
+
+impl From<&Task> for TaskDto {
+    fn from(t: &Task) -> Self {
+        Self {
+            id: t.id,
+            title: t.title.clone(),
+            done: t.done,
         }
     }
 }

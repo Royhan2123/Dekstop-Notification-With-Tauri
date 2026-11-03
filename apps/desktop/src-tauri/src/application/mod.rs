@@ -2,6 +2,7 @@
 pub mod bridge_service;
 pub mod charger_service;
 pub mod clipboard_service;
+pub mod fullscreen_service;
 pub mod health_service;
 pub mod island_service;
 pub mod media_service;

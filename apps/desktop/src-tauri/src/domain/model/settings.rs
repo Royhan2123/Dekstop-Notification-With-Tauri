@@ -54,6 +54,8 @@ impl Default for HealthRules {
 
 pub const MIN_DISPLAY_SECONDS: u32 = 2;
 pub const MAX_DISPLAY_SECONDS: u32 = 60;
+pub const MAX_FOCUS_MINUTES: u32 = 120;
+pub const MAX_BREAK_MINUTES: u32 = 60;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(default)]
@@ -81,6 +83,11 @@ pub struct Settings {
     pub mascot: String,
     /// Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
     pub background: String,
+    /// Lama fokus dan istirahat Pomodoro (menit).
+    pub focus_minutes: u32,
+    pub break_minutes: u32,
+    /// Sembunyikan pulau saat ada aplikasi layar penuh (game, video, presentasi).
+    pub hide_on_fullscreen: bool,
 }
 
 impl Default for Settings {
@@ -102,6 +109,9 @@ impl Default for Settings {
             custom_accent: String::new(),
             mascot: "mino".into(),
             background: String::new(),
+            focus_minutes: 25,
+            break_minutes: 5,
+            hide_on_fullscreen: true,
         }
     }
 }
@@ -132,6 +142,8 @@ impl Settings {
             .display_seconds
             .clamp(MIN_DISPLAY_SECONDS, MAX_DISPLAY_SECONDS);
         self.ai_model = self.ai_model.trim().chars().take(100).collect();
+        self.focus_minutes = self.focus_minutes.clamp(1, MAX_FOCUS_MINUTES);
+        self.break_minutes = self.break_minutes.clamp(1, MAX_BREAK_MINUTES);
         for id in [&mut self.theme, &mut self.mascot] {
             id.retain(|c| c.is_ascii_alphanumeric() || c == '-');
             id.truncate(32);
@@ -215,6 +227,17 @@ mod tests {
         }
         .sanitized();
         assert!(s.background.is_empty());
+    }
+
+    #[test]
+    fn sanitized_membatasi_durasi_pomodoro() {
+        let s = Settings {
+            focus_minutes: 0,
+            break_minutes: 999,
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!((s.focus_minutes, s.break_minutes), (1, MAX_BREAK_MINUTES));
     }
 
     #[test]

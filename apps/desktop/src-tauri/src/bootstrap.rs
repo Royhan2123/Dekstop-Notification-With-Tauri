@@ -8,6 +8,7 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 use crate::application::bridge_service::BridgeService;
 use crate::application::charger_service::ChargerService;
 use crate::application::clipboard_service::ClipboardService;
+use crate::application::fullscreen_service::FullscreenService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
@@ -36,6 +37,7 @@ use crate::infrastructure::storage::usage_store::SqliteUsageStore;
 use crate::infrastructure::system::autostart::TauriAutostart;
 use crate::infrastructure::system::brightness::SystemBrightness;
 use crate::infrastructure::system::clipboard::SystemClipboard;
+use crate::infrastructure::system::fullscreen::SystemFullscreen;
 use crate::infrastructure::system::idle::SystemIdle;
 use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
@@ -66,13 +68,10 @@ pub fn assemble(app: &App) {
     );
     app.manage(settings.clone());
 
-    // shortcut: durasi tetap 25/5 menit, belum bisa diatur; jadikan setelan bila diminta.
     app.manage(PomodoroService::new(
         island.clone(),
         settings.clone(),
         tauri::async_runtime::handle().inner().clone(),
-        Duration::from_secs(25 * 60),
-        Duration::from_secs(5 * 60),
     ));
 
     let ws = WsBridge::new();
@@ -147,6 +146,12 @@ pub fn assemble(app: &App) {
 
     app.manage(NetService::new(Arc::new(SystemNet)));
 
+    spawn_fullscreen_watch(FullscreenService::new(
+        Arc::new(SystemFullscreen),
+        settings.clone(),
+        island.clone(),
+    ));
+
     spawn_volume_watch(VolumeService::new(Arc::new(SystemVolume), island.clone()));
 
     let clipboard = ClipboardService::new(Arc::new(SystemClipboard), settings.clone());
@@ -206,6 +211,17 @@ fn spawn_charger_watch(charger: Arc<ChargerService>) {
         loop {
             interval.tick().await;
             charger.tick();
+        }
+    });
+}
+
+/// Periksa aplikasi layar penuh tiap 2 detik; satu panggilan Shell API murah.
+fn spawn_fullscreen_watch(fullscreen: Arc<FullscreenService>) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(2));
+        loop {
+            interval.tick().await;
+            fullscreen.tick();
         }
     });
 }

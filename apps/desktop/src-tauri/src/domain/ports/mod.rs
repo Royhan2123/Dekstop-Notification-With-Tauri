@@ -115,6 +115,11 @@ pub trait PowerReader: Send + Sync {
     fn status(&self) -> Option<PowerStatus>;
 }
 
+/// Apakah aplikasi layar penuh (game, video, presentasi) sedang aktif.
+pub trait FullscreenDetector: Send + Sync {
+    fn is_fullscreen(&self) -> bool;
+}
+
 /// Total byte jaringan fisik sejak boot (unduh, unggah); `None` bila OS tidak mendukung.
 pub trait NetCounters: Send + Sync {
     fn totals(&self) -> Option<(u64, u64)>;

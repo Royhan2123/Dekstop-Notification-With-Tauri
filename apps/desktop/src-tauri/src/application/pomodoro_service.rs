@@ -6,7 +6,7 @@ use tokio::runtime::Handle;
 use crate::application::island_service::IslandService;
 use crate::application::settings_service::SettingsService;
 use crate::domain::island::action::IslandAction;
-use crate::domain::model::settings::Language;
+use crate::domain::model::settings::{Language, Settings};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PomodoroPhase {
@@ -27,8 +27,6 @@ pub struct PomodoroService {
     island: Arc<IslandService>,
     settings: Arc<SettingsService>,
     rt: Handle,
-    focus: Duration,
-    rest: Duration,
     run: Mutex<Run>,
 }
 
@@ -37,15 +35,11 @@ impl PomodoroService {
         island: Arc<IslandService>,
         settings: Arc<SettingsService>,
         rt: Handle,
-        focus: Duration,
-        rest: Duration,
     ) -> Arc<Self> {
         Arc::new(Self {
             island,
             settings,
             rt,
-            focus,
-            rest,
             run: Mutex::new(Run {
                 phase: PomodoroPhase::Idle,
                 generation: 0,
@@ -56,7 +50,7 @@ impl PomodoroService {
 
     pub fn start_focus(self: &Arc<Self>) {
         self.island.dispatch(IslandAction::DoNotDisturb(true));
-        self.begin(PomodoroPhase::Focus, self.focus);
+        self.begin(PomodoroPhase::Focus, self.minutes(|s| s.focus_minutes));
     }
 
     pub fn stop(&self) {
@@ -82,6 +76,11 @@ impl PomodoroService {
                 run.ends.saturating_duration_since(Instant::now()).as_secs(),
             ),
         }
+    }
+
+    /// Durasi dari setelan saat fase dimulai, jadi perubahan setelan berlaku di fase berikutnya.
+    fn minutes(&self, pick: impl Fn(&Settings) -> u32) -> Duration {
+        Duration::from_secs(u64::from(pick(&self.settings.get())) * 60)
     }
 
     fn begin(self: &Arc<Self>, phase: PomodoroPhase, duration: Duration) {
@@ -119,7 +118,7 @@ impl PomodoroService {
                     }
                     .into(),
                 ));
-                self.begin(PomodoroPhase::Break, self.rest);
+                self.begin(PomodoroPhase::Break, self.minutes(|s| s.break_minutes));
             }
             PomodoroPhase::Break => {
                 self.run().phase = PomodoroPhase::Idle;
@@ -154,8 +153,7 @@ mod tests {
         tokio::runtime::Runtime,
     ) {
         let (settings, island, rt) = services(Settings::default());
-        let hour = Duration::from_secs(3600);
-        let svc = PomodoroService::new(island.clone(), settings, rt.handle().clone(), hour, hour);
+        let svc = PomodoroService::new(island.clone(), settings, rt.handle().clone());
         (svc, island, rt)
     }
 
@@ -177,6 +175,18 @@ mod tests {
 
         svc.finish(2);
         assert_eq!(svc.status(), (PomodoroPhase::Idle, 0));
+    }
+
+    #[test]
+    fn durasi_fokus_dan_istirahat_mengikuti_setelan() {
+        let (settings, island, rt) = services(Settings {
+            focus_minutes: 50,
+            break_minutes: 10,
+            ..Default::default()
+        });
+        let svc = PomodoroService::new(island, settings, rt.handle().clone());
+        assert_eq!(svc.minutes(|s| s.focus_minutes), Duration::from_secs(3000));
+        assert_eq!(svc.minutes(|s| s.break_minutes), Duration::from_secs(600));
     }
 
     #[test]

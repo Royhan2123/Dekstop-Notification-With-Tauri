@@ -466,6 +466,15 @@ export type Settings = {
    * Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
    */
   background: string;
+  /**
+   * Lama fokus dan istirahat Pomodoro (menit).
+   */
+  focus_minutes: number;
+  break_minutes: number;
+  /**
+   * Sembunyikan pulau saat ada aplikasi layar penuh (game, video, presentasi).
+   */
+  hide_on_fullscreen: boolean;
 };
 /**
  * Dikirim ke semua jendela setiap setelan berubah.

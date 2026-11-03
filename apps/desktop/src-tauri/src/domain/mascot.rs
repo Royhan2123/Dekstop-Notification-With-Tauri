@@ -37,6 +37,10 @@ pub fn mood_for(s: &IslandState) -> Mood {
         Some(Content::Media | Content::Volume(_) | Content::Shelf) | None if music => {
             Mood::Listening
         }
+        // Jangan Ganggu (termasuk saat fokus Pomodoro): Mino ikut berkonsentrasi.
+        Some(Content::Media | Content::Volume(_) | Content::Shelf) | None if s.dnd => {
+            Mood::Thinking
+        }
         Some(Content::Media | Content::Volume(_) | Content::Shelf) | None => Mood::Idle,
     }
 }
@@ -110,5 +114,31 @@ mod tests {
             ..playing
         };
         assert_eq!(mood_for(&paused), Mood::Idle);
+    }
+
+    #[test]
+    fn jangan_ganggu_membuat_mino_berpikir_kecuali_musik_diputar() {
+        let dnd = IslandState {
+            dnd: true,
+            ..Default::default()
+        };
+        assert_eq!(mood_for(&dnd), Mood::Thinking);
+        let paused = IslandState {
+            media: Some(MediaInfo {
+                playing: false,
+                ..Default::default()
+            }),
+            view: View::Compact(Content::Media),
+            ..dnd.clone()
+        };
+        assert_eq!(mood_for(&paused), Mood::Thinking);
+        let playing = IslandState {
+            media: Some(MediaInfo {
+                playing: true,
+                ..Default::default()
+            }),
+            ..paused
+        };
+        assert_eq!(mood_for(&playing), Mood::Listening);
     }
 }

@@ -1,6 +1,7 @@
 pub mod autostart;
 pub mod brightness;
 pub mod clipboard;
+pub mod fullscreen;
 pub mod idle;
 pub mod network;
 pub mod power;

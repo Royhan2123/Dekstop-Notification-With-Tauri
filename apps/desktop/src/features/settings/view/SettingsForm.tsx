@@ -46,6 +46,15 @@ export function SettingsForm() {
         {t("settings.reduce_motion")}
       </label>
 
+      <label className="row">
+        <input
+          type="checkbox"
+          checked={settings.hide_on_fullscreen}
+          onChange={(e) => void vm.update({ hide_on_fullscreen: e.currentTarget.checked })}
+        />
+        {t("settings.hide_on_fullscreen")}
+      </label>
+
       <label className="column">
         {t("settings.display_seconds")}: {settings.display_seconds}
         <input

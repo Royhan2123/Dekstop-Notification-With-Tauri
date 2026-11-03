@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
+import { AskCard } from "../../ask/view/AskCard";
 import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
@@ -58,7 +59,9 @@ export function IslandShell() {
             exit={{ opacity: 0, scale: 0.96 }}
             transition={reduceMotion ? instant : { duration: 0.15 }}
           >
-            {content.kind === "media" ? (
+            {content.kind === "ask" && mode === "expanded" ? (
+              <AskCard />
+            ) : content.kind === "media" ? (
               mode === "expanded" ? (
                 <MediaExpanded />
               ) : (

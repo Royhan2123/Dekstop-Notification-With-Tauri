@@ -349,3 +349,60 @@ html[data-window="island"] #root {
   color: #fff;
   cursor: pointer;
 }
+
+.ask-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 56px 16px 20px;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.ask-form {
+  display: flex;
+  gap: 6px;
+}
+
+.ask-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: #222;
+  color: #fff;
+  font-size: 14px;
+}
+
+.ask-form button {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+}
+
+.ask-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ask-status {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.ask-answer {
+  margin: 0;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.ask-error {
+  color: #ff8a80;
+}

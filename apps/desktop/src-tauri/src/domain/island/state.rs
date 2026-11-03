@@ -8,6 +8,16 @@ pub enum Content {
     ReviewResult(ReviewReport),
     HealthAlert(HealthAlert),
     Notice(String),
+    /// Quick Ask: kotak pertanyaan ke AI.
+    Ask(AskPhase),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum AskPhase {
+    Input,
+    Thinking,
+    Done(String),
+    Failed(String),
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]

@@ -1,3 +1,4 @@
+use super::state::AskPhase;
 use crate::domain::model::{HealthAlert, MediaInfo, ReviewId, ReviewReport};
 
 pub enum IslandAction {
@@ -14,6 +15,10 @@ pub enum IslandAction {
     HideForFullscreen(bool),
     DoNotDisturb(bool),
     ExtensionConnected(bool),
+    /// Pengguna memanggil Quick Ask (pintasan keyboard).
+    AskOpen,
+    /// Kemajuan pertanyaan; diabaikan bila kotak Quick Ask sudah ditutup.
+    AskUpdate(AskPhase),
 }
 
 #[derive(Debug, PartialEq)]

@@ -25,6 +25,11 @@ export function shapeFor(s: IslandSnapshot): Shape {
       if (s.review && s.review.findings.length > 0) {
         return { width: 480, height: 250, radius: 28, opacity: 1 };
       }
+      // Quick Ask: kotak pertanyaan kecil, memanjang saat ada jawaban.
+      if (s.content?.kind === "ask") {
+        const answered = s.content.detail === "done" || s.content.detail === "failed";
+        return { width: 480, height: answered ? 260 : 110, radius: 28, opacity: 1 };
+      }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {
         return { width: 420, height: 200, radius: 28, opacity: 1 };

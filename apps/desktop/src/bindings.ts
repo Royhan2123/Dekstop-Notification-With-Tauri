@@ -203,6 +203,12 @@ async clipboardCopy(id: number) : Promise<Result<null, string>> {
 },
 async clipboardClear() : Promise<void> {
     await TAURI_INVOKE("clipboard_clear");
+},
+async askOpen() : Promise<void> {
+    await TAURI_INVOKE("ask_open");
+},
+async askSubmit(question: string) : Promise<void> {
+    await TAURI_INVOKE("ask_submit", { question });
 }
 }
 
@@ -228,7 +234,7 @@ settingsChangedEvent: "settings-changed-event"
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
 export type ClipEntryDto = { id: number; text: string }
-export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice"
+export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask"
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
 export type Decision = 
 /**

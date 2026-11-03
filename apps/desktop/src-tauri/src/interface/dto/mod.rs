@@ -5,7 +5,7 @@ use tauri_specta::Event;
 
 use crate::application::health_service::HealthSummary;
 use crate::domain::health::DayUsage;
-use crate::domain::island::state::{Content, IslandState, View};
+use crate::domain::island::state::{AskPhase, Content, IslandState, View};
 use crate::domain::mascot::{Mood, mood_for};
 use crate::domain::model::review::Severity;
 use crate::domain::model::settings::Settings;
@@ -28,6 +28,7 @@ pub enum ContentKind {
     ReviewResult,
     HealthAlert,
     Notice,
+    Ask,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
@@ -199,6 +200,19 @@ impl From<&IslandState> for IslandSnapshot {
                 text: a.message.clone(),
                 detail: None,
             },
+            Content::Ask(p) => {
+                let (phase, text) = match p {
+                    AskPhase::Input => ("input", String::new()),
+                    AskPhase::Thinking => ("thinking", String::new()),
+                    AskPhase::Done(t) => ("done", t.clone()),
+                    AskPhase::Failed(t) => ("failed", t.clone()),
+                };
+                IslandContent {
+                    kind: ContentKind::Ask,
+                    text,
+                    detail: Some(phase.into()),
+                }
+            }
             Content::Notice(t) => IslandContent {
                 kind: ContentKind::Notice,
                 text: t.clone(),

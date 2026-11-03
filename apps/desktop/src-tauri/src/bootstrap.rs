@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use tauri::{App, Manager};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 use crate::application::bridge_service::BridgeService;
 use crate::application::charger_service::ChargerService;
@@ -11,6 +12,7 @@ use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
 use crate::application::pomodoro_service::PomodoroService;
+use crate::application::quick_ask_service::QuickAskService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
 use crate::domain::bridge::clean_query;
@@ -105,12 +107,20 @@ pub fn assemble(app: &App) {
         Arc::new(CliGit),
         Arc::new(GitHookInstaller::new(exe, ipc_file.clone())),
         Arc::new(RegexScanner),
-        Arc::new(DefaultAiFactory::new(secrets)),
+        Arc::new(DefaultAiFactory::new(secrets.clone())),
         settings.clone(),
         island.clone(),
         Duration::from_secs(120),
     );
     app.manage(review.clone());
+    let ask = QuickAskService::new(
+        Arc::new(DefaultAiFactory::new(secrets.clone())),
+        settings.clone(),
+        island.clone(),
+    );
+    app.manage(ask.clone());
+    register_ask_shortcut(app, ask);
+
     let on_push = Arc::new(move |repo: &str, refs: &[PushRef]| review.review_push(repo, refs));
     let notice_island = island.clone();
     let on_notify: ipc::Notifier = Arc::new(move |text| {
@@ -145,6 +155,36 @@ pub fn assemble(app: &App) {
 
     if !settings.get().onboarded {
         settings_window::show(&handle);
+    }
+}
+
+/// Ctrl+Space membuka Quick Ask dan memberi fokus keyboard ke jendela pulau.
+fn register_ask_shortcut(app: &App, ask: Arc<QuickAskService>) {
+    let handle = app.handle().clone();
+    let shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::Space);
+    let result = app
+        .global_shortcut()
+        .on_shortcut(shortcut, move |_, _, event| {
+            if event.state() != ShortcutState::Pressed {
+                return;
+            }
+            ask.open();
+            // Windows kadang menahan perpindahan fokus sesaat; coba lagi sampai jendela benar-benar fokus.
+            if let Some(window) = handle.get_webview_window("island") {
+                std::thread::spawn(move || {
+                    for _ in 0..5 {
+                        let _ = window.set_focus();
+                        std::thread::sleep(Duration::from_millis(100));
+                        if window.is_focused().unwrap_or(false) {
+                            break;
+                        }
+                    }
+                });
+            }
+        });
+    if let Err(e) = result {
+        // Mis. dipakai aplikasi lain; pulau tetap jalan tanpa Quick Ask.
+        tracing::error!("gagal mendaftarkan Ctrl+Space: {e}");
     }
 }
 

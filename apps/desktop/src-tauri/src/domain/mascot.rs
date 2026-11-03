@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::domain::island::state::{Content, IslandState};
+use crate::domain::island::state::{AskPhase, Content, IslandState};
 use crate::domain::model::review::Severity;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -31,6 +31,9 @@ pub fn mood_for(s: &IslandState) -> Mood {
         Some(Content::ReviewResult(_)) => Mood::Worried,
         Some(Content::HealthAlert(_)) => Mood::Sleepy,
         Some(Content::Notice(_)) => Mood::Happy,
+        Some(Content::Ask(AskPhase::Thinking)) => Mood::Thinking,
+        Some(Content::Ask(AskPhase::Done(_))) => Mood::Happy,
+        Some(Content::Ask(_)) => Mood::Idle,
         Some(Content::Media) | None if music => Mood::Listening,
         Some(Content::Media) | None => Mood::Idle,
     }

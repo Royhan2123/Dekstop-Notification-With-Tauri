@@ -8,6 +8,7 @@ use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{Builder, collect_commands, collect_events};
 
+use interface::commands::ask::{ask_open, ask_submit};
 use interface::commands::bridge::{
     bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
 };
@@ -63,7 +64,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
             pomodoro_stop,
             clipboard_list,
             clipboard_copy,
-            clipboard_clear
+            clipboard_clear,
+            ask_open,
+            ask_submit
         ])
         .events(collect_events![IslandSnapshotEvent, SettingsChangedEvent])
 }
@@ -83,6 +86,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             None,

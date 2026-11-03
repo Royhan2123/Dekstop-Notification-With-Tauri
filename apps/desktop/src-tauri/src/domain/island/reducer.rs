@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
 
 use super::action::{Effect, IslandAction};
-use super::state::{Content, Ctx, IslandState, View};
+use super::state::{AskPhase, Content, Ctx, IslandState, View};
 
 pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandState, Vec<Effect>) {
     let mut s = state.clone();
@@ -63,6 +63,19 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
         IslandAction::HideForFullscreen(b) => s.fullscreen = b,
         IslandAction::ExtensionConnected(b) => s.extension = b,
+        IslandAction::AskOpen => {
+            let c = Content::Ask(AskPhase::Input);
+            if matches!(s.view.content(), Some(Content::Ask(_))) {
+                show(&mut s, c, ctx, &mut fx);
+            } else {
+                offer(&mut s, c, ctx, &mut fx);
+            }
+        }
+        IslandAction::AskUpdate(phase) => {
+            if matches!(s.view.content(), Some(Content::Ask(_))) {
+                s.view = View::Expanded(Content::Ask(phase));
+            }
+        }
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
             if b {

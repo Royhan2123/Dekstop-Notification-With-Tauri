@@ -6,6 +6,7 @@ pub mod health_service;
 pub mod island_service;
 pub mod media_service;
 pub mod pomodoro_service;
+pub mod quick_ask_service;
 pub mod review;
 pub mod settings_service;
 #[cfg(test)]

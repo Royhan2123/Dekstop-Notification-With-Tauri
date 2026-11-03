@@ -74,6 +74,8 @@
   "settings.pomodoro.break": "Istirahat, sisa {0}",
   "settings.pomodoro.start": "Mulai fokus",
   "settings.pomodoro.stop": "Berhenti",
+  "settings.terminal": "Notifikasi terminal",
+  "settings.terminal.hint": "Tambahkan di akhir perintah panjang agar pulau memberi tahu saat selesai:",
   "settings.link": "Isla Link (ekstensi browser)",
   "settings.link.hint": "Atur kecepatan putar dan cari lagu dari pulau. Pasang ekstensi dari folder extension, lalu pasangkan dengan kode.",
   "settings.link.paired": "Terpasang",

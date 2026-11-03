@@ -4,6 +4,7 @@ use std::io::BufRead;
 use std::path::PathBuf;
 
 use super::ipc;
+use crate::domain::bridge::clean_query;
 
 pub fn run_hook(args: &[String]) -> i32 {
     attach_parent_console();
@@ -30,6 +31,34 @@ pub fn run_hook(args: &[String]) -> i32 {
             1
         }
         _ => 0,
+    }
+}
+
+/// `isla-desk notify [--ipc <berkas>] <teks...>`: tampilkan pemberitahuan di pulau (mis. perintah
+/// terminal selesai). Kode keluar 0 bila terkirim, 1 bila aplikasi tidak berjalan atau teks tidak sah.
+pub fn run_notify(args: &[String]) -> i32 {
+    attach_parent_console();
+    let (ipc_file, text) = match args.first().map(String::as_str) {
+        Some("--ipc") if args.len() >= 2 => (Some(PathBuf::from(&args[1])), args[2..].join(" ")),
+        _ => (None, args.join(" ")),
+    };
+    // shortcut: berkas bawaan hanya dikenal di Windows (%APPDATA%); platform lain pakai --ipc.
+    let ipc_file = ipc_file.or_else(|| {
+        std::env::var_os("APPDATA").map(|d| {
+            PathBuf::from(d)
+                .join("com.royhan.isladesk")
+                .join("ipc.json")
+        })
+    });
+    let (Some(ipc_file), Some(text)) = (ipc_file, clean_query(&text)) else {
+        eprintln!("Pemakaian: isla-desk notify [--ipc <berkas>] <teks>");
+        return 1;
+    };
+    if ipc::notify(&ipc_file, &text) {
+        0
+    } else {
+        eprintln!("Isla: aplikasi tidak berjalan");
+        1
     }
 }
 

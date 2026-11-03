@@ -5,12 +5,15 @@ use std::time::Duration;
 use tauri::{App, Manager};
 
 use crate::application::bridge_service::BridgeService;
+use crate::application::charger_service::ChargerService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
 use crate::application::pomodoro_service::PomodoroService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
+use crate::domain::bridge::clean_query;
+use crate::domain::island::action::IslandAction;
 use crate::domain::model::review::PushRef;
 use crate::domain::ports::SecretStore;
 use crate::infrastructure::ai::DefaultAiFactory;
@@ -26,6 +29,7 @@ use crate::infrastructure::storage::usage_store::SqliteUsageStore;
 use crate::infrastructure::system::autostart::TauriAutostart;
 use crate::infrastructure::system::brightness::SystemBrightness;
 use crate::infrastructure::system::idle::SystemIdle;
+use crate::infrastructure::system::power::SystemPower;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
 use crate::interface::ipc;
 use crate::interface::window::hit_test::{self, Hitbox};
@@ -106,9 +110,21 @@ pub fn assemble(app: &App) {
     );
     app.manage(review.clone());
     let on_push = Arc::new(move |repo: &str, refs: &[PushRef]| review.review_push(repo, refs));
-    if let Err(e) = ipc::serve(&ipc_file, on_push) {
+    let notice_island = island.clone();
+    let on_notify: ipc::Notifier = Arc::new(move |text| {
+        if let Some(text) = clean_query(text) {
+            notice_island.dispatch(IslandAction::Notice(text));
+        }
+    });
+    if let Err(e) = ipc::serve(&ipc_file, on_push, on_notify) {
         tracing::error!("gagal membuka jalur IPC hook: {e}");
     }
+
+    spawn_charger_watch(ChargerService::new(
+        Arc::new(SystemPower),
+        settings.clone(),
+        island.clone(),
+    ));
 
     let media = MediaService::new(default_source(), island);
     app.manage(media.clone());
@@ -126,7 +142,18 @@ pub fn assemble(app: &App) {
     }
 }
 
-/// Satu-satunya timer berkala aplikasi: satu ketukan per menit untuk pencatatan dan pengingat.
+/// Periksa colokan charger tiap 3 detik; murah (satu panggilan API) jadi tidak perlu event OS.
+fn spawn_charger_watch(charger: Arc<ChargerService>) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(3));
+        loop {
+            interval.tick().await;
+            charger.tick();
+        }
+    });
+}
+
+/// Timer pencatatan: satu ketukan per menit untuk pencatatan dan pengingat.
 fn spawn_health_ticker(health: Arc<HealthService>) {
     tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(60));

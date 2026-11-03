@@ -1,6 +1,7 @@
 import { useT } from "../../../shared/i18n";
 import type { Language } from "../../../bindings";
 import { useSettingsVM } from "../viewmodel/useSettingsVM";
+import { TerminalNotifyHint } from "./TerminalNotifyHint";
 import { PomodoroSettings } from "../../pomodoro/view/PomodoroSettings";
 import { LinkSettings } from "../../link/view/LinkSettings";
 import { HealthSettings } from "../../health/view/HealthSettings";
@@ -67,6 +68,8 @@ export function SettingsForm() {
       <ReviewSettings />
 
       <PomodoroSettings />
+
+      <TerminalNotifyHint />
 
       <LinkSettings />
 

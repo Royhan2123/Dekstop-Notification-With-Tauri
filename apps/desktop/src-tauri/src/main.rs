@@ -7,5 +7,8 @@ fn main() {
     if args.get(1).map(String::as_str) == Some("hook") {
         std::process::exit(isla_desk_lib::interface::cli::run_hook(&args[2..]));
     }
+    if args.get(1).map(String::as_str) == Some("notify") {
+        std::process::exit(isla_desk_lib::interface::cli::run_notify(&args[2..]));
+    }
     isla_desk_lib::run()
 }

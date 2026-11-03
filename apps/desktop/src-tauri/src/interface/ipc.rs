@@ -1,4 +1,4 @@
-//! Jalur antara hook `pre-push` (proses `isla-desk hook`) dan aplikasi yang sedang berjalan:
+//! Jalur antara proses CLI (`isla-desk hook` / `isla-desk notify`) dan aplikasi yang sedang berjalan:
 //! TCP di loopback dengan token acak yang ditulis ke berkas yang hanya bisa dibaca pemilik akun.
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
@@ -23,8 +23,13 @@ struct Endpoint {
 #[derive(Serialize, Deserialize)]
 struct Request {
     token: String,
+    #[serde(default)]
     repo: String,
+    #[serde(default)]
     refs: Vec<String>,
+    /// Bila ada, ini pemberitahuan dari terminal, bukan permintaan review.
+    #[serde(default)]
+    notify: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -34,10 +39,11 @@ pub struct Response {
 }
 
 pub type Handler = Arc<dyn Fn(&str, &[PushRef]) -> Verdict + Send + Sync>;
+pub type Notifier = Arc<dyn Fn(&str) + Send + Sync>;
 
 /// Buka pendengar di port acak dan tulis `ipc_file`; tiap sambungan dilayani thread sendiri
 /// karena jawaban baru ada setelah pengguna memutuskan.
-pub fn serve(ipc_file: &Path, handler: Handler) -> std::io::Result<()> {
+pub fn serve(ipc_file: &Path, handler: Handler, notifier: Notifier) -> std::io::Result<()> {
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let endpoint = Endpoint {
         port: listener.local_addr()?.port(),
@@ -50,16 +56,21 @@ pub fn serve(ipc_file: &Path, handler: Handler) -> std::io::Result<()> {
     let token = endpoint.token;
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
-            let (handler, token) = (handler.clone(), token.clone());
+            let (handler, notifier, token) = (handler.clone(), notifier.clone(), token.clone());
             thread::spawn(move || {
-                let _ = serve_one(stream, &token, &handler);
+                let _ = serve_one(stream, &token, &handler, &notifier);
             });
         }
     });
     Ok(())
 }
 
-fn serve_one(stream: TcpStream, token: &str, handler: &Handler) -> std::io::Result<()> {
+fn serve_one(
+    stream: TcpStream,
+    token: &str,
+    handler: &Handler,
+    notifier: &Notifier,
+) -> std::io::Result<()> {
     let mut line = String::new();
     BufReader::new((&stream).take(MAX_REQUEST_BYTES)).read_line(&mut line)?;
     // Token salah atau permintaan rusak: tutup tanpa jawaban.
@@ -68,6 +79,13 @@ fn serve_one(stream: TcpStream, token: &str, handler: &Handler) -> std::io::Resu
     };
     if req.token != token {
         return Ok(());
+    }
+    if let Some(text) = &req.notify {
+        notifier(text);
+        return (&stream).write_all(
+            b"{\"allow\":true,\"message\":\"\"}
+",
+        );
     }
     let refs: Vec<PushRef> = req.refs.iter().filter_map(|l| PushRef::parse(l)).collect();
     let res = match handler(&req.repo, &refs) {
@@ -87,14 +105,30 @@ fn serve_one(stream: TcpStream, token: &str, handler: &Handler) -> std::io::Resu
 
 /// Tanya aplikasi; `None` bila aplikasi tidak berjalan atau tidak menjawab (push dilanjutkan).
 pub fn ask(ipc_file: &Path, repo: &str, refs: Vec<String>) -> Option<Response> {
+    exchange(ipc_file, |token| Request {
+        token,
+        repo: repo.into(),
+        refs,
+        notify: None,
+    })
+}
+
+/// Kirim pemberitahuan ke pulau; `false` bila aplikasi tidak berjalan.
+pub fn notify(ipc_file: &Path, text: &str) -> bool {
+    exchange(ipc_file, |token| Request {
+        token,
+        repo: String::new(),
+        refs: Vec::new(),
+        notify: Some(text.into()),
+    })
+    .is_some()
+}
+
+fn exchange(ipc_file: &Path, build: impl FnOnce(String) -> Request) -> Option<Response> {
     let endpoint: Endpoint = serde_json::from_slice(&std::fs::read(ipc_file).ok()?).ok()?;
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, endpoint.port));
     let stream = TcpStream::connect_timeout(&addr, Duration::from_secs(2)).ok()?;
-    let req = Request {
-        token: endpoint.token,
-        repo: repo.into(),
-        refs,
-    };
+    let req = build(endpoint.token);
     let mut out = serde_json::to_vec(&req).ok()?;
     out.push(b'\n');
     (&stream).write_all(&out).ok()?;
@@ -121,7 +155,7 @@ mod tests {
                 Verdict::Allow
             }
         });
-        serve(&file, handler).unwrap();
+        serve(&file, handler, Arc::new(|_| {})).unwrap();
         let line = "refs/heads/m aaa refs/heads/m bbb".to_string();
         let ok = ask(&file, "/ok", vec![line.clone()]).unwrap();
         assert_eq!(
@@ -143,10 +177,24 @@ mod tests {
     }
 
     #[test]
+    fn pemberitahuan_terminal_sampai_ke_notifier_tanpa_memanggil_review() {
+        let file = temp_file();
+        let got = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = got.clone();
+        let handler: Handler = Arc::new(|_, _| Verdict::Block("bukan review".into()));
+        let notifier: Notifier = Arc::new(move |t| sink.lock().unwrap().push(t.to_string()));
+        serve(&file, handler, notifier).unwrap();
+        assert!(notify(&file, "build selesai"));
+        assert_eq!(*got.lock().unwrap(), vec!["build selesai".to_string()]);
+        assert!(!notify(&temp_file(), "x"), "aplikasi mati");
+        let _ = std::fs::remove_file(&file);
+    }
+
+    #[test]
     fn token_salah_dan_aplikasi_mati_tidak_menghasilkan_jawaban() {
         let file = temp_file();
         let handler: Handler = Arc::new(|_, _| Verdict::Block("harusnya tak dipanggil".into()));
-        serve(&file, handler).unwrap();
+        serve(&file, handler, Arc::new(|_| {})).unwrap();
         let mut e: Endpoint = serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
         e.token = "salah".into();
         std::fs::write(&file, serde_json::to_vec(&e).unwrap()).unwrap();

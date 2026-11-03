@@ -87,6 +87,18 @@ pub trait BrightnessReader: Send + Sync {
     fn read(&self) -> Option<u8>;
 }
 
+/// Keadaan daya laptop.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PowerStatus {
+    pub plugged: bool,
+    pub percent: Option<u8>,
+}
+
+/// Status charger/baterai; `None` bila tidak ada baterai atau OS tidak mendukung.
+pub trait PowerReader: Send + Sync {
+    fn status(&self) -> Option<PowerStatus>;
+}
+
 /// Catatan pemakaian per menit.
 pub trait UsageStore: Send + Sync {
     fn record(

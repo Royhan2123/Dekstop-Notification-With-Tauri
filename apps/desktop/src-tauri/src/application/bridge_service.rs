@@ -6,6 +6,7 @@ use crate::application::settings_service::SettingsService;
 use crate::domain::bridge::{BridgeCommand, clamp_rate, clean_query, is_extension_origin};
 use crate::domain::error::{BridgeError, SettingsError};
 use crate::domain::island::action::IslandAction;
+use crate::domain::island::state::{Content, View};
 use crate::domain::model::settings::Language;
 use crate::domain::ports::{BridgeHandler, BrowserBridge, SecretStore};
 
@@ -84,6 +85,13 @@ impl BridgeService {
             Language::Id => format!("Kode Isla Link: {code}"),
             Language::En => format!("Isla Link code: {code}"),
         };
+        // Kode lama sudah hangus; jangan biarkan pulau menampilkannya (Notice baru akan diantrikan).
+        if matches!(
+            self.island.snapshot().view,
+            View::Expanded(Content::Notice(_))
+        ) {
+            self.island.dispatch(IslandAction::Dismissed);
+        }
         self.island.dispatch(IslandAction::Notice(text));
         code
     }
@@ -159,7 +167,6 @@ impl BridgeHandler for BridgeService {
 mod tests {
     use super::*;
     use crate::application::test_support::{MemSecrets, services};
-    use crate::domain::island::state::{Content, View};
     use crate::domain::model::settings::Settings;
 
     #[derive(Default)]
@@ -221,6 +228,22 @@ mod tests {
         assert!(f.svc.is_paired().unwrap());
         assert!(f.svc.authenticate(ORIGIN, &token));
         assert_eq!(f.svc.pair(ORIGIN, &code), None, "kode sudah terpakai");
+    }
+
+    #[test]
+    fn kode_kedua_menggantikan_kode_pertama_di_pulau() {
+        let f = fx();
+        let first = f.svc.begin_pairing();
+        let second = f.svc.begin_pairing();
+        assert!(matches!(
+            f.island.snapshot().view,
+            View::Expanded(Content::Notice(t)) if t.contains(&second)
+        ));
+        let (a, b) = (first.clone(), second.clone());
+        assert!(
+            a == b || f.svc.pair(ORIGIN, &first).is_none(),
+            "kode lama tidak berlaku"
+        );
     }
 
     #[test]

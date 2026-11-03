@@ -3,13 +3,14 @@ import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "../../../shared/ui/icon
 import { useState } from "react";
 import { useIslandStore } from "../../island/store";
 import { currentLyric, useLyricsVM } from "../viewmodel/useLyricsVM";
-import { formatTime, useMediaVM } from "../viewmodel/useMediaVM";
+import { LYRIC_TICK_MS, formatTime, useMediaVM } from "../viewmodel/useMediaVM";
+import { KaraokeLine } from "./KaraokeLine";
 import { Visualizer } from "./Visualizer";
 
 export function MediaExpanded() {
   const t = useT();
-  const vm = useMediaVM(true);
   const lyrics = useLyricsVM();
+  const vm = useMediaVM(true, lyrics.length > 0 ? LYRIC_TICK_MS : undefined);
   const content = useIslandStore((s) => s.snapshot.content);
   const { media } = vm;
   const [rate, setRate] = useState(1);
@@ -33,7 +34,7 @@ export function MediaExpanded() {
           <Visualizer color={media.color} playing={media.playing} />
         </div>
         {lyric ? (
-          <span className="island-detail lyric-line">{lyric}</span>
+          <KaraokeLine text={lyric.text} fraction={lyric.fraction} />
         ) : (
           <span className="island-detail">
             {content.detail}

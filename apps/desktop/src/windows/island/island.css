@@ -879,7 +879,33 @@ html[data-window="island"] #root {
   cursor: default;
 }
 
-.lyric-line {
-  color: var(--accent, #2fcf9c);
+/* Karaoke: bagian yang sudah dinyanyikan berwarna aksen, sisanya redup; --p bergeser halus. */
+@property --p {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.karaoke {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.karaoke-text {
+  --p: 0%;
+  display: inline-block;
   font-weight: 600;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--accent, #2fcf9c) calc(var(--p) - 3%),
+    rgb(255 255 255 / 0.4) calc(var(--p) + 3%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  transition:
+    --p 0.12s linear,
+    transform 0.12s linear;
 }

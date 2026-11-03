@@ -3,6 +3,8 @@ import { commands, type MediaDto } from "../../../shared/ipc";
 import { useIslandStore } from "../../island/store";
 
 const TICK_MS = 250;
+/** Saat lirik tampil, warna karaoke butuh pembaruan lebih rapat agar bergerak halus. */
+export const LYRIC_TICK_MS = 100;
 const WHEEL_COOLDOWN_MS = 300;
 
 /** Posisi (ms) pada waktu `now`: posisi terakhir + waktu berjalan x kecepatan bila diputar. */
@@ -18,7 +20,7 @@ export function formatTime(ms: number): string {
 }
 
 /** `ticking`: perbarui progress terus-menerus (saat tampilan lebar atau ada lirik, agar CPU idle tetap rendah). */
-export function useMediaVM(ticking: boolean) {
+export function useMediaVM(ticking: boolean, tickMs = TICK_MS) {
   const media = useIslandStore((s) => s.snapshot.media);
   const receivedAt = useIslandStore((s) => s.receivedAt);
   const extensionConnected = useIslandStore((s) => s.snapshot.extension_connected);
@@ -28,9 +30,9 @@ export function useMediaVM(ticking: boolean) {
   const running = ticking && media?.playing === true;
   useEffect(() => {
     if (!running) return;
-    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
+    const timer = setInterval(() => setNow(Date.now()), tickMs);
     return () => clearInterval(timer);
-  }, [running]);
+  }, [running, tickMs]);
 
   return {
     media,

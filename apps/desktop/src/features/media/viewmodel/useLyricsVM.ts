@@ -18,10 +18,28 @@ export function lineIndexAt(lines: LyricLineDto[], positionMs: number): number {
   return lo - 1;
 }
 
-/** Teks baris aktif; baris kosong (jeda instrumental) dan sebelum lirik dimulai menghasilkan `null`. */
-export function currentLyric(lines: LyricLineDto[], positionMs: number): string | null {
+/** Perkiraan lama menyanyikan satu huruf; sumber lirik hanya punya waktu per baris, bukan per kata. */
+const MS_PER_CHAR = 110;
+const MIN_SING_MS = 1500;
+
+/**
+ * Baris aktif dan seberapa jauh (0..1) ia sudah dinyanyikan. Baris kosong (jeda instrumental) dan
+ * sebelum lirik dimulai menghasilkan `null`.
+ * shortcut: kemajuan dalam baris diperkirakan dari jumlah huruf, bukan waktu tiap kata; upgrade bila ada sumber lirik per kata.
+ */
+export function currentLyric(
+  lines: LyricLineDto[],
+  positionMs: number,
+): { text: string; fraction: number } | null {
   const i = lineIndexAt(lines, positionMs);
-  return i >= 0 && lines[i].text ? lines[i].text : null;
+  if (i < 0 || !lines[i].text) return null;
+  const { ms, text } = lines[i];
+  const next = lines[i + 1]?.ms ?? ms + MIN_SING_MS * 3;
+  const sing = Math.max(
+    300,
+    Math.min(next - 100 - ms, Math.max(MIN_SING_MS, [...text].length * MS_PER_CHAR)),
+  );
+  return { text, fraction: Math.min(1, Math.max(0, (positionMs - ms) / sing)) };
 }
 
 /** Lirik berwaktu lagu yang sedang diputar; kosong bila tidak ada. Diambil sekali per lagu. */

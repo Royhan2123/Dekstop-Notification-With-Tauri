@@ -122,3 +122,21 @@ html[data-window="settings"] body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.swatches {
+  display: flex;
+  gap: 8px;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch.active {
+  border-color: currentColor;
+}

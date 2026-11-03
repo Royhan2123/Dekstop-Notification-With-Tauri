@@ -9,6 +9,7 @@ import { LinkSettings } from "../../link/view/LinkSettings";
 import { HealthSettings } from "../../health/view/HealthSettings";
 import { AiBrainPicker } from "./AiBrainPicker";
 import { ReviewSettings } from "./ReviewSettings";
+import { ThemeSettings } from "../../theme/view/ThemeSettings";
 
 const LANGUAGES: Language[] = ["id", "en"];
 
@@ -64,6 +65,8 @@ export function SettingsForm() {
         />
         {t("settings.autostart")}
       </label>
+
+      <ThemeSettings />
 
       <AiBrainPicker />
 

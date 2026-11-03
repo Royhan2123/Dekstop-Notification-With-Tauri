@@ -26,7 +26,11 @@ export function ReviewSettings() {
           {settings.watched_repos.map((repo) => (
             <li key={repo} className="row">
               <code>{repo}</code>
-              <button type="button" disabled={review.busy} onClick={() => void review.unwatch(repo)}>
+              <button
+                type="button"
+                disabled={review.busy}
+                onClick={() => void review.unwatch(repo)}
+              >
                 {t("settings.review.unwatch")}
               </button>
             </li>

@@ -352,7 +352,15 @@ watched_repos: string[]; review_timeout_action: ReviewTimeoutAction; health_enab
 /**
  * Riwayat clipboard (di memori saja); mati secara bawaan karena clipboard bisa memuat rahasia.
  */
-clipboard_enabled: boolean }
+clipboard_enabled: boolean; 
+/**
+ * Id tema bawaan (palet warna pulau dan Mino).
+ */
+theme: string; 
+/**
+ * Warna aksen buatan sendiri (`#rrggbb`); bila terisi menggantikan `theme`.
+ */
+custom_accent: string }
 /**
  * Dikirim ke semua jendela setiap setelan berubah.
  */

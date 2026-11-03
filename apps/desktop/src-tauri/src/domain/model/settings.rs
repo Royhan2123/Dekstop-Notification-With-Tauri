@@ -73,6 +73,10 @@ pub struct Settings {
     pub health_rules: HealthRules,
     /// Riwayat clipboard (di memori saja); mati secara bawaan karena clipboard bisa memuat rahasia.
     pub clipboard_enabled: bool,
+    /// Id tema bawaan (palet warna pulau dan Mino).
+    pub theme: String,
+    /// Warna aksen buatan sendiri (`#rrggbb`); bila terisi menggantikan `theme`.
+    pub custom_accent: String,
 }
 
 impl Default for Settings {
@@ -90,8 +94,14 @@ impl Default for Settings {
             health_enabled: true,
             health_rules: HealthRules::default(),
             clipboard_enabled: false,
+            theme: "mint".into(),
+            custom_accent: String::new(),
         }
     }
+}
+
+fn is_hex_color(s: &str) -> bool {
+    s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit())
 }
 
 impl Settings {
@@ -101,6 +111,11 @@ impl Settings {
             .display_seconds
             .clamp(MIN_DISPLAY_SECONDS, MAX_DISPLAY_SECONDS);
         self.ai_model = self.ai_model.trim().chars().take(100).collect();
+        self.theme.retain(|c| c.is_ascii_alphanumeric() || c == '-');
+        self.theme.truncate(32);
+        if !is_hex_color(&self.custom_accent) {
+            self.custom_accent.clear();
+        }
         self
     }
 }
@@ -125,6 +140,24 @@ mod tests {
         }
         .sanitized();
         assert_eq!(s.display_seconds, MAX_DISPLAY_SECONDS);
+    }
+
+    #[test]
+    fn sanitized_menolak_warna_dan_tema_tak_valid() {
+        let s = Settings {
+            theme: "o<c>ean!".into(),
+            custom_accent: "red".into(),
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(s.theme, "ocean");
+        assert!(s.custom_accent.is_empty());
+        let s = Settings {
+            custom_accent: "#A1b2C3".into(),
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(s.custom_accent, "#A1b2C3");
     }
 
     #[test]

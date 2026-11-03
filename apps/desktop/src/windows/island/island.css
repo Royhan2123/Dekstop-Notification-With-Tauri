@@ -590,7 +590,7 @@ html[data-window="island"] #root {
 
 .dock-dots .dot.active {
   width: 16px;
-  background: #2fcf9c;
+  background: var(--accent, #2fcf9c);
 }
 
 .dock-btn {
@@ -617,8 +617,8 @@ html[data-window="island"] #root {
 }
 
 .dock-btn.active {
-  background: #2fcf9c;
-  color: #04231b;
+  background: var(--accent, #2fcf9c);
+  color: var(--accent-ink, #04231b);
 }
 
 .dock-settings {
@@ -708,5 +708,5 @@ html[data-window="island"] #root {
   width: 100%;
   min-height: 2px;
   border-radius: 4px;
-  background: #2fcf9c;
+  background: var(--accent, #2fcf9c);
 }

@@ -61,6 +61,11 @@ impl ClipboardService {
         true
     }
 
+    /// Taruh berkas di clipboard; bukan teks, jadi tidak masuk riwayat.
+    pub fn copy_files(&self, paths: &[String]) -> bool {
+        self.access.write_files(paths)
+    }
+
     pub fn clear(&self) {
         self.state().history.clear();
     }
@@ -84,6 +89,9 @@ mod tests {
         }
         fn write_text(&self, text: &str) -> bool {
             *self.0.lock().unwrap() = text.to_string();
+            true
+        }
+        fn write_files(&self, _paths: &[String]) -> bool {
             true
         }
     }

@@ -34,8 +34,10 @@ pub fn mood_for(s: &IslandState) -> Mood {
         Some(Content::Ask(AskPhase::Thinking)) => Mood::Thinking,
         Some(Content::Ask(AskPhase::Done(_))) => Mood::Happy,
         Some(Content::Ask(_)) => Mood::Idle,
-        Some(Content::Media | Content::Volume(_)) | None if music => Mood::Listening,
-        Some(Content::Media | Content::Volume(_)) | None => Mood::Idle,
+        Some(Content::Media | Content::Volume(_) | Content::Shelf) | None if music => {
+            Mood::Listening
+        }
+        Some(Content::Media | Content::Volume(_) | Content::Shelf) | None => Mood::Idle,
     }
 }
 

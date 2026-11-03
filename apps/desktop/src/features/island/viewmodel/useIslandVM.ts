@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { commands, subscribeIsland, type IslandSnapshot } from "../../../shared/ipc";
 import { useIslandStore } from "../store";
 
@@ -25,6 +26,10 @@ export function shapeFor(s: IslandSnapshot): Shape {
       if (s.review && s.review.findings.length > 0) {
         return { width: 480, height: 250, radius: 28, opacity: 1 };
       }
+      // Rak file: kepala + satu baris per berkas (maksimal 5 terlihat, sisanya digulir).
+      if (s.content?.kind === "shelf") {
+        return { width: 420, height: 84 + 28 * Math.min(Math.max(s.shelf.length, 1), 5), radius: 28, opacity: 1 };
+      }
       // Quick Ask: kotak pertanyaan kecil, memanjang saat ada jawaban.
       if (s.content?.kind === "ask") {
         const answered = s.content.detail === "done" || s.content.detail === "failed";
@@ -48,6 +53,16 @@ export function useIslandVM() {
       void stop.then((unlisten) => unlisten());
     };
   }, [setSnapshot]);
+
+  // Berkas yang dijatuhkan ke pulau masuk rak (pulau menerima kursor hanya saat kursor di atasnya).
+  useEffect(() => {
+    const stop = getCurrentWebview().onDragDropEvent((e) => {
+      if (e.payload.type === "drop") void commands.shelfAdd(e.payload.paths);
+    });
+    return () => {
+      void stop.then((unlisten) => unlisten());
+    };
+  }, []);
 
   return {
     mode: snapshot.mode,

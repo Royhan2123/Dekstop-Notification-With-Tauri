@@ -12,7 +12,12 @@ pub enum Content {
     Ask(AskPhase),
     /// HUD volume: muncul sebentar saat volume atau bisu berubah.
     Volume(VolumeInfo),
+    /// Rak file: daftar berkas di `IslandState::shelf`.
+    Shelf,
 }
+
+/// Batas isi rak; yang paling lama dibuang saat penuh.
+pub const SHELF_MAX: usize = 20;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VolumeInfo {
@@ -58,6 +63,8 @@ pub struct IslandState {
     pub dnd: bool,
     /// Ekstensi Isla Link sedang tersambung (tombol kecepatan/cari tampil).
     pub extension: bool,
+    /// Path berkas di rak (terlama dulu); tetap ada walau pulau menampilkan hal lain.
+    pub shelf: Vec<String>,
     pub token: u64,
 }
 

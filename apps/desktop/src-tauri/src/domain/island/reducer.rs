@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
 
 use super::action::{Effect, IslandAction};
-use super::state::{AskPhase, Content, Ctx, IslandState, View};
+use super::state::{AskPhase, Content, Ctx, IslandState, SHELF_MAX, View};
 
 pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandState, Vec<Effect>) {
     let mut s = state.clone();
@@ -87,6 +87,18 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
                 s.view = View::Expanded(Content::Ask(phase));
             }
         }
+        IslandAction::ShelfAdd(paths) => {
+            for p in paths {
+                s.shelf.retain(|x| *x != p);
+                s.shelf.push(p);
+            }
+            let extra = s.shelf.len().saturating_sub(SHELF_MAX);
+            s.shelf.drain(..extra);
+            show_shelf(&mut s, ctx, &mut fx);
+        }
+        IslandAction::ShelfShow => show_shelf(&mut s, ctx, &mut fx),
+        IslandAction::ShelfRemove(p) => s.shelf.retain(|x| *x != p),
+        IslandAction::ShelfClear => s.shelf.clear(),
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
             if b {
@@ -98,6 +110,15 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
     }
     (s, fx)
+}
+
+/// Rak yang sudah tampil diperbarui di tempat; selain itu ikut aturan prioritas.
+fn show_shelf(s: &mut IslandState, ctx: &Ctx, fx: &mut Vec<Effect>) {
+    if s.view.content() == Some(&Content::Shelf) {
+        show(s, Content::Shelf, ctx, fx);
+    } else {
+        offer(s, Content::Shelf, ctx, fx);
+    }
 }
 
 /// Konten informatif: boleh ditahan Jangan Ganggu dan menutup sendiri. Hasil review yang
@@ -340,6 +361,48 @@ mod tests {
             View::Expanded(Content::Media),
             "media lebar tidak ditutup"
         );
+    }
+
+    #[test]
+    fn rak_menampung_tanpa_duplikat_terbatas_dan_tetap_ada_setelah_ditutup() {
+        let add =
+            |names: &[&str]| IslandAction::ShelfAdd(names.iter().map(|n| n.to_string()).collect());
+        let (s, _) = run(IslandState::default(), add(&["a", "b"]));
+        assert_eq!(s.view, View::Expanded(Content::Shelf));
+        let (s, _) = run(s, add(&["a"]));
+        assert_eq!(s.shelf, ["b", "a"], "duplikat dipindah ke akhir");
+
+        let many: Vec<String> = (0..25).map(|i| format!("f{i}")).collect();
+        let (s, _) = run(s, IslandAction::ShelfAdd(many));
+        assert_eq!(s.shelf.len(), SHELF_MAX);
+        assert_eq!(s.shelf.last().map(String::as_str), Some("f24"));
+
+        let (s, _) = run(s, IslandAction::Dismissed);
+        assert_eq!(s.view, View::Idle);
+        assert_eq!(
+            s.shelf.len(),
+            SHELF_MAX,
+            "isi rak tidak hilang saat ditutup"
+        );
+        let (s, _) = run(s, IslandAction::ShelfShow);
+        assert_eq!(s.view, View::Expanded(Content::Shelf));
+        let (s, _) = run(s, IslandAction::ShelfRemove("f24".into()));
+        assert_eq!(s.shelf.len(), SHELF_MAX - 1);
+        let (s, _) = run(s, IslandAction::ShelfClear);
+        assert!(s.shelf.is_empty());
+    }
+
+    #[test]
+    fn rak_tidak_menggeser_hasil_review_yang_menunggu() {
+        let mut r = report();
+        r.findings.push(Default::default());
+        let (s, _) = run(
+            IslandState::default(),
+            IslandAction::ReviewFinished(ReviewId(1), r),
+        );
+        let (s, _) = run(s, IslandAction::ShelfAdd(vec!["a".into()]));
+        assert!(matches!(s.view, View::Expanded(Content::ReviewResult(_))));
+        assert_eq!(s.queue, [Content::Shelf]);
     }
 
     #[test]

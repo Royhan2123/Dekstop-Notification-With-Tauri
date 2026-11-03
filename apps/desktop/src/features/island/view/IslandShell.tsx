@@ -7,6 +7,7 @@ import { AskCard } from "../../ask/view/AskCard";
 import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
+import { ShelfCard } from "../../shelf/view/ShelfCard";
 import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
 import { useIslandVM } from "../viewmodel/useIslandVM";
@@ -62,6 +63,8 @@ export function IslandShell() {
           >
             {content.kind === "volume" ? (
               <VolumeHud level={Number(content.text) || 0} muted={content.detail === "muted"} />
+            ) : content.kind === "shelf" && mode === "expanded" ? (
+              <ShelfCard />
             ) : content.kind === "ask" && mode === "expanded" ? (
               <AskCard />
             ) : content.kind === "media" ? (

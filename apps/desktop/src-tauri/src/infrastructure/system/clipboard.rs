@@ -13,4 +13,10 @@ impl ClipboardAccess for SystemClipboard {
             .and_then(|mut c| c.set_text(text))
             .is_ok()
     }
+
+    fn write_files(&self, paths: &[String]) -> bool {
+        arboard::Clipboard::new()
+            .and_then(|mut c| c.set().file_list(paths))
+            .is_ok()
+    }
 }

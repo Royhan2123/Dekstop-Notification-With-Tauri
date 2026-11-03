@@ -209,6 +209,43 @@ async askOpen() : Promise<void> {
 },
 async askSubmit(question: string) : Promise<void> {
     await TAURI_INVOKE("ask_submit", { question });
+},
+/**
+ * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
+ */
+async shelfAdd(paths: string[]) : Promise<void> {
+    await TAURI_INVOKE("shelf_add", { paths });
+},
+async shelfShow() : Promise<void> {
+    await TAURI_INVOKE("shelf_show");
+},
+async shelfRemove(path: string) : Promise<void> {
+    await TAURI_INVOKE("shelf_remove", { path });
+},
+async shelfClear() : Promise<void> {
+    await TAURI_INVOKE("shelf_clear");
+},
+async shelfOpenFile(path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("shelf_open_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async shelfReveal(path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("shelf_reveal", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Salin berkas ke clipboard supaya bisa ditempel (Ctrl+V) di folder atau aplikasi mana pun.
+ */
+async shelfCopy(path: string) : Promise<boolean> {
+    return await TAURI_INVOKE("shelf_copy", { path });
 }
 }
 
@@ -234,7 +271,7 @@ settingsChangedEvent: "settings-changed-event"
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
 export type ClipEntryDto = { id: number; text: string }
-export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume"
+export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume" | "shelf"
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
 export type Decision = 
 /**
@@ -269,7 +306,11 @@ review: ReviewDto | null;
 /**
  * Ekspresi Lumi untuk keadaan pulau saat ini.
  */
-mood: Mood; extension_connected: boolean; hovered: boolean }
+mood: Mood; extension_connected: boolean; hovered: boolean; 
+/**
+ * Isi rak; hanya terisi saat pulau menampilkan rak.
+ */
+shelf: ShelfItemDto[] }
 /**
  * Dikirim setiap state pulau berubah.
  */
@@ -314,6 +355,7 @@ export type Severity = "critical" | "important" |
  * Nilai tak dikenal dari AI jatuh ke sini.
  */
 "suggestion"
+export type ShelfItemDto = { path: string; name: string }
 
 /** tauri-specta globals **/
 

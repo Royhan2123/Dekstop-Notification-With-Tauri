@@ -1,4 +1,6 @@
 //! DTO yang dikirim ke frontend. Dihasilkan dari state domain; tipe TS dibuat otomatis.
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
@@ -30,6 +32,7 @@ pub enum ContentKind {
     Notice,
     Ask,
     Volume,
+    Shelf,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
@@ -81,6 +84,14 @@ pub struct IslandSnapshot {
     pub mood: Mood,
     pub extension_connected: bool,
     pub hovered: bool,
+    /// Isi rak; hanya terisi saat pulau menampilkan rak.
+    pub shelf: Vec<ShelfItemDto>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct ShelfItemDto {
+    pub path: String,
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
@@ -219,6 +230,11 @@ impl From<&IslandState> for IslandSnapshot {
                     detail: Some(phase.into()),
                 }
             }
+            Content::Shelf => IslandContent {
+                kind: ContentKind::Shelf,
+                text: s.shelf.len().to_string(),
+                detail: None,
+            },
             Content::Notice(t) => IslandContent {
                 kind: ContentKind::Notice,
                 text: t.clone(),
@@ -250,6 +266,19 @@ impl From<&IslandState> for IslandSnapshot {
             mood: mood_for(s),
             extension_connected: s.extension,
             hovered: s.hovered,
+            shelf: match s.view.content() {
+                Some(Content::Shelf) => s
+                    .shelf
+                    .iter()
+                    .map(|p| ShelfItemDto {
+                        path: p.clone(),
+                        name: Path::new(p)
+                            .file_name()
+                            .map_or_else(|| p.clone(), |n| n.to_string_lossy().into_owned()),
+                    })
+                    .collect(),
+                _ => Vec::new(),
+            },
         }
     }
 }

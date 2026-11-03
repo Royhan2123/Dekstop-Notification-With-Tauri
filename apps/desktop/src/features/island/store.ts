@@ -9,6 +9,7 @@ export const idleSnapshot: IslandSnapshot = {
   mood: "idle",
   extension_connected: false,
   hovered: false,
+  shelf: [],
 };
 
 interface IslandStore {

@@ -26,6 +26,9 @@ use interface::commands::settings::{
     api_key_clear, api_key_set, api_key_status, close_settings, open_settings, settings_get,
     settings_update,
 };
+use interface::commands::shelf::{
+    shelf_add, shelf_clear, shelf_copy, shelf_open_file, shelf_remove, shelf_reveal, shelf_show,
+};
 use interface::dto::{IslandSnapshotEvent, SettingsChangedEvent};
 use interface::window::{review_window, settings_window};
 
@@ -66,7 +69,14 @@ fn specta_builder() -> Builder<tauri::Wry> {
             clipboard_copy,
             clipboard_clear,
             ask_open,
-            ask_submit
+            ask_submit,
+            shelf_add,
+            shelf_show,
+            shelf_remove,
+            shelf_clear,
+            shelf_open_file,
+            shelf_reveal,
+            shelf_copy
         ])
         .events(collect_events![IslandSnapshotEvent, SettingsChangedEvent])
 }

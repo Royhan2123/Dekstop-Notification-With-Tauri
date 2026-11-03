@@ -96,6 +96,8 @@ pub trait VolumeReader: Send + Sync {
 pub trait ClipboardAccess: Send + Sync {
     fn read_text(&self) -> Option<String>;
     fn write_text(&self, text: &str) -> bool;
+    /// Taruh daftar berkas di clipboard (bisa ditempel di Explorer atau aplikasi lain).
+    fn write_files(&self, paths: &[String]) -> bool;
 }
 
 /// Keadaan daya laptop.

@@ -21,6 +21,12 @@ pub enum IslandAction {
     AskOpen,
     /// Kemajuan pertanyaan; diabaikan bila kotak Quick Ask sudah ditutup.
     AskUpdate(AskPhase),
+    /// Berkas dijatuhkan ke pulau: masuk rak dan rak ditampilkan.
+    ShelfAdd(Vec<String>),
+    /// Tampilkan rak apa adanya.
+    ShelfShow,
+    ShelfRemove(String),
+    ShelfClear,
 }
 
 #[derive(Debug, PartialEq)]

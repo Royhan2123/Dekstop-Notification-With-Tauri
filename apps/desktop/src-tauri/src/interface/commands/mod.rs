@@ -7,3 +7,4 @@ pub mod media;
 pub mod pomodoro;
 pub mod review;
 pub mod settings;
+pub mod shelf;

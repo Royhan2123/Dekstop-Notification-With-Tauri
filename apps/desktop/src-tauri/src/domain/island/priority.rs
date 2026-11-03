@@ -5,7 +5,7 @@ impl Content {
     pub fn priority(&self) -> u8 {
         match self {
             Content::Ask(_) => 6,
-            Content::ReviewResult(_) => 5,
+            Content::ReviewResult(_) | Content::Shelf => 5,
             Content::ReviewRunning(_) => 4,
             Content::HealthAlert(_) => 3,
             Content::Notice(_) | Content::Volume(_) => 2,

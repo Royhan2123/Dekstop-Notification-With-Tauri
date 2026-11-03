@@ -166,6 +166,28 @@ async lyricsFetch(artist: string, title: string, durationMs: number) : Promise<R
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Isi berkas tema dari sebuah tautan https; penerapannya lewat jalur impor berkas di Setelan.
+ */
+async themeFetch(url: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("theme_fetch", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Wallpaper Windows saat ini (data URL JPEG kecil); galat bila tidak terbaca.
+ */
+async wallpaperCurrent() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("wallpaper_current") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async tasksList() : Promise<Result<TaskDto[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("tasks_list") };
@@ -437,6 +459,10 @@ mascot: string;
  * Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
  */
 background: string; 
+/**
+ * Sumber latar pulau: `static` (foto di atas atau hitam), `album`, `time`, atau `wallpaper`.
+ */
+background_mode: string; 
 /**
  * Lama fokus dan istirahat Pomodoro (menit).
  */

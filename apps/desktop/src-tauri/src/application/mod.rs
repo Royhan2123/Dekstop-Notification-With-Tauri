@@ -16,4 +16,5 @@ pub mod settings_service;
 pub mod task_service;
 #[cfg(test)]
 pub mod test_support;
+pub mod theme_service;
 pub mod volume_service;

@@ -13,20 +13,28 @@ pub struct Artwork {
     pub color: String,
 }
 
+/// Gambar dikecilkan sampai sisi terpanjang `max_side` lalu dijadikan data URL JPEG.
+pub fn data_url(bytes: &[u8], max_side: u32) -> Option<String> {
+    shrink(&image::load_from_memory(bytes).ok()?, max_side)
+}
+
+fn shrink(img: &DynamicImage, max_side: u32) -> Option<String> {
+    let small = DynamicImage::ImageRgb8(img.thumbnail(max_side, max_side).to_rgb8());
+    let mut jpeg = Cursor::new(Vec::new());
+    small.write_to(&mut jpeg, ImageFormat::Jpeg).ok()?;
+    Some(format!(
+        "data:image/jpeg;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(jpeg.into_inner())
+    ))
+}
+
 /// `None` bila format tidak dikenali (hanya JPEG dan PNG).
 pub fn process(bytes: &[u8]) -> Option<Artwork> {
     let img = image::load_from_memory(bytes).ok()?;
-    let small = DynamicImage::ImageRgb8(img.thumbnail(MAX_SIDE, MAX_SIDE).to_rgb8());
-    let mut jpeg = Cursor::new(Vec::new());
-    small.write_to(&mut jpeg, ImageFormat::Jpeg).ok()?;
-
     let avg = img.thumbnail(1, 1).to_rgb8();
     let [r, g, b] = avg.get_pixel(0, 0).0;
     Some(Artwork {
-        data_url: format!(
-            "data:image/jpeg;base64,{}",
-            base64::engine::general_purpose::STANDARD.encode(jpeg.into_inner())
-        ),
+        data_url: shrink(&img, MAX_SIDE)?,
         color: format!("#{r:02x}{g:02x}{b:02x}"),
     })
 }

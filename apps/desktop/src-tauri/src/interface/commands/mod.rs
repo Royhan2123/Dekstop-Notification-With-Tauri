@@ -11,3 +11,4 @@ pub mod review;
 pub mod settings;
 pub mod shelf;
 pub mod tasks;
+pub mod theme;

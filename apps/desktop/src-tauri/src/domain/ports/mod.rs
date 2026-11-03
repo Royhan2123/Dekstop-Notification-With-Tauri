@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use crate::domain::bridge::BridgeCommand;
 use crate::domain::error::{
-    AiError, BridgeError, GitError, LyricsError, MediaError, SettingsError, TaskError, UsageError,
+    AiError, BridgeError, GitError, LyricsError, MediaError, SettingsError, TaskError, ThemeError,
+    UsageError,
 };
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
@@ -119,6 +120,16 @@ pub trait PowerReader: Send + Sync {
 /// Sumber lirik berwaktu (pencarian teks bebas).
 pub trait LyricsSource: Send + Sync {
     fn search(&self, query: &str) -> Result<Vec<Candidate>, LyricsError>;
+}
+
+/// Mengunduh isi berkas tema dari URL yang sudah lolos pemeriksaan.
+pub trait ThemeFetcher: Send + Sync {
+    fn fetch(&self, url: &str) -> Result<String, ThemeError>;
+}
+
+/// Wallpaper desktop saat ini sebagai data URL gambar kecil.
+pub trait WallpaperSource: Send + Sync {
+    fn current(&self) -> Option<String>;
 }
 
 /// Memutar bunyi notifikasi (tidak menunggu bunyinya selesai).

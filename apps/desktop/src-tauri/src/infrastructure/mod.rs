@@ -7,3 +7,4 @@ pub mod media;
 pub mod security;
 pub mod storage;
 pub mod system;
+pub mod theme;

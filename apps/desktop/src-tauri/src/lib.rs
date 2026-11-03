@@ -35,6 +35,7 @@ use interface::commands::shelf::{
 use interface::commands::tasks::{
     tasks_add, tasks_clear_done, tasks_list, tasks_remove, tasks_set_done,
 };
+use interface::commands::theme::{theme_fetch, wallpaper_current};
 use interface::dto::{IslandSnapshotEvent, SettingsChangedEvent};
 use interface::window::{review_window, settings_window};
 
@@ -66,6 +67,8 @@ fn specta_builder() -> Builder<tauri::Wry> {
             health_peek,
             net_rate,
             lyrics_fetch,
+            theme_fetch,
+            wallpaper_current,
             tasks_list,
             tasks_add,
             tasks_set_done,

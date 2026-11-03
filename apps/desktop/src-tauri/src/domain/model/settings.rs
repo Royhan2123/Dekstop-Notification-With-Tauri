@@ -83,6 +83,8 @@ pub struct Settings {
     pub mascot: String,
     /// Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
     pub background: String,
+    /// Sumber latar pulau: `static` (foto di atas atau hitam), `album`, `time`, atau `wallpaper`.
+    pub background_mode: String,
     /// Lama fokus dan istirahat Pomodoro (menit).
     pub focus_minutes: u32,
     pub break_minutes: u32,
@@ -113,6 +115,7 @@ impl Default for Settings {
             custom_accent: String::new(),
             mascot: "mino".into(),
             background: String::new(),
+            background_mode: "static".into(),
             focus_minutes: 25,
             break_minutes: 5,
             hide_on_fullscreen: true,
@@ -123,6 +126,7 @@ impl Default for Settings {
 }
 
 pub const MAX_BACKGROUND_BYTES: usize = 400_000;
+const BACKGROUND_MODES: [&str; 4] = ["static", "album", "time", "wallpaper"];
 
 fn is_image_data_url(s: &str) -> bool {
     let Some(rest) = ["jpeg", "png", "webp"]
@@ -153,6 +157,9 @@ impl Settings {
         for id in [&mut self.theme, &mut self.mascot] {
             id.retain(|c| c.is_ascii_alphanumeric() || c == '-');
             id.truncate(32);
+        }
+        if !BACKGROUND_MODES.contains(&self.background_mode.as_str()) {
+            self.background_mode = "static".into();
         }
         if !is_image_data_url(&self.background) {
             self.background.clear();
@@ -202,6 +209,24 @@ mod tests {
         }
         .sanitized();
         assert_eq!(s.custom_accent, "#A1b2C3");
+    }
+
+    #[test]
+    fn mode_latar_hanya_dari_daftar_yang_dikenal() {
+        for ok in ["static", "album", "time", "wallpaper"] {
+            let s = Settings {
+                background_mode: ok.into(),
+                ..Default::default()
+            }
+            .sanitized();
+            assert_eq!(s.background_mode, ok);
+        }
+        let s = Settings {
+            background_mode: "javascript:1".into(),
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(s.background_mode, "static");
     }
 
     #[test]

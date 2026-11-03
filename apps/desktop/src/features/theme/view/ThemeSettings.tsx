@@ -1,10 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useT } from "../../../shared/i18n";
+import { commands } from "../../../shared/ipc";
 import { readPhoto } from "../../../shared/theme/photo";
 import { MASCOTS, THEMES, accentOf } from "../../../shared/theme/themes";
 import { useSettingsVM } from "../../settings/viewmodel/useSettingsVM";
 
 const FILE_VERSION = 1;
+const BACKGROUND_MODES = ["static", "album", "time", "wallpaper"] as const;
 const MAX_FILE_BYTES = 600_000;
 
 /** Pemilih tema: warna, maskot, foto latar, dan berkas tema yang bisa dibagikan. */
@@ -13,8 +15,10 @@ export function ThemeSettings() {
   const vm = useSettingsVM();
   const photoInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
   if (!vm.settings) return null;
-  const { theme, custom_accent, mascot, background } = vm.settings;
+  const { theme, custom_accent, mascot, background, background_mode } = vm.settings;
   const current = accentOf(theme, custom_accent);
 
   async function pickPhoto(file: File) {
@@ -42,9 +46,25 @@ export function ThemeSettings() {
   }
 
   async function importTheme(file: File) {
+    if (file.size > MAX_FILE_BYTES) return vm.fail(t("settings.theme.file_error"));
+    await applyThemeText(await file.text());
+  }
+
+  async function importFromUrl() {
+    setBusy(true);
     try {
-      if (file.size > MAX_FILE_BYTES) throw new Error("size");
-      const j: Record<string, unknown> = JSON.parse(await file.text());
+      const r = await commands.themeFetch(url);
+      if (r.status !== "ok") return vm.fail(r.error);
+      await applyThemeText(r.data);
+      setUrl("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyThemeText(text: string) {
+    try {
+      const j: Record<string, unknown> = JSON.parse(text);
       if (j.isla_theme !== FILE_VERSION) throw new Error("version");
       const str = (k: string) => (typeof j[k] === "string" ? (j[k] as string) : "");
       // Backend menyaring ulang semua nilai (warna, id, data URL gambar) sebelum disimpan.
@@ -99,6 +119,20 @@ export function ThemeSettings() {
         ))}
       </div>
       <div className="row">
+        {t("settings.theme.mode")}
+        {BACKGROUND_MODES.map((m) => (
+          <button
+            key={m}
+            type="button"
+            className={m === background_mode ? "chip active" : "chip"}
+            aria-pressed={m === background_mode}
+            onClick={() => void vm.update({ background_mode: m })}
+          >
+            {t(`settings.theme.mode.${m}`)}
+          </button>
+        ))}
+      </div>
+      <div className="row">
         <button type="button" className="chip" onClick={() => photoInput.current?.click()}>
           {t("settings.theme.photo")}
         </button>
@@ -114,6 +148,23 @@ export function ThemeSettings() {
           {t("settings.theme.import")}
         </button>
       </div>
+      <form
+        className="row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (url.trim() && !busy) void importFromUrl();
+        }}
+      >
+        <input
+          type="url"
+          value={url}
+          placeholder={t("settings.theme.url_placeholder")}
+          onChange={(e) => setUrl(e.currentTarget.value)}
+        />
+        <button type="submit" className="chip" disabled={busy || !url.trim()}>
+          {t("settings.theme.url_import")}
+        </button>
+      </form>
       <input
         ref={photoInput}
         type="file"

@@ -3,6 +3,19 @@ import { accentFromPixels } from "./themes";
 const MAX_WIDTH = 480;
 const MAX_BYTES = 350_000;
 
+/** Warna aksen dari gambar yang sudah berupa data URL (sampul album, wallpaper). */
+export async function accentOfImage(src: string): Promise<string> {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 32;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas");
+  ctx.drawImage(img, 0, 0, 32, 32);
+  return accentFromPixels(ctx.getImageData(0, 0, 32, 32).data);
+}
+
 /** Foto pilihan pengguna -> latar (data URL JPEG kecil) dan warna aksen dari isinya. */
 export async function readPhoto(file: File): Promise<{ background: string; accent: string }> {
   const bmp = await createImageBitmap(file);

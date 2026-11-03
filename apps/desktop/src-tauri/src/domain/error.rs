@@ -53,6 +53,14 @@ pub enum LyricsError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum ThemeError {
+    #[error("tema tidak bisa dipakai: {0}")]
+    Invalid(String),
+    #[error("tema tidak bisa diunduh: {0}")]
+    Unavailable(String),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum TaskError {
     #[error("judul tugas kosong")]
     EmptyTitle,

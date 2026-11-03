@@ -17,6 +17,7 @@ import { IslandMenu, menuShape } from "./IslandMenu";
 import { ShelfCard } from "../../shelf/view/ShelfCard";
 import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
+import { useDynamicBackground } from "../../theme/viewmodel/useDynamicBackground";
 import { useIslandVM } from "../viewmodel/useIslandVM";
 
 const panelShapes = {
@@ -29,6 +30,7 @@ const panelShapes = {
 
 export function IslandShell() {
   const vm = useIslandVM();
+  useDynamicBackground();
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const systemReduce = useReducedMotion();

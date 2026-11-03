@@ -7,3 +7,4 @@ pub mod network;
 pub mod power;
 pub mod sound;
 pub mod volume;
+pub mod wallpaper;

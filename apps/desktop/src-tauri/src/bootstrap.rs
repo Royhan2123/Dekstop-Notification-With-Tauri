@@ -20,6 +20,7 @@ use crate::application::quick_ask_service::QuickAskService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
 use crate::application::task_service::TaskService;
+use crate::application::theme_service::ThemeService;
 use crate::application::volume_service::VolumeService;
 use crate::domain::bridge::clean_query;
 use crate::domain::island::action::IslandAction;
@@ -46,6 +47,8 @@ use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
 use crate::infrastructure::system::sound::SystemSound;
 use crate::infrastructure::system::volume::SystemVolume;
+use crate::infrastructure::system::wallpaper::SystemWallpaper;
+use crate::infrastructure::theme::HttpThemeFetcher;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
 use crate::interface::ipc;
 use crate::interface::window::hit_test::{self, Hitbox};
@@ -151,6 +154,10 @@ pub fn assemble(app: &App) {
 
     app.manage(NetService::new(Arc::new(SystemNet)));
     app.manage(LyricsService::new(Arc::new(Lrclib), settings.clone()));
+    app.manage(ThemeService::new(
+        Arc::new(HttpThemeFetcher),
+        Arc::new(SystemWallpaper),
+    ));
 
     spawn_brightness_watch(BrightnessService::new(
         Arc::new(SystemBrightness),

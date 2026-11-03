@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useT, type MessageKey } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
 import { usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
@@ -47,6 +47,9 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   );
 }
 
+/** Tombol per halaman carousel dok. */
+const PER_PAGE = 3;
+
 interface Item {
   id: keyof typeof ICONS;
   label: MessageKey;
@@ -55,8 +58,8 @@ interface Item {
 }
 
 /**
- * Dok fitur di dasar pulau yang terbuka: deretan ikon yang bisa digeser (seret, roda mouse, atau
- * sentuh), plus tombol Setelan yang selalu terlihat di kanan.
+ * Dok fitur di dasar pulau yang terbuka: carousel per halaman (3 tombol) yang bisa digeser dengan
+ * seret, roda mouse, atau titik indikator, plus tombol Setelan yang selalu terlihat di kanan.
  */
 export function IslandDock({
   panel,
@@ -71,7 +74,9 @@ export function IslandDock({
   const snapshot = useIslandStore((s) => s.snapshot);
   const pomodoro = usePomodoroVM();
   const scroller = useRef<HTMLDivElement>(null);
-  const drag = useRef({ x: 0, left: 0, moved: false, down: false });
+  const drag = useRef({ x: 0, page: 0, moved: false, down: false });
+  const wheelLock = useRef(false);
+  const [page, setPage] = useState(0);
   const kind = snapshot.content?.kind;
   const focusing = pomodoro.status.phase !== "idle";
 
@@ -120,67 +125,109 @@ export function IslandDock({
     },
   ];
 
+  const pages = Array.from({ length: Math.ceil(items.length / PER_PAGE) }, (_, i) =>
+    items.slice(i * PER_PAGE, (i + 1) * PER_PAGE),
+  );
+  const goTo = (p: number) => {
+    const el = scroller.current;
+    if (!el) return;
+    const target = Math.max(0, Math.min(pages.length - 1, p));
+    el.scrollTo({ left: target * el.clientWidth, behavior: "smooth" });
+  };
+
   return (
     <div className="island-dock" onClick={(e) => e.stopPropagation()}>
-      <div
-        ref={scroller}
-        className="dock-scroll"
-        onWheel={(e) => {
-          if (scroller.current) scroller.current.scrollLeft += e.deltaY + e.deltaX;
-        }}
-        onPointerDown={(e) => {
-          drag.current = {
-            x: e.clientX,
-            left: scroller.current?.scrollLeft ?? 0,
-            moved: false,
-            down: true,
-          };
-        }}
-        onPointerMove={(e) => {
-          const d = drag.current;
-          if (!d.down || !scroller.current) return;
-          const dx = e.clientX - d.x;
-          if (Math.abs(dx) > 4) d.moved = true;
-          scroller.current.scrollLeft = d.left - dx;
-        }}
-        onPointerUp={() => {
-          drag.current.down = false;
-        }}
-        onPointerLeave={() => {
-          drag.current.down = false;
-        }}
-        // Seretan tidak boleh dihitung sebagai klik pada ikon.
-        onClickCapture={(e) => {
-          if (drag.current.moved) {
-            e.stopPropagation();
-            drag.current.moved = false;
-          }
-        }}
-      >
-        {items.map((it) => (
+      <div className="dock-main">
+        <div
+          ref={scroller}
+          className="dock-scroll"
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            setPage(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+          }}
+          onWheel={(e) => {
+            if (wheelLock.current) return;
+            wheelLock.current = true;
+            window.setTimeout(() => (wheelLock.current = false), 350);
+            goTo(page + (e.deltaY + e.deltaX > 0 ? 1 : -1));
+          }}
+          onPointerDown={(e) => {
+            drag.current = { x: e.clientX, page, moved: false, down: true };
+          }}
+          onPointerMove={(e) => {
+            const d = drag.current;
+            const el = scroller.current;
+            if (!d.down || !el) return;
+            const dx = e.clientX - d.x;
+            if (Math.abs(dx) > 4) {
+              d.moved = true;
+              el.style.scrollSnapType = "none";
+            }
+            if (d.moved) el.scrollLeft = d.page * el.clientWidth - dx;
+          }}
+          onPointerUp={(e) => {
+            const d = drag.current;
+            if (!d.down) return;
+            d.down = false;
+            if (!d.moved || !scroller.current) return;
+            scroller.current.style.scrollSnapType = "";
+            const dx = e.clientX - d.x;
+            goTo(d.page + (dx < -40 ? 1 : dx > 40 ? -1 : 0));
+          }}
+          onPointerLeave={() => {
+            if (!drag.current.down) return;
+            drag.current.down = false;
+            if (scroller.current) scroller.current.style.scrollSnapType = "";
+            goTo(page);
+          }}
+          // Seretan tidak boleh dihitung sebagai klik pada tombol.
+          onClickCapture={(e) => {
+            if (drag.current.moved) {
+              e.stopPropagation();
+              drag.current.moved = false;
+            }
+          }}
+        >
+          {pages.map((p, i) => (
+            <div className="dock-page" key={i}>
+              {p.map((it) => (
+                <button
+                  key={it.id}
+                  type="button"
+                  className={it.active ? "dock-btn active" : "dock-btn"}
+                  title={t(it.label)}
+                  aria-label={t(it.label)}
+                  aria-pressed={it.active}
+                  onClick={it.run}
+                >
+                  <Icon name={it.id} />
+                  <span>{t(it.label)}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="dock-btn dock-settings"
+          title={t("dock.settings")}
+          aria-label={t("dock.settings")}
+          onClick={onOpenSettings}
+        >
+          <Icon name="settings" />
+        </button>
+      </div>
+      <div className="dock-dots">
+        {pages.map((_, i) => (
           <button
-            key={it.id}
+            key={i}
             type="button"
-            className={it.active ? "dock-btn active" : "dock-btn"}
-            title={t(it.label)}
-            aria-label={t(it.label)}
-            aria-pressed={it.active}
-            onClick={it.run}
-          >
-            <Icon name={it.id} />
-            <span>{t(it.label)}</span>
-          </button>
+            className={i === page ? "dot active" : "dot"}
+            aria-label={`${i + 1}/${pages.length}`}
+            onClick={() => goTo(i)}
+          />
         ))}
       </div>
-      <button
-        type="button"
-        className="dock-btn dock-settings"
-        title={t("dock.settings")}
-        aria-label={t("dock.settings")}
-        onClick={onOpenSettings}
-      >
-        <Icon name="settings" />
-      </button>
     </div>
   );
 }

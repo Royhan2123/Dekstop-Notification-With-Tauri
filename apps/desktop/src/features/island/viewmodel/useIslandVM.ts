@@ -4,7 +4,7 @@ import { commands, subscribeIsland, type IslandSnapshot } from "../../../shared/
 import { useIslandStore } from "../store";
 
 /** Tinggi dok fitur di dasar pulau terbuka. */
-export const DOCK_H = 40;
+export const DOCK_H = 50;
 
 export interface Shape {
   width: number;

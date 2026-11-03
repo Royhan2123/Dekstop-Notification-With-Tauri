@@ -10,6 +10,7 @@ import { MediaExpanded } from "../../media/view/MediaExpanded";
 import { ClipboardPanel } from "../../clipboard/view/ClipboardPanel";
 import { HealthPanel } from "../../health/view/HealthPanel";
 import { NetPanel } from "../../net/view/NetPanel";
+import { FocusPanel } from "../../pomodoro/view/FocusPanel";
 import { TasksPanel } from "../../tasks/view/TasksPanel";
 import { IslandDock, type Panel } from "./IslandDock";
 import { IslandMenu, menuShape } from "./IslandMenu";
@@ -22,6 +23,7 @@ const panelShapes = {
   clipboard: { width: 440, height: 240, radius: 26, opacity: 1 },
   health: { width: 440, height: 210, radius: 26, opacity: 1 },
   net: { width: 440, height: 200, radius: 26, opacity: 1 },
+  focus: { width: 440, height: 210, radius: 26, opacity: 1 },
   tasks: { width: 440, height: 290, radius: 26, opacity: 1 },
 };
 
@@ -92,6 +94,8 @@ export function IslandShell() {
             ) : panelOpen ? (
               panel === "health" ? (
                 <HealthPanel onClose={() => setPanel(null)} />
+              ) : panel === "focus" ? (
+                <FocusPanel onClose={() => setPanel(null)} />
               ) : panel === "net" ? (
                 <NetPanel onClose={() => setPanel(null)} />
               ) : panel === "tasks" ? (

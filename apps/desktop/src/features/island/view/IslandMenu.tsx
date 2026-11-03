@@ -39,7 +39,7 @@ export function IslandMenu({
       <button
         type="button"
         role="menuitem"
-        onClick={run(focusing ? pomodoro.stop : pomodoro.start)}
+        onClick={run(focusing ? pomodoro.stop : () => pomodoro.start())}
       >
         <span>{focusing ? t("menu.focus_stop") : t("menu.focus_start")}</span>
         <span>{focusing ? formatRemaining(pomodoro.status.remaining_secs) : ""}</span>

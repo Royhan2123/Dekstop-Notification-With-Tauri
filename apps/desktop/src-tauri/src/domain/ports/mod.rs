@@ -115,6 +115,11 @@ pub trait PowerReader: Send + Sync {
     fn status(&self) -> Option<PowerStatus>;
 }
 
+/// Memutar bunyi notifikasi (tidak menunggu bunyinya selesai).
+pub trait SoundPlayer: Send + Sync {
+    fn chime(&self);
+}
+
 /// Apakah aplikasi layar penuh (game, video, presentasi) sedang aktif.
 pub trait FullscreenDetector: Send + Sync {
     fn is_fullscreen(&self) -> bool;

@@ -237,8 +237,11 @@ export const commands = {
   async pomodoroStatus(): Promise<PomodoroStatusDto> {
     return await TAURI_INVOKE("pomodoro_status");
   },
-  async pomodoroStart(): Promise<void> {
-    await TAURI_INVOKE("pomodoro_start");
+  /**
+   * `seconds` = 0 memakai lama fokus dari setelan; selain itu durasi sendiri (dijepit 1 detik - 24 jam).
+   */
+  async pomodoroStart(seconds: number): Promise<void> {
+    await TAURI_INVOKE("pomodoro_start", { seconds });
   },
   async pomodoroStop(): Promise<void> {
     await TAURI_INVOKE("pomodoro_stop");
@@ -476,6 +479,10 @@ export type Settings = {
    * Sembunyikan pulau saat ada aplikasi layar penuh (game, video, presentasi).
    */
   hide_on_fullscreen: boolean;
+  /**
+   * Bunyikan nada saat fase Pomodoro selesai.
+   */
+  sound_enabled: boolean;
 };
 /**
  * Dikirim ke semua jendela setiap setelan berubah.

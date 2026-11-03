@@ -42,6 +42,7 @@ use crate::infrastructure::system::fullscreen::SystemFullscreen;
 use crate::infrastructure::system::idle::SystemIdle;
 use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
+use crate::infrastructure::system::sound::SystemSound;
 use crate::infrastructure::system::volume::SystemVolume;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
 use crate::interface::ipc;
@@ -72,6 +73,7 @@ pub fn assemble(app: &App) {
     app.manage(PomodoroService::new(
         island.clone(),
         settings.clone(),
+        Arc::new(SystemSound),
         tauri::async_runtime::handle().inner().clone(),
     ));
 

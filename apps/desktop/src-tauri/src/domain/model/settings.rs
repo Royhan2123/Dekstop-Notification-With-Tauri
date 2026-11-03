@@ -88,6 +88,8 @@ pub struct Settings {
     pub break_minutes: u32,
     /// Sembunyikan pulau saat ada aplikasi layar penuh (game, video, presentasi).
     pub hide_on_fullscreen: bool,
+    /// Bunyikan nada saat fase Pomodoro selesai.
+    pub sound_enabled: bool,
 }
 
 impl Default for Settings {
@@ -112,6 +114,7 @@ impl Default for Settings {
             focus_minutes: 25,
             break_minutes: 5,
             hide_on_fullscreen: true,
+            sound_enabled: true,
         }
     }
 }

@@ -14,6 +14,16 @@ export function PomodoroSettings() {
       <legend>{t("settings.pomodoro")}</legend>
       <p className="muted">{t("settings.pomodoro.hint")}</p>
       {settings.settings && (
+        <label className="row">
+          <input
+            type="checkbox"
+            checked={settings.settings.sound_enabled}
+            onChange={(e) => void settings.update({ sound_enabled: e.currentTarget.checked })}
+          />
+          {t("settings.pomodoro.sound")}
+        </label>
+      )}
+      {settings.settings && (
         <div className="row">
           <label>
             {t("settings.pomodoro.focus_minutes")}
@@ -52,7 +62,7 @@ export function PomodoroSettings() {
             {t("settings.pomodoro.stop")}
           </button>
         ) : (
-          <button type="button" onClick={vm.start}>
+          <button type="button" onClick={() => vm.start()}>
             {t("settings.pomodoro.start")}
           </button>
         )}

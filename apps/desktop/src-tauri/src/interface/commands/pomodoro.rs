@@ -36,10 +36,12 @@ pub fn pomodoro_status(svc: Svc) -> PomodoroStatusDto {
     }
 }
 
+/// `seconds` = 0 memakai lama fokus dari setelan; selain itu durasi sendiri (dijepit 1 detik - 24 jam).
 #[tauri::command]
 #[specta::specta]
-pub fn pomodoro_start(svc: Svc) {
-    svc.inner().start_focus();
+pub fn pomodoro_start(svc: Svc, seconds: u32) {
+    let duration = (seconds > 0).then(|| std::time::Duration::from_secs(u64::from(seconds)));
+    svc.inner().start_focus(duration);
 }
 
 #[tauri::command]

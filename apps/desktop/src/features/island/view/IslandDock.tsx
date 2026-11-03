@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import { useT, type MessageKey } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
-import { usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
+import { formatRemaining, usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
 import { useIslandStore } from "../store";
 
-export type Panel = "clipboard" | "health" | "net" | "tasks" | null;
+export type Panel = "clipboard" | "health" | "net" | "tasks" | "focus" | null;
 
 const ICONS = {
   net: <path d="M12 4v13m0 0-4-4m4 4 4-4M5 20h14" />,
@@ -55,6 +55,8 @@ const PER_PAGE = 3;
 interface Item {
   id: keyof typeof ICONS;
   label: MessageKey;
+  /** Teks di tombol bila bukan label (mis. hitung mundur). */
+  text?: string;
   active: boolean;
   run: () => void;
 }
@@ -97,9 +99,10 @@ export function IslandDock({
     },
     {
       id: "focus",
-      label: focusing ? "dock.focus_stop" : "dock.focus",
-      active: focusing,
-      run: focusing ? pomodoro.stop : pomodoro.start,
+      label: "dock.focus",
+      text: focusing ? formatRemaining(pomodoro.status.remaining_secs) : undefined,
+      active: focusing || panel === "focus",
+      run: () => onPanel(panel === "focus" ? null : "focus"),
     },
     {
       id: "tasks",
@@ -215,7 +218,7 @@ export function IslandDock({
                   onClick={it.run}
                 >
                   <Icon name={it.id} />
-                  <span>{t(it.label)}</span>
+                  <span>{it.text ?? t(it.label)}</span>
                 </button>
               ))}
             </div>

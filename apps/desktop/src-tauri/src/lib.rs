@@ -15,7 +15,7 @@ use interface::commands::bridge::{
 use interface::commands::clipboard::{clipboard_clear, clipboard_copy, clipboard_list};
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
-    dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_snapshot,
+    dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_set_dnd, island_snapshot,
 };
 use interface::commands::media::{media_control, media_cycle};
 use interface::commands::pomodoro::{pomodoro_start, pomodoro_status, pomodoro_stop};
@@ -40,6 +40,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             island_click,
             island_dismiss,
             island_hitbox,
+            island_set_dnd,
             dev_simulate,
             media_control,
             media_cycle,

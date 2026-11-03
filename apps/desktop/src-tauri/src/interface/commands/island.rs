@@ -34,6 +34,12 @@ pub fn island_dismiss(svc: Svc) {
     svc.inner().dispatch(IslandAction::Dismissed);
 }
 
+#[tauri::command]
+#[specta::specta]
+pub fn island_set_dnd(svc: Svc, on: bool) {
+    svc.inner().dispatch(IslandAction::DoNotDisturb(on));
+}
+
 /// Hitbox pulau saat ini (piksel logis relatif ke jendela), dipakai untuk klik tembus.
 #[tauri::command]
 #[specta::specta]

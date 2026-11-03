@@ -86,6 +86,8 @@ pub struct IslandSnapshot {
     pub hovered: bool,
     /// Isi rak; hanya terisi saat pulau menampilkan rak.
     pub shelf: Vec<ShelfItemDto>,
+    /// Jangan Ganggu aktif (menu klik kanan menampilkan centangnya).
+    pub dnd: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
@@ -266,6 +268,7 @@ impl From<&IslandState> for IslandSnapshot {
             mood: mood_for(s),
             extension_connected: s.extension,
             hovered: s.hovered,
+            dnd: s.dnd,
             shelf: match s.view.content() {
                 Some(Content::Shelf) => s
                     .shelf

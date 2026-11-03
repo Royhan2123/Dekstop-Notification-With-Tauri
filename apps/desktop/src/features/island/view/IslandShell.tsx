@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
@@ -7,6 +7,7 @@ import { AskCard } from "../../ask/view/AskCard";
 import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
+import { IslandMenu, menuShape } from "./IslandMenu";
 import { ShelfCard } from "../../shelf/view/ShelfCard";
 import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
@@ -30,7 +31,9 @@ export function IslandShell() {
     return () => observer.disconnect();
   }, [reportHitbox]);
 
-  const { content, mode, shape } = vm;
+  const [menu, setMenu] = useState(false);
+  const { content, mode } = vm;
+  const shape = menu ? menuShape : vm.shape;
   return (
     <motion.div
       ref={ref}
@@ -45,23 +48,28 @@ export function IslandShell() {
       }}
       transition={reduceMotion ? instant : springs.island}
       onHoverStart={() => vm.onHover(true)}
-      onHoverEnd={() => vm.onHover(false)}
+      onHoverEnd={() => {
+        setMenu(false);
+        vm.onHover(false);
+      }}
       onClick={vm.onClick}
       onContextMenu={(e) => {
         e.preventDefault();
-        vm.onOpenSettings();
+        setMenu(true);
       }}
     >
       <AnimatePresence mode="popLayout" initial={false}>
-        {content && (
+        {(menu || content) && (
           <motion.div
-            key={`${content.kind}-${mode}`}
+            key={menu ? "menu" : `${content?.kind}-${mode}`}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={reduceMotion ? instant : { duration: 0.15 }}
           >
-            {content.kind === "volume" ? (
+            {menu ? (
+              <IslandMenu onClose={() => setMenu(false)} onOpenSettings={vm.onOpenSettings} />
+            ) : !content ? null : content.kind === "volume" ? (
               <VolumeHud level={Number(content.text) || 0} muted={content.detail === "muted"} />
             ) : content.kind === "shelf" && mode === "expanded" ? (
               <ShelfCard />
@@ -96,7 +104,7 @@ export function IslandShell() {
           </motion.div>
         )}
       </AnimatePresence>
-      {mode !== "hidden" && <LumiCanvas />}
+      {mode !== "hidden" && !menu && <LumiCanvas />}
     </motion.div>
   );
 }

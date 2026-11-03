@@ -10,6 +10,7 @@ export const idleSnapshot: IslandSnapshot = {
   extension_connected: false,
   hovered: false,
   shelf: [],
+  dnd: false,
 };
 
 interface IslandStore {

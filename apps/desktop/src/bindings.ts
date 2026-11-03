@@ -23,6 +23,9 @@ async islandDismiss() : Promise<void> {
 async islandHitbox(rect: Rect) : Promise<void> {
     await TAURI_INVOKE("island_hitbox", { rect });
 },
+async islandSetDnd(on: boolean) : Promise<void> {
+    await TAURI_INVOKE("island_set_dnd", { on });
+},
 /**
  * Simulasi kejadian untuk mencoba pulau sebelum fitur aslinya ada. Hanya aktif di build debug.
  */
@@ -310,7 +313,11 @@ mood: Mood; extension_connected: boolean; hovered: boolean;
 /**
  * Isi rak; hanya terisi saat pulau menampilkan rak.
  */
-shelf: ShelfItemDto[] }
+shelf: ShelfItemDto[]; 
+/**
+ * Jangan Ganggu aktif (menu klik kanan menampilkan centangnya).
+ */
+dnd: boolean }
 /**
  * Dikirim setiap state pulau berubah.
  */

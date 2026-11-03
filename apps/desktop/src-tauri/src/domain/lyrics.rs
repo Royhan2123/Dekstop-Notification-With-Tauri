@@ -123,7 +123,7 @@ pub fn pick_best<'a>(
         .map(|(c, _)| c)
 }
 
-/// Buang bagian dalam kurung `(...)`/`[...]`, ekor setelah `|`, dan penanda kanal YouTube.
+/// Buang bagian dalam kurung `(...)`/`[...]`, ekor setelah `|`, dan tagar (`#lyrics`).
 fn clean(s: &str) -> String {
     let mut out = String::new();
     let mut depth = 0u32;
@@ -138,6 +138,7 @@ fn clean(s: &str) -> String {
     }
     out.replace(['\u{2013}', '\u{2014}'], "-")
         .split_whitespace()
+        .filter(|w| !w.starts_with('#'))
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -155,9 +156,18 @@ pub fn search_queries(artist: &str, title: &str) -> Vec<String> {
         if !artist.is_empty() {
             queries.push(format!("{artist} {title}"));
         }
-        queries.push(title);
+        queries.push(title.clone());
+        // Judul YouTube "Lagu - Artis ..." atau "Artis - Lagu ...": urutannya tidak pasti dan ekornya sering
+        // berisi tambahan ("Lagu Nostalgia Terbaik"), jadi coba juga tiap bagian dan pasangan kata pertamanya.
+        if let Some((a, b)) = title.split_once(" - ") {
+            let b_first = b.split_whitespace().next().unwrap_or_default();
+            queries.push(format!("{a} {b_first}"));
+            queries.push(a.to_string());
+            queries.push(b.to_string());
+        }
     }
-    queries.dedup();
+    let mut seen = std::collections::HashSet::new();
+    queries.retain(|q| !q.trim().is_empty() && seen.insert(q.clone()));
     queries
 }
 
@@ -276,6 +286,17 @@ mod tests {
             lrc,
         )];
         assert!(pick_best(&feat, "Weird Genius", "Lathi", 189_000).is_some());
+        // judul YouTube "Lagu - Artis ..." dari kanal lirik: artis ada di judul, bukan di nama kanal
+        let slam = [named("Slam", "Rindiani", 277.0, lrc)];
+        assert!(
+            pick_best(
+                &slam,
+                "MVM INDONESIA",
+                "RINDIANI - SLAM (LIRIK VIDEO) Lagu Nostalgia Terbaik #lyrics",
+                276_000
+            )
+            .is_some()
+        );
     }
 
     #[test]
@@ -286,7 +307,27 @@ mod tests {
         );
         assert_eq!(
             search_queries("SOUND OF RAX", "VOID \u{2013} HBRP | REMIX | DARK"),
-            ["SOUND OF RAX VOID - HBRP", "VOID - HBRP"]
+            [
+                "SOUND OF RAX VOID - HBRP",
+                "VOID - HBRP",
+                "VOID HBRP",
+                "VOID",
+                "HBRP"
+            ]
+        );
+        // tagar dibuang; judul panjang dipecah per bagian
+        assert_eq!(
+            search_queries(
+                "MVM INDONESIA",
+                "RINDIANI - SLAM (LIRIK VIDEO) Lagu Nostalgia Terbaik #lyrics"
+            ),
+            [
+                "MVM INDONESIA RINDIANI - SLAM Lagu Nostalgia Terbaik",
+                "RINDIANI - SLAM Lagu Nostalgia Terbaik",
+                "RINDIANI SLAM",
+                "RINDIANI",
+                "SLAM Lagu Nostalgia Terbaik",
+            ]
         );
         assert_eq!(search_queries("", "Lathi"), ["Lathi"]);
         assert!(search_queries("x", "(cuma kurung)").is_empty());

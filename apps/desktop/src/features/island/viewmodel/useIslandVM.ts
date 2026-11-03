@@ -17,29 +17,29 @@ export function shapeFor(s: IslandSnapshot): Shape {
       return { width: 0, height: 0, radius: 0, opacity: 0 };
     case "idle":
       return s.hovered
-        ? { width: 150, height: 36, radius: 18, opacity: 1 }
-        : { width: 120, height: 32, radius: 16, opacity: 1 };
+        ? { width: 112, height: 38, radius: 19, opacity: 1 }
+        : { width: 84, height: 38, radius: 19, opacity: 1 };
     case "compact":
-      return { width: 240, height: 36, radius: 18, opacity: 1 };
+      return { width: 276, height: 40, radius: 20, opacity: 1 };
     case "expanded":
       // Kartu review berisi temuan butuh ruang untuk daftar dan tombol keputusan.
       if (s.review && s.review.findings.length > 0) {
-        return { width: 480, height: 250, radius: 28, opacity: 1 };
+        return { width: 556, height: 250, radius: 28, opacity: 1 };
       }
       // Rak file: kepala + satu baris per berkas (maksimal 5 terlihat, sisanya digulir).
       if (s.content?.kind === "shelf") {
-        return { width: 420, height: 84 + 28 * Math.min(Math.max(s.shelf.length, 1), 5), radius: 28, opacity: 1 };
+        return { width: 492, height: 84 + 28 * Math.min(Math.max(s.shelf.length, 1), 5), radius: 28, opacity: 1 };
       }
       // Quick Ask: kotak pertanyaan kecil, memanjang saat ada jawaban.
       if (s.content?.kind === "ask") {
         const answered = s.content.detail === "done" || s.content.detail === "failed";
-        return { width: 480, height: answered ? 260 : 110, radius: 28, opacity: 1 };
+        return { width: 556, height: answered ? 260 : 110, radius: 28, opacity: 1 };
       }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {
-        return { width: 420, height: 200, radius: 28, opacity: 1 };
+        return { width: 492, height: 200, radius: 28, opacity: 1 };
       }
-      return { width: 420, height: 140, radius: 28, opacity: 1 };
+      return { width: 492, height: 140, radius: 28, opacity: 1 };
   }
 }
 

@@ -24,7 +24,7 @@
 
 .island[data-mode="idle"] .lumi {
   top: calc((100% - 30px) / 2);
-  left: 6px;
+  left: calc((100% - 30px) / 2);
 }
 
 .island[data-mode="compact"] .lumi {

@@ -44,7 +44,14 @@ html[data-window="island"] #root {
   justify-content: center;
   height: 112px;
   padding: 12px 20px;
+  box-sizing: border-box;
   white-space: normal;
+}
+
+/* Kartu info bertumpuk: teks tidak boleh melar (flex:1 milik pil satu baris) dan mendorong tombol. */
+.island-body.expanded .island-text {
+  flex: none;
+  max-width: 100%;
 }
 
 .island-label {

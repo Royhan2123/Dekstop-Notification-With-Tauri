@@ -2,36 +2,39 @@ import "./lumi.css";
 import type { Mood } from "../../../shared/ipc";
 import { useLumiVM } from "../viewmodel/useLumiVM";
 
+/** Bola mata putih + pupil bersorot; pupil bergeser mengikuti kursor lewat variabel CSS --lx/--ly. */
+function Eye({ cx, cy, r = 3 }: { cx: number; cy: number; r?: number }) {
+  return (
+    <g className="lumi-eye">
+      <ellipse cx={cx} cy={cy} rx="4.8" ry="5.6" fill="#fff" />
+      <g className="lumi-pupil">
+        <circle cx={cx} cy={cy + 0.4} r={r} fill="#1b1840" />
+        <circle cx={cx - 1} cy={cy - 1} r="1.1" fill="#fff" />
+        <circle cx={cx + 1.1} cy={cy + 1.6} r="0.5" fill="#fff" opacity="0.7" />
+      </g>
+    </g>
+  );
+}
+
 function Eyes({ mood }: { mood: Mood }) {
   switch (mood) {
     case "happy":
-      return <path className="lumi-line" d="M14 23 q4 -5 8 0 M26 23 q4 -5 8 0" />;
+      return <path className="lumi-line" d="M13 24 q4 -5 8 0 M27 24 q4 -5 8 0" />;
     case "sleepy":
-      return <path className="lumi-line" d="M14 24 h8 M26 24 h8" />;
+      return <path className="lumi-line" d="M13 24 h8 M27 24 h8" />;
     case "panic":
       return (
-        <g className="lumi-eyes">
-          <circle cx="18" cy="23" r="5" fill="#fff" />
-          <circle cx="30" cy="23" r="5" fill="#fff" />
-          <circle cx="18" cy="23" r="1.6" fill="#111" />
-          <circle cx="30" cy="23" r="1.6" fill="#111" />
-        </g>
-      );
-    case "thinking":
-      return (
-        <g className="lumi-eyes lumi-look">
-          <circle cx="18" cy="22" r="3.4" fill="#fff" />
-          <circle cx="30" cy="22" r="3.4" fill="#fff" />
-          <circle cx="19" cy="21" r="1.4" fill="#111" />
-          <circle cx="31" cy="21" r="1.4" fill="#111" />
-        </g>
+        <>
+          <Eye cx={17} cy={23} r={1.6} />
+          <Eye cx={31} cy={23} r={1.6} />
+        </>
       );
     default:
       return (
-        <g className="lumi-eyes lumi-blink">
-          <ellipse cx="18" cy="23" rx="3" ry="4" fill="#111" />
-          <ellipse cx="30" cy="23" rx="3" ry="4" fill="#111" />
-        </g>
+        <>
+          <Eye cx={17} cy={23} />
+          <Eye cx={31} cy={23} />
+        </>
       );
   }
 }
@@ -88,7 +91,7 @@ function Extras({ mood }: { mood: Mood }) {
   }
 }
 
-/** Lumi: bola cahaya ungu-biru. Digambar sebagai SVG supaya ringan dan bisa dijeda total. */
+/** Lumi: bola cahaya ungu-biru bergaya 3D (gradasi, kilau, bayangan). SVG supaya ringan dan bisa dijeda total. */
 export function LumiCanvas() {
   const vm = useLumiVM();
   const cls = ["lumi", `mood-${vm.mood}`, vm.calm && "calm", vm.poked && "poked"]
@@ -96,6 +99,7 @@ export function LumiCanvas() {
     .join(" ");
   return (
     <svg
+      ref={vm.ref}
       className={cls}
       viewBox="0 0 48 48"
       role="img"
@@ -106,20 +110,33 @@ export function LumiCanvas() {
       }}
     >
       <defs>
-        <radialGradient id="lumi-body" cx="35%" cy="30%" r="80%">
-          <stop offset="0%" stopColor="#b9a4ff" />
-          <stop offset="100%" stopColor="#4a8dff" />
+        <radialGradient id="lumi-body" cx="35%" cy="28%" r="80%">
+          <stop offset="0%" stopColor="#e2d8ff" />
+          <stop offset="45%" stopColor="#9a86ff" />
+          <stop offset="100%" stopColor="#4262f0" />
         </radialGradient>
+        <linearGradient id="lumi-shade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="55%" stopColor="#1a1a6a" stopOpacity="0" />
+          <stop offset="100%" stopColor="#1a1a6a" stopOpacity="0.4" />
+        </linearGradient>
       </defs>
+      <ellipse cx="24" cy="44.5" rx="13" ry="2.4" fill="#000" opacity="0.28" />
       <g className="lumi-bob">
+        <path className="lumi-antenna" d="M24 9 q-1.5 -4 2.5 -6" fill="none" stroke="#b9a8ff" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="27" cy="3.4" r="2.2" fill="#ffd84d" />
         <ellipse
           className="lumi-body"
           cx="24"
           cy="26"
-          rx="18"
-          ry="16"
+          rx="19"
+          ry="17"
           fill={vm.mood === "panic" ? "#ff5d5d" : "url(#lumi-body)"}
         />
+        <ellipse cx="24" cy="26" rx="19" ry="17" fill="url(#lumi-shade)" />
+        <ellipse cx="15" cy="15.5" rx="6" ry="3.4" transform="rotate(-28 15 15.5)" fill="#fff" opacity="0.55" />
+        <circle cx="9.5" cy="22" r="1.1" fill="#fff" opacity="0.55" />
+        <ellipse cx="10.5" cy="31" rx="3.2" ry="2" fill="#ff8fb1" opacity="0.55" />
+        <ellipse cx="37.5" cy="31" rx="3.2" ry="2" fill="#ff8fb1" opacity="0.55" />
         <Eyes mood={vm.mood} />
         <Mouth mood={vm.mood} />
       </g>

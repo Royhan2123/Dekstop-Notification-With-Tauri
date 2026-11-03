@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use serde::Deserialize;
 use specta::Type;
-use tauri::WebviewWindow;
+use tauri::{Emitter, WebviewWindow};
 
 use super::island_window::{center_top, monitor_at};
 
@@ -44,9 +44,16 @@ pub fn spawn(window: WebviewWindow, hitbox: Arc<Hitbox>) {
     tauri::async_runtime::spawn(async move {
         let mut ignoring = true;
         let mut origin = None;
+        let mut last_cursor = (0, 0);
         let _ = window.set_ignore_cursor_events(true);
         loop {
-            let delay = tick(&window, &hitbox, &mut ignoring, &mut origin);
+            let delay = tick(
+                &window,
+                &hitbox,
+                &mut ignoring,
+                &mut origin,
+                &mut last_cursor,
+            );
             tokio::time::sleep(delay).await;
         }
     });
@@ -58,6 +65,7 @@ fn tick(
     hitbox: &Hitbox,
     ignoring: &mut bool,
     origin: &mut Option<(i32, i32)>,
+    last_cursor: &mut (i32, i32),
 ) -> Duration {
     let Ok(cursor) = window.cursor_position() else {
         return SLOW;
@@ -74,6 +82,20 @@ fn tick(
     }
 
     let scale = window.scale_factor().unwrap_or(1.0);
+    // Mata Lumi mengikuti kursor di mana pun; jendela klik-tembus tidak menerima gerak mouse, jadi dikirim dari sini.
+    let here = (cursor.x as i32, cursor.y as i32);
+    if (here.0 - last_cursor.0).abs() + (here.1 - last_cursor.1).abs() >= 3
+        && let Ok(pos) = window.outer_position()
+    {
+        *last_cursor = here;
+        let _ = window.emit(
+            "cursor",
+            (
+                (cursor.x - pos.x as f64) / scale,
+                (cursor.y - pos.y as f64) / scale,
+            ),
+        );
+    }
     let near = cursor.y - (top_left.1 as f64) < NEAR_TOP * scale;
     let inside = near
         && window.outer_position().is_ok_and(|pos| {

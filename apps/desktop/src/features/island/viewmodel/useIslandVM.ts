@@ -3,6 +3,9 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { commands, subscribeIsland, type IslandSnapshot } from "../../../shared/ipc";
 import { useIslandStore } from "../store";
 
+/** Tinggi dok fitur di dasar pulau terbuka. */
+export const DOCK_H = 46;
+
 export interface Shape {
   width: number;
   height: number;
@@ -24,22 +27,27 @@ export function shapeFor(s: IslandSnapshot): Shape {
     case "expanded":
       // Kartu review berisi temuan butuh ruang untuk daftar dan tombol keputusan.
       if (s.review && s.review.findings.length > 0) {
-        return { width: 556, height: 250, radius: 28, opacity: 1 };
+        return { width: 584, height: 250 + DOCK_H, radius: 28, opacity: 1 };
       }
       // Rak file: kepala + satu baris per berkas (maksimal 5 terlihat, sisanya digulir).
       if (s.content?.kind === "shelf") {
-        return { width: 492, height: 84 + 28 * Math.min(Math.max(s.shelf.length, 1), 5), radius: 28, opacity: 1 };
+        return {
+          width: 520,
+          height: 84 + DOCK_H + 28 * Math.min(Math.max(s.shelf.length, 1), 5),
+          radius: 28,
+          opacity: 1,
+        };
       }
       // Quick Ask: kotak pertanyaan kecil, memanjang saat ada jawaban.
       if (s.content?.kind === "ask") {
         const answered = s.content.detail === "done" || s.content.detail === "failed";
-        return { width: 556, height: answered ? 260 : 110, radius: 28, opacity: 1 };
+        return { width: 584, height: (answered ? 260 : 110) + DOCK_H, radius: 28, opacity: 1 };
       }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {
-        return { width: 492, height: 200, radius: 28, opacity: 1 };
+        return { width: 520, height: 200 + DOCK_H, radius: 28, opacity: 1 };
       }
-      return { width: 492, height: 140, radius: 28, opacity: 1 };
+      return { width: 520, height: 140 + DOCK_H, radius: 28, opacity: 1 };
   }
 }
 
@@ -71,8 +79,7 @@ export function useIslandVM() {
     hasFindings: (snapshot.review?.findings.length ?? 0) > 0,
     onHover: (hovered: boolean) => void commands.islandHover(hovered),
     // Klik pulau kosong menampilkan ringkasan kesehatan hari ini.
-    onClick: () =>
-      void (snapshot.mode === "idle" ? commands.healthPeek() : commands.islandClick()),
+    onClick: () => void (snapshot.mode === "idle" ? commands.healthPeek() : commands.islandClick()),
     onDismiss: () => void commands.islandDismiss(),
     // shortcut: klik kanan langsung membuka Setelan; menu cepat (Fokus, Jeda notifikasi) menyusul.
     onOpenSettings: () => void commands.openSettings(),

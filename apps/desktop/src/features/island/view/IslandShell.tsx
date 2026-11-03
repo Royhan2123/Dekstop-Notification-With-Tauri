@@ -7,11 +7,15 @@ import { AskCard } from "../../ask/view/AskCard";
 import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
+import { ClipboardPanel } from "../../clipboard/view/ClipboardPanel";
+import { IslandDock } from "./IslandDock";
 import { IslandMenu, menuShape } from "./IslandMenu";
 import { ShelfCard } from "../../shelf/view/ShelfCard";
 import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
 import { useIslandVM } from "../viewmodel/useIslandVM";
+
+const panelShape = { width: 520, height: 298, radius: 28, opacity: 1 };
 
 export function IslandShell() {
   const vm = useIslandVM();
@@ -32,8 +36,15 @@ export function IslandShell() {
   }, [reportHitbox]);
 
   const [menu, setMenu] = useState(false);
+  const [panel, setPanel] = useState<"clipboard" | null>(null);
   const { content, mode } = vm;
-  const shape = menu ? menuShape : vm.shape;
+  const expanded = mode === "expanded";
+  const panelOpen = panel !== null && expanded;
+  // Panel hanya hidup selama pulau terbuka.
+  useEffect(() => {
+    if (!expanded) setPanel(null);
+  }, [expanded]);
+  const shape = menu ? menuShape : panelOpen ? panelShape : vm.shape;
   return (
     <motion.div
       ref={ref}
@@ -59,9 +70,9 @@ export function IslandShell() {
       }}
     >
       <AnimatePresence mode="popLayout" initial={false}>
-        {(menu || content) && (
+        {(menu || panelOpen || content) && (
           <motion.div
-            key={menu ? "menu" : `${content?.kind}-${mode}`}
+            key={menu ? "menu" : panelOpen ? "panel" : `${content?.kind}-${mode}`}
             className={menu ? "island-content no-gutter" : "island-content"}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -70,6 +81,8 @@ export function IslandShell() {
           >
             {menu ? (
               <IslandMenu onClose={() => setMenu(false)} onOpenSettings={vm.onOpenSettings} />
+            ) : panelOpen ? (
+              <ClipboardPanel onClose={() => setPanel(null)} />
             ) : !content ? null : content.kind === "volume" ? (
               <VolumeHud level={Number(content.text) || 0} muted={content.detail === "muted"} />
             ) : content.kind === "shelf" && mode === "expanded" ? (
@@ -105,6 +118,9 @@ export function IslandShell() {
           </motion.div>
         )}
       </AnimatePresence>
+      {expanded && !menu && (
+        <IslandDock panel={panel} onPanel={setPanel} onOpenSettings={vm.onOpenSettings} />
+      )}
       {mode !== "hidden" && !menu && <LumiCanvas />}
     </motion.div>
   );

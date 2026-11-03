@@ -525,3 +525,104 @@ html[data-window="island"] #root {
 .island-menu button:hover {
   background: #2a2a2a;
 }
+
+.island-dock {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-top: 1px solid #1d1d1d;
+}
+
+.dock-scroll {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  cursor: grab;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+  padding: 0 8px;
+}
+
+.dock-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.dock-btn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #1a1a1a;
+  color: #d8d8d8;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.dock-btn:hover {
+  background: #2a2a2a;
+}
+
+.dock-btn.active {
+  background: #2fcf9c;
+  color: #04231b;
+}
+
+.dock-settings {
+  background: #262626;
+}
+
+.clip-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  font-size: 12px;
+}
+
+.clip-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  max-height: 170px;
+  list-style: none;
+}
+
+.clip-rows button {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #eee;
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.clip-rows button:hover {
+  background: #2a2a2a;
+}

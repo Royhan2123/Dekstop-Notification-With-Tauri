@@ -12,6 +12,8 @@ pub enum Content {
     Ask(AskPhase),
     /// HUD volume: muncul sebentar saat volume atau bisu berubah.
     Volume(VolumeInfo),
+    /// HUD kecerahan layar (0-100), seumur HUD volume.
+    Brightness(u8),
     /// Rak file: daftar berkas di `IslandState::shelf`.
     Shelf,
 }

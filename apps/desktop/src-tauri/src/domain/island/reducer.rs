@@ -56,7 +56,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
             if token == s.token {
                 match s.view {
                     View::Expanded(Content::Media) => s.view = View::Compact(Content::Media),
-                    View::Compact(Content::Volume(_)) => settle(&mut s, ctx, &mut fx),
+                    View::Compact(Content::Volume(_) | Content::Brightness(_)) => {
+                        settle(&mut s, ctx, &mut fx)
+                    }
                     View::Expanded(ref c) if is_soft(c) => settle(&mut s, ctx, &mut fx),
                     _ => {}
                 }
@@ -64,15 +66,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
         IslandAction::HideForFullscreen(b) => s.fullscreen = b,
         IslandAction::ExtensionConnected(b) => s.extension = b,
-        IslandAction::VolumeChanged(v) => {
-            // HUD hanya menumpang di pulau kosong atau media ringkas; konten lain lebih penting.
-            let free = matches!(
-                s.view,
-                View::Idle | View::Compact(Content::Media | Content::Volume(_))
-            );
-            if free {
-                show(&mut s, Content::Volume(v), ctx, &mut fx);
-            }
+        IslandAction::VolumeChanged(v) => show_hud(&mut s, Content::Volume(v), ctx, &mut fx),
+        IslandAction::BrightnessChanged(b) => {
+            show_hud(&mut s, Content::Brightness(b), ctx, &mut fx)
         }
         IslandAction::AskOpen => {
             let c = Content::Ask(AskPhase::Input);
@@ -121,11 +117,25 @@ fn show_shelf(s: &mut IslandState, ctx: &Ctx, fx: &mut Vec<Effect>) {
     }
 }
 
+/// HUD (volume, kecerahan) hanya menumpang di pulau kosong atau media ringkas; konten lain lebih penting.
+fn show_hud(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
+    let free = matches!(
+        s.view,
+        View::Idle | View::Compact(Content::Media | Content::Volume(_) | Content::Brightness(_))
+    );
+    if free {
+        show(s, c, ctx, fx);
+    }
+}
+
 /// Konten informatif: boleh ditahan Jangan Ganggu dan menutup sendiri. Hasil review yang
 /// bersih (tanpa temuan) juga begini; yang berisi temuan menunggu keputusan pengguna.
 fn is_soft(c: &Content) -> bool {
     match c {
-        Content::HealthAlert(_) | Content::Notice(_) | Content::Volume(_) => true,
+        Content::HealthAlert(_)
+        | Content::Notice(_)
+        | Content::Volume(_)
+        | Content::Brightness(_) => true,
         Content::ReviewResult(r) => r.findings.is_empty(),
         _ => false,
     }
@@ -155,7 +165,7 @@ fn enqueue(s: &mut IslandState, c: Content, ctx: &Ctx) {
 fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
     s.token += 1;
     if is_soft(&c) {
-        let ms = if matches!(c, Content::Volume(_)) {
+        let ms = if matches!(c, Content::Volume(_) | Content::Brightness(_)) {
             ctx.hud_ms
         } else {
             ctx.auto_dismiss_ms
@@ -163,7 +173,10 @@ fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
         fx.push(Effect::StartTimer { token: s.token, ms });
     }
     s.view = match c {
-        Content::Media | Content::ReviewRunning(_) | Content::Volume(_) => View::Compact(c),
+        Content::Media
+        | Content::ReviewRunning(_)
+        | Content::Volume(_)
+        | Content::Brightness(_) => View::Compact(c),
         _ => View::Expanded(c),
     };
 }
@@ -331,6 +344,25 @@ mod tests {
         );
         let (s, _) = run(s, IslandAction::Timeout(second));
         assert_eq!(s.view, View::Compact(Content::Media));
+    }
+
+    #[test]
+    fn hud_kecerahan_tampil_singkat_lalu_kembali_ke_media_dan_tidak_menimpa_review() {
+        let (s, _) = run(IslandState::default(), IslandAction::MediaChanged(media()));
+        let (s, fx) = run(s, IslandAction::BrightnessChanged(60));
+        assert_eq!(s.view, View::Compact(Content::Brightness(60)));
+        let Effect::StartTimer { token, ms } = fx[0];
+        assert_eq!(ms, Ctx::default().hud_ms);
+        let (s, _) = run(s, IslandAction::Timeout(token));
+        assert_eq!(s.view, View::Compact(Content::Media));
+
+        let (s, _) = run(
+            IslandState::default(),
+            IslandAction::ReviewStarted(ReviewId(1)),
+        );
+        let (s, fx) = run(s, IslandAction::BrightnessChanged(10));
+        assert_eq!(s.view, View::Compact(Content::ReviewRunning(ReviewId(1))));
+        assert!(fx.is_empty());
     }
 
     #[test]

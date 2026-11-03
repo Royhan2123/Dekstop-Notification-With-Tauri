@@ -8,7 +8,7 @@ impl Content {
             Content::ReviewResult(_) | Content::Shelf => 5,
             Content::ReviewRunning(_) => 4,
             Content::HealthAlert(_) => 3,
-            Content::Notice(_) | Content::Volume(_) => 2,
+            Content::Notice(_) | Content::Volume(_) | Content::Brightness(_) => 2,
             Content::Media => 1,
         }
     }

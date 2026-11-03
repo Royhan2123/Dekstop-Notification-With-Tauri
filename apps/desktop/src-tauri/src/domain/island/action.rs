@@ -18,6 +18,8 @@ pub enum IslandAction {
     /// Pengguna memanggil Quick Ask (pintasan keyboard).
     /// Volume atau bisu berubah (dari tombol volume, mixer, dsb).
     VolumeChanged(VolumeInfo),
+    /// Kecerahan layar internal berubah (tombol Fn, Pengaturan Windows, dsb).
+    BrightnessChanged(u8),
     AskOpen,
     /// Kemajuan pertanyaan; diabaikan bila kotak Quick Ask sudah ditutup.
     AskUpdate(AskPhase),

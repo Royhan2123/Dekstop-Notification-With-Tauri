@@ -34,14 +34,21 @@ pub fn mood_for(s: &IslandState) -> Mood {
         Some(Content::Ask(AskPhase::Thinking)) => Mood::Thinking,
         Some(Content::Ask(AskPhase::Done(_))) => Mood::Happy,
         Some(Content::Ask(_)) => Mood::Idle,
-        Some(Content::Media | Content::Volume(_) | Content::Shelf) | None if music => {
+        Some(Content::Media | Content::Volume(_) | Content::Brightness(_) | Content::Shelf)
+        | None
+            if music =>
+        {
             Mood::Listening
         }
         // Jangan Ganggu (termasuk saat fokus Pomodoro): Mino ikut berkonsentrasi.
-        Some(Content::Media | Content::Volume(_) | Content::Shelf) | None if s.dnd => {
+        Some(Content::Media | Content::Volume(_) | Content::Brightness(_) | Content::Shelf)
+        | None
+            if s.dnd =>
+        {
             Mood::Thinking
         }
-        Some(Content::Media | Content::Volume(_) | Content::Shelf) | None => Mood::Idle,
+        Some(Content::Media | Content::Volume(_) | Content::Brightness(_) | Content::Shelf)
+        | None => Mood::Idle,
     }
 }
 

@@ -99,7 +99,9 @@ export function IslandShell() {
               ) : (
                 <ClipboardPanel onClose={() => setPanel(null)} />
               )
-            ) : !content ? null : content.kind === "volume" ? (
+            ) : !content ? null : content.kind === "brightness" ? (
+              <VolumeHud level={Number(content.text) || 0} muted={false} kind="brightness" />
+            ) : content.kind === "volume" ? (
               <VolumeHud level={Number(content.text) || 0} muted={content.detail === "muted"} />
             ) : content.kind === "shelf" && mode === "expanded" ? (
               <ShelfCard />

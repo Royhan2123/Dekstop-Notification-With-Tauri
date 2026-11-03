@@ -33,6 +33,7 @@ pub enum ContentKind {
     Notice,
     Ask,
     Volume,
+    Brightness,
     Shelf,
 }
 
@@ -242,6 +243,11 @@ impl From<&IslandState> for IslandSnapshot {
                 kind: ContentKind::Volume,
                 text: v.level.to_string(),
                 detail: Some(if v.muted { "muted" } else { "volume" }.into()),
+            },
+            Content::Brightness(b) => IslandContent {
+                kind: ContentKind::Brightness,
+                text: b.to_string(),
+                detail: None,
             },
             Content::Ask(p) => {
                 let (phase, text) = match p {

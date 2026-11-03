@@ -3,23 +3,37 @@ import { useT } from "../../../shared/i18n";
 interface Props {
   level: number;
   muted: boolean;
+  /** `brightness`: ikon matahari dan label kecerahan, tanpa status bisu. */
+  kind?: "volume" | "brightness";
 }
 
 /**
  * HUD volume gaya pulau: ikon, bilah, dan persen; muncul sebentar saat volume berubah.
  * Data lewat props (bukan store) agar animasi keluar tetap menampilkan nilai terakhir HUD ini.
  */
-export function VolumeHud({ level, muted }: Props) {
+export function VolumeHud({ level, muted, kind = "volume" }: Props) {
   const t = useT();
 
   return (
     <div
       className="volume-hud"
       role="status"
-      aria-label={muted ? t("hud.muted") : `${t("island.volume")} ${level}%`}
+      aria-label={
+        muted
+          ? t("hud.muted")
+          : `${t(kind === "brightness" ? "hud.brightness" : "island.volume")} ${level}%`
+      }
     >
       <span className="volume-icon" aria-hidden="true">
-        {muted || level === 0 ? "🔇" : level < 50 ? "🔉" : "🔊"}
+        {kind === "brightness"
+          ? level < 50
+            ? "🔅"
+            : "🔆"
+          : muted || level === 0
+            ? "🔇"
+            : level < 50
+              ? "🔉"
+              : "🔊"}
       </span>
       <div className="volume-bar">
         <div className="volume-bar-fill" style={{ width: `${muted ? 0 : level}%` }} />

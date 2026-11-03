@@ -6,6 +6,7 @@ use tauri::{App, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 use crate::application::bridge_service::BridgeService;
+use crate::application::brightness_service::BrightnessService;
 use crate::application::charger_service::ChargerService;
 use crate::application::clipboard_service::ClipboardService;
 use crate::application::fullscreen_service::FullscreenService;
@@ -146,6 +147,11 @@ pub fn assemble(app: &App) {
 
     app.manage(NetService::new(Arc::new(SystemNet)));
 
+    spawn_brightness_watch(BrightnessService::new(
+        Arc::new(SystemBrightness),
+        island.clone(),
+    ));
+
     spawn_fullscreen_watch(FullscreenService::new(
         Arc::new(SystemFullscreen),
         settings.clone(),
@@ -211,6 +217,17 @@ fn spawn_charger_watch(charger: Arc<ChargerService>) {
         loop {
             interval.tick().await;
             charger.tick();
+        }
+    });
+}
+
+/// Periksa kecerahan 2 kali per detik di thread sendiri (WMI memakai COM per thread);
+/// satu kueri WMI lokal murah dan sambungannya dipakai ulang.
+fn spawn_brightness_watch(brightness: Arc<BrightnessService>) {
+    std::thread::spawn(move || {
+        loop {
+            brightness.tick();
+            std::thread::sleep(Duration::from_millis(500));
         }
     });
 }

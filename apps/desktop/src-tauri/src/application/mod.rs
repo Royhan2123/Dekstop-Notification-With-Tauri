@@ -1,5 +1,6 @@
 //! Application: use case/service yang hanya bergantung pada `domain`.
 pub mod bridge_service;
+pub mod brightness_service;
 pub mod charger_service;
 pub mod clipboard_service;
 pub mod fullscreen_service;

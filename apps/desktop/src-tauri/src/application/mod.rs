@@ -11,3 +11,4 @@ pub mod review;
 pub mod settings_service;
 #[cfg(test)]
 pub mod test_support;
+pub mod volume_service;

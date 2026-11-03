@@ -1,4 +1,4 @@
-use super::state::AskPhase;
+use super::state::{AskPhase, VolumeInfo};
 use crate::domain::model::{HealthAlert, MediaInfo, ReviewId, ReviewReport};
 
 pub enum IslandAction {
@@ -16,6 +16,8 @@ pub enum IslandAction {
     DoNotDisturb(bool),
     ExtensionConnected(bool),
     /// Pengguna memanggil Quick Ask (pintasan keyboard).
+    /// Volume atau bisu berubah (dari tombol volume, mixer, dsb).
+    VolumeChanged(VolumeInfo),
     AskOpen,
     /// Kemajuan pertanyaan; diabaikan bila kotak Quick Ask sudah ditutup.
     AskUpdate(AskPhase),

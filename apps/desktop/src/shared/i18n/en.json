@@ -84,6 +84,8 @@
   "settings.clipboard.copy": "Copy",
   "settings.clipboard.empty": "Nothing recorded yet",
   "island.ask": "Ask",
+  "island.volume": "Volume",
+  "hud.muted": "Muted",
   "ask.placeholder": "Ask anything...",
   "ask.send": "Ask",
   "ask.close": "Close",

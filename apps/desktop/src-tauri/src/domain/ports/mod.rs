@@ -87,6 +87,11 @@ pub trait BrightnessReader: Send + Sync {
     fn read(&self) -> Option<u8>;
 }
 
+/// Volume utama dan status bisu; `None` bila tidak ada perangkat keluaran atau OS tidak mendukung.
+pub trait VolumeReader: Send + Sync {
+    fn read(&self) -> Option<crate::domain::island::state::VolumeInfo>;
+}
+
 /// Baca/tulis teks clipboard sistem.
 pub trait ClipboardAccess: Send + Sync {
     fn read_text(&self) -> Option<String>;

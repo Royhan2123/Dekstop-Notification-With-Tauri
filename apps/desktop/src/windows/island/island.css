@@ -406,3 +406,33 @@ html[data-window="island"] #root {
 .ask-error {
   color: #ff8a80;
 }
+
+.volume-hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 48px 0 16px;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.volume-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #333;
+  overflow: hidden;
+}
+
+.volume-bar-fill {
+  height: 100%;
+  background: #fff;
+  transition: width 0.1s ease-out;
+}
+
+.volume-value {
+  min-width: 34px;
+  text-align: right;
+}

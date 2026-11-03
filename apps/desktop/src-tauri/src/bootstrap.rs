@@ -15,6 +15,7 @@ use crate::application::pomodoro_service::PomodoroService;
 use crate::application::quick_ask_service::QuickAskService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
+use crate::application::volume_service::VolumeService;
 use crate::domain::bridge::clean_query;
 use crate::domain::island::action::IslandAction;
 use crate::domain::model::review::PushRef;
@@ -34,6 +35,7 @@ use crate::infrastructure::system::brightness::SystemBrightness;
 use crate::infrastructure::system::clipboard::SystemClipboard;
 use crate::infrastructure::system::idle::SystemIdle;
 use crate::infrastructure::system::power::SystemPower;
+use crate::infrastructure::system::volume::SystemVolume;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
 use crate::interface::ipc;
 use crate::interface::window::hit_test::{self, Hitbox};
@@ -138,6 +140,8 @@ pub fn assemble(app: &App) {
         island.clone(),
     ));
 
+    spawn_volume_watch(VolumeService::new(Arc::new(SystemVolume), island.clone()));
+
     let clipboard = ClipboardService::new(Arc::new(SystemClipboard), settings.clone());
     app.manage(clipboard.clone());
     spawn_clipboard_watch(clipboard);
@@ -195,6 +199,17 @@ fn spawn_charger_watch(charger: Arc<ChargerService>) {
         loop {
             interval.tick().await;
             charger.tick();
+        }
+    });
+}
+
+/// Periksa volume 4 kali per detik di thread sendiri (COM diinisialisasi per thread);
+/// satu panggilan Core Audio murah, jadi tidak perlu notifikasi event OS.
+fn spawn_volume_watch(volume: Arc<VolumeService>) {
+    std::thread::spawn(move || {
+        loop {
+            volume.tick();
+            std::thread::sleep(Duration::from_millis(250));
         }
     });
 }

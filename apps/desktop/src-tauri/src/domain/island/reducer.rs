@@ -56,6 +56,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
             if token == s.token {
                 match s.view {
                     View::Expanded(Content::Media) => s.view = View::Compact(Content::Media),
+                    View::Compact(Content::Volume(_)) => settle(&mut s, ctx, &mut fx),
                     View::Expanded(ref c) if is_soft(c) => settle(&mut s, ctx, &mut fx),
                     _ => {}
                 }
@@ -63,6 +64,16 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
         IslandAction::HideForFullscreen(b) => s.fullscreen = b,
         IslandAction::ExtensionConnected(b) => s.extension = b,
+        IslandAction::VolumeChanged(v) => {
+            // HUD hanya menumpang di pulau kosong atau media ringkas; konten lain lebih penting.
+            let free = matches!(
+                s.view,
+                View::Idle | View::Compact(Content::Media | Content::Volume(_))
+            );
+            if free {
+                show(&mut s, Content::Volume(v), ctx, &mut fx);
+            }
+        }
         IslandAction::AskOpen => {
             let c = Content::Ask(AskPhase::Input);
             if matches!(s.view.content(), Some(Content::Ask(_))) {
@@ -93,7 +104,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
 /// bersih (tanpa temuan) juga begini; yang berisi temuan menunggu keputusan pengguna.
 fn is_soft(c: &Content) -> bool {
     match c {
-        Content::HealthAlert(_) | Content::Notice(_) => true,
+        Content::HealthAlert(_) | Content::Notice(_) | Content::Volume(_) => true,
         Content::ReviewResult(r) => r.findings.is_empty(),
         _ => false,
     }
@@ -123,13 +134,15 @@ fn enqueue(s: &mut IslandState, c: Content, ctx: &Ctx) {
 fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
     s.token += 1;
     if is_soft(&c) {
-        fx.push(Effect::StartTimer {
-            token: s.token,
-            ms: ctx.auto_dismiss_ms,
-        });
+        let ms = if matches!(c, Content::Volume(_)) {
+            ctx.hud_ms
+        } else {
+            ctx.auto_dismiss_ms
+        };
+        fx.push(Effect::StartTimer { token: s.token, ms });
     }
     s.view = match c {
-        Content::Media | Content::ReviewRunning(_) => View::Compact(c),
+        Content::Media | Content::ReviewRunning(_) | Content::Volume(_) => View::Compact(c),
         _ => View::Expanded(c),
     };
 }
@@ -152,6 +165,7 @@ fn settle(s: &mut IslandState, ctx: &Ctx, fx: &mut Vec<Effect>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::island::state::VolumeInfo;
     use crate::domain::model::{HealthAlert, MediaInfo, ReviewId, ReviewReport};
 
     fn run(s: IslandState, a: IslandAction) -> (IslandState, Vec<Effect>) {
@@ -270,6 +284,62 @@ mod tests {
         assert_eq!(s2.view, View::Expanded(Content::Media));
         let (s, _) = run(s, IslandAction::Timeout(token));
         assert_eq!(s.view, View::Compact(Content::Media));
+    }
+
+    #[test]
+    fn hud_volume_singkat_diperbarui_di_tempat_dan_kembali_ke_media() {
+        let v = |level| {
+            IslandAction::VolumeChanged(VolumeInfo {
+                level,
+                muted: false,
+            })
+        };
+        let (s, _) = run(IslandState::default(), IslandAction::MediaChanged(media()));
+        let (s, fx) = run(s, v(40));
+        assert!(matches!(s.view, View::Compact(Content::Volume(i)) if i.level == 40));
+        let Effect::StartTimer { token: first, ms } = fx[0];
+        assert_eq!(ms, Ctx::default().hud_ms);
+
+        let (s, fx) = run(s, v(42));
+        assert!(matches!(s.view, View::Compact(Content::Volume(i)) if i.level == 42));
+        let Effect::StartTimer { token: second, .. } = fx[0];
+        let (s2, _) = run(s.clone(), IslandAction::Timeout(first));
+        assert!(
+            matches!(s2.view, View::Compact(Content::Volume(_))),
+            "timer lama diabaikan"
+        );
+        let (s, _) = run(s, IslandAction::Timeout(second));
+        assert_eq!(s.view, View::Compact(Content::Media));
+    }
+
+    #[test]
+    fn hud_volume_tidak_menimpa_konten_yang_lebih_penting() {
+        let v = IslandAction::VolumeChanged(VolumeInfo {
+            level: 10,
+            muted: true,
+        });
+        let (s, _) = run(
+            IslandState::default(),
+            IslandAction::ReviewStarted(ReviewId(1)),
+        );
+        let (s, fx) = run(s, v);
+        assert_eq!(s.view, View::Compact(Content::ReviewRunning(ReviewId(1))));
+        assert!(fx.is_empty());
+
+        let (s, _) = run(IslandState::default(), IslandAction::MediaChanged(media()));
+        let (s, _) = run(s, IslandAction::Clicked);
+        let (s, _) = run(
+            s,
+            IslandAction::VolumeChanged(VolumeInfo {
+                level: 5,
+                muted: false,
+            }),
+        );
+        assert_eq!(
+            s.view,
+            View::Expanded(Content::Media),
+            "media lebar tidak ditutup"
+        );
     }
 
     #[test]

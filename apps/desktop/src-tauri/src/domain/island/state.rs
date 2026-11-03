@@ -10,6 +10,15 @@ pub enum Content {
     Notice(String),
     /// Quick Ask: kotak pertanyaan ke AI.
     Ask(AskPhase),
+    /// HUD volume: muncul sebentar saat volume atau bisu berubah.
+    Volume(VolumeInfo),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VolumeInfo {
+    /// 0-100.
+    pub level: u8,
+    pub muted: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -57,6 +66,7 @@ pub struct Ctx {
     pub max_queue: usize,
     pub auto_dismiss_ms: u64,
     pub collapse_ms: u64,
+    pub hud_ms: u64,
 }
 
 impl Default for Ctx {
@@ -65,6 +75,7 @@ impl Default for Ctx {
             max_queue: 5,
             auto_dismiss_ms: 8_000,
             collapse_ms: 5_000,
+            hud_ms: 1_500,
         }
     }
 }

@@ -234,7 +234,7 @@ settingsChangedEvent: "settings-changed-event"
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
 export type ClipEntryDto = { id: number; text: string }
-export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask"
+export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume"
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
 export type Decision = 
 /**

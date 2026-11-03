@@ -84,6 +84,8 @@
   "settings.clipboard.copy": "Salin",
   "settings.clipboard.empty": "Belum ada yang tercatat",
   "island.ask": "Tanya",
+  "island.volume": "Volume",
+  "hud.muted": "Bisu",
   "ask.placeholder": "Tanya apa saja...",
   "ask.send": "Tanya",
   "ask.close": "Tutup",

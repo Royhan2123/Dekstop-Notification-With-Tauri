@@ -29,6 +29,7 @@ pub enum ContentKind {
     HealthAlert,
     Notice,
     Ask,
+    Volume,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
@@ -199,6 +200,11 @@ impl From<&IslandState> for IslandSnapshot {
                 kind: ContentKind::HealthAlert,
                 text: a.message.clone(),
                 detail: None,
+            },
+            Content::Volume(v) => IslandContent {
+                kind: ContentKind::Volume,
+                text: v.level.to_string(),
+                detail: Some(if v.muted { "muted" } else { "volume" }.into()),
             },
             Content::Ask(p) => {
                 let (phase, text) = match p {

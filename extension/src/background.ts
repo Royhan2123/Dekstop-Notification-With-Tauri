@@ -66,7 +66,19 @@ async function handle(raw: string) {
     return;
   }
   const tab = pickTab(await chrome.tabs.query({ url: MEDIA_TABS }));
-  if (tab?.id !== undefined) await chrome.tabs.sendMessage(tab.id, cmd);
+  if (tab?.id !== undefined) await sendToTab(tab.id, cmd);
+}
+
+/** Content script baru terpasang setelah halaman idle (YouTube lama); coba lagi sebentar bila belum siap. */
+async function sendToTab(tabId: number, cmd: object) {
+  for (let i = 0; i < 6; i++) {
+    try {
+      await chrome.tabs.sendMessage(tabId, cmd);
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
 }
 
 /** Sambungkan ulang memakai token tersimpan; dipanggil saat start dan tiap alarm. */

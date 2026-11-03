@@ -4,9 +4,10 @@ import { commands } from "../../../shared/ipc";
 import { usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
 import { useIslandStore } from "../store";
 
-type Panel = "clipboard" | null;
+export type Panel = "clipboard" | "health" | null;
 
 const ICONS = {
+  health: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />,
   dnd: <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z" />,
   focus: (
     <>
@@ -32,8 +33,8 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="19"
-      height="19"
+      width="16"
+      height="16"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
@@ -75,6 +76,12 @@ export function IslandDock({
   const focusing = pomodoro.status.phase !== "idle";
 
   const items: Item[] = [
+    {
+      id: "health",
+      label: "dock.health",
+      active: panel === "health",
+      run: () => onPanel(panel === "health" ? null : "health"),
+    },
     {
       id: "dnd",
       label: "dock.dnd",
@@ -161,6 +168,7 @@ export function IslandDock({
             onClick={it.run}
           >
             <Icon name={it.id} />
+            <span>{t(it.label)}</span>
           </button>
         ))}
       </div>

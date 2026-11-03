@@ -8,14 +8,18 @@ import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
 import { MediaExpanded } from "../../media/view/MediaExpanded";
 import { ClipboardPanel } from "../../clipboard/view/ClipboardPanel";
-import { IslandDock } from "./IslandDock";
+import { HealthPanel } from "../../health/view/HealthPanel";
+import { IslandDock, type Panel } from "./IslandDock";
 import { IslandMenu, menuShape } from "./IslandMenu";
 import { ShelfCard } from "../../shelf/view/ShelfCard";
 import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
 import { useIslandVM } from "../viewmodel/useIslandVM";
 
-const panelShape = { width: 520, height: 298, radius: 28, opacity: 1 };
+const panelShapes = {
+  clipboard: { width: 440, height: 240, radius: 26, opacity: 1 },
+  health: { width: 440, height: 210, radius: 26, opacity: 1 },
+};
 
 export function IslandShell() {
   const vm = useIslandVM();
@@ -36,7 +40,7 @@ export function IslandShell() {
   }, [reportHitbox]);
 
   const [menu, setMenu] = useState(false);
-  const [panel, setPanel] = useState<"clipboard" | null>(null);
+  const [panel, setPanel] = useState<Panel>(null);
   const { content, mode } = vm;
   const expanded = mode === "expanded";
   const panelOpen = panel !== null && expanded;
@@ -44,7 +48,7 @@ export function IslandShell() {
   useEffect(() => {
     if (!expanded) setPanel(null);
   }, [expanded]);
-  const shape = menu ? menuShape : panelOpen ? panelShape : vm.shape;
+  const shape = menu ? menuShape : panelOpen && panel ? panelShapes[panel] : vm.shape;
   return (
     <motion.div
       ref={ref}
@@ -82,7 +86,11 @@ export function IslandShell() {
             {menu ? (
               <IslandMenu onClose={() => setMenu(false)} onOpenSettings={vm.onOpenSettings} />
             ) : panelOpen ? (
-              <ClipboardPanel onClose={() => setPanel(null)} />
+              panel === "health" ? (
+                <HealthPanel onClose={() => setPanel(null)} />
+              ) : (
+                <ClipboardPanel onClose={() => setPanel(null)} />
+              )
             ) : !content ? null : content.kind === "volume" ? (
               <VolumeHud level={Number(content.text) || 0} muted={content.detail === "muted"} />
             ) : content.kind === "shelf" && mode === "expanded" ? (

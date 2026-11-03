@@ -5,9 +5,10 @@ import { useIslandStore } from "../../island/store";
 
 const POKE_MS = 700;
 
-/** Ekspresi dari backend + reaksi "geli" saat diklik. `calm` mematikan semua animasi tak berujung. */
+/** Ekspresi dari backend + reaksi "geli" saat diklik. `calm` (idle atau gerak dikurangi) mematikan semua animasi tak berujung: animasi terus-menerus memakan CPU renderer. */
 export function useLumiVM() {
   const mood = useIslandStore((s) => s.snapshot.mood);
+  const idle = useIslandStore((s) => s.snapshot.mode === "idle");
   const systemReduce = useReducedMotion();
   const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
   const [poked, setPoked] = useState(false);
@@ -18,7 +19,7 @@ export function useLumiVM() {
   return {
     mood,
     poked,
-    calm: systemReduce === true || settingReduce,
+    calm: idle || systemReduce === true || settingReduce,
     poke: () => {
       setPoked(true);
       window.clearTimeout(timer.current);

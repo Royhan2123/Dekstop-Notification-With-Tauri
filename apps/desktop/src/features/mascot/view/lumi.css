@@ -1,50 +1,39 @@
-.island {
+.island-anchor {
   position: relative;
 }
 
-/* Lumi kecil saat idle, lebih besar saat pulau terbuka; ukuran dan posisi bergeser halus. */
+/* Mino duduk di sebelah kiri pulau; makin besar saat pulau terbuka (posisi dan ukuran bergeser halus).
+   Ukuran/offset kiri ini juga dipakai IslandShell untuk memperluas hitbox (MINO_REACH). */
 .lumi {
   position: absolute;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   overflow: visible;
   cursor: pointer;
   transition:
     width 0.3s,
     height 0.3s,
     top 0.3s,
-    right 0.3s,
     left 0.3s;
 }
 
-.island[data-mode="idle"] .lumi {
+.island-anchor[data-mode="idle"] .lumi {
+  top: 2px;
+  left: -36px;
+}
+
+.island-anchor[data-mode="compact"] .lumi {
   top: 0;
-  left: calc(50% - 17px);
+  left: -48px;
+  width: 56px;
+  height: 56px;
 }
 
-.island[data-mode="compact"] .lumi {
-  top: -3px;
-  right: 8px;
-  width: 44px;
-  height: 44px;
-}
-
-.island[data-mode="expanded"] .lumi {
-  top: 4px;
-  right: -18px;
-  width: 72px;
-  height: 72px;
-}
-
-.island[data-mode="compact"] .island-body {
-  padding-right: 56px;
-}
-
-.lumi-line {
-  fill: none;
-  stroke: #111;
-  stroke-width: 2;
-  stroke-linecap: round;
+.island-anchor[data-mode="expanded"] .lumi {
+  top: 6px;
+  left: -76px;
+  width: 84px;
+  height: 84px;
 }
 
 .lumi-bob,
@@ -73,12 +62,12 @@
 }
 
 .lumi-pupil {
-  transform: translate(calc(var(--lx, 0) * 2px), calc(var(--ly, 0) * 2.2px));
+  transform: translate(calc(var(--lx, 0) * 3px), calc(var(--ly, 0) * 3px));
   transition: transform 0.12s ease-out;
 }
 
 .lumi.mood-thinking .lumi-pupil {
-  transform: translate(2px, -2.4px);
+  transform: translate(2px, -3px);
 }
 
 .lumi:not(.calm) .lumi-dots {

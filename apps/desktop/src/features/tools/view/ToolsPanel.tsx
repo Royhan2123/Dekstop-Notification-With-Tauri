@@ -3,7 +3,7 @@ import { useReducedMotion } from "motion/react";
 import { useT, type MessageKey } from "../../../shared/i18n";
 import type { PowerActionDto } from "../../../shared/ipc";
 import { useSettingsStore } from "../../settings/store";
-import { COUNTDOWN_SECS, usePowerVM } from "../viewmodel/usePowerVM";
+import { COUNTDOWN_SECS, usePowerVM, type SlowAction } from "../viewmodel/usePowerVM";
 
 const POWER_ICONS: Record<PowerActionDto, React.ReactNode> = {
   shutdown: <path d="M12 3v9M6.3 6.8a8 8 0 1 0 11.4 0" />,
@@ -29,16 +29,12 @@ const LABEL = {
 const ASK = {
   shutdown: "tools.confirm.shutdown",
   restart: "tools.confirm.restart",
-  sleep: "tools.confirm.sleep",
-  lock: "tools.confirm.sleep",
-} as const satisfies Record<PowerActionDto, MessageKey>;
+} as const satisfies Record<SlowAction, MessageKey>;
 
 const DOING = {
   shutdown: "tools.doing.shutdown",
   restart: "tools.doing.restart",
-  sleep: "tools.doing.sleep",
-  lock: "tools.doing.sleep",
-} as const satisfies Record<PowerActionDto, MessageKey>;
+} as const satisfies Record<SlowAction, MessageKey>;
 
 const RING_R = 28;
 const RING_LEN = 2 * Math.PI * RING_R;

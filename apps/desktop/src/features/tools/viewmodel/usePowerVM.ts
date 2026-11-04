@@ -4,25 +4,28 @@ import { commands, type PowerActionDto } from "../../../shared/ipc";
 /** Detik hitung mundur setelah pengguna menyetujui; masih bisa dibatalkan sampai habis. */
 export const COUNTDOWN_SECS = 5;
 
+/** Aksi yang mengakhiri sesi: lewat konfirmasi + hitung mundur. Tidur (layar mati) dan kunci langsung jalan. */
+export type SlowAction = "shutdown" | "restart";
+
 export type PowerStep =
   | { phase: "idle" }
-  | { phase: "confirm"; action: PowerActionDto }
-  | { phase: "counting"; action: PowerActionDto; left: number };
+  | { phase: "confirm"; action: SlowAction }
+  | { phase: "counting"; action: SlowAction; left: number };
 
 export type PowerEvent =
-  | { type: "pick"; action: PowerActionDto }
+  | { type: "pick"; action: SlowAction }
   | { type: "confirm" }
   | { type: "tick" }
   | { type: "cancel" };
 
-/** Mesin keadaan murni (layar mati tidak merusak apa pun, jadi tanpa hitung mundur): pilih → konfirmasi → hitung mundur → (jalankan saat left = 0). Kunci layar tidak lewat sini. */
+/** Mesin keadaan murni: pilih → konfirmasi → hitung mundur → (jalankan saat left = 0). */
 export function powerReducer(s: PowerStep, e: PowerEvent): PowerStep {
   switch (e.type) {
     case "pick":
-      return e.action === "lock" ? s : { phase: "confirm", action: e.action };
+      return { phase: "confirm", action: e.action };
     case "confirm":
       return s.phase === "confirm"
-        ? { phase: "counting", action: s.action, left: s.action === "sleep" ? 0 : COUNTDOWN_SECS }
+        ? { phase: "counting", action: s.action, left: COUNTDOWN_SECS }
         : s;
     case "tick":
       return s.phase === "counting" && s.left > 0 ? { ...s, left: s.left - 1 } : s;
@@ -44,7 +47,6 @@ export function usePowerVM() {
     }
     void commands.powerPerform(step.action).then((r) => {
       setError(r.status === "error" ? r.error : null);
-      // Setelah tidur, pengguna kembali ke panel yang bersih.
       dispatch({ type: "cancel" });
     });
   }, [step]);
@@ -54,8 +56,8 @@ export function usePowerVM() {
     error,
     pick: (action: PowerActionDto) => {
       setError(null);
-      if (action === "lock") {
-        void commands.powerPerform("lock").then((r) => {
+      if (action === "lock" || action === "sleep") {
+        void commands.powerPerform(action).then((r) => {
           if (r.status === "error") setError(r.error);
         });
       } else dispatch({ type: "pick", action });

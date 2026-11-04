@@ -45,12 +45,16 @@ it("batal saat hitung mundur tidak mengirim apa pun", async () => {
   expect(powerPerform).not.toHaveBeenCalled();
 });
 
-it("tidur dan mulai ulang dikirim dengan aksinya; kunci langsung tanpa konfirmasi", async () => {
+it("mulai ulang dikirim dengan aksinya; tidur dan kunci langsung tanpa konfirmasi", async () => {
   const { result } = renderHook(() => usePowerVM());
-  act(() => result.current.pick("sleep"));
+  act(() => result.current.pick("restart"));
   act(() => result.current.confirm());
   await tick(COUNTDOWN_SECS);
+  expect(powerPerform).toHaveBeenLastCalledWith("restart");
+  act(() => result.current.pick("sleep"));
+  await act(() => Promise.resolve());
   expect(powerPerform).toHaveBeenLastCalledWith("sleep");
+  expect(result.current.step).toEqual({ phase: "idle" });
   act(() => result.current.pick("lock"));
   await act(() => Promise.resolve());
   expect(powerPerform).toHaveBeenLastCalledWith("lock");

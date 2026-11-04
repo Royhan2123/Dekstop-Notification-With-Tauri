@@ -18,24 +18,11 @@ it("konfirmasi tidak bisa dilompati dan tick tidak menghidupkan hitung mundur da
 });
 
 it("hitung mundur berhenti di nol dan batal kapan saja kembali ke idle", () => {
-  let s: PowerStep = { phase: "counting", action: "sleep", left: 1 };
+  let s: PowerStep = { phase: "counting", action: "restart", left: 1 };
   s = powerReducer(s, { type: "tick" });
-  expect(s).toEqual({ phase: "counting", action: "sleep", left: 0 });
+  expect(s).toEqual({ phase: "counting", action: "restart", left: 0 });
   expect(powerReducer(s, { type: "tick" })).toEqual(s);
   expect(powerReducer(s, { type: "cancel" })).toEqual(idle);
   const mid: PowerStep = { phase: "counting", action: "restart", left: 3 };
   expect(powerReducer(mid, { type: "cancel" })).toEqual(idle);
-});
-
-it("kunci layar tidak masuk mesin konfirmasi", () => {
-  expect(powerReducer(idle, { type: "pick", action: "lock" })).toEqual(idle);
-});
-
-it("tidur (layar mati) langsung jalan setelah konfirmasi, tanpa hitung mundur", () => {
-  const confirm = powerReducer({ phase: "idle" }, { type: "pick", action: "sleep" });
-  expect(powerReducer(confirm, { type: "confirm" })).toEqual({
-    phase: "counting",
-    action: "sleep",
-    left: 0,
-  });
 });

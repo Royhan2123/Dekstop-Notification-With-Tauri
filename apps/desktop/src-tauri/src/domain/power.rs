@@ -9,9 +9,9 @@ pub enum PowerAction {
 }
 
 impl PowerAction {
-    /// Aksi yang mengakhiri sesi pengguna perlu konfirmasi; mengunci layar tidak.
+    /// Hanya aksi yang menutup sesi pengguna perlu konfirmasi; kunci dan layar mati tidak.
     pub fn needs_confirm(self) -> bool {
-        !matches!(self, PowerAction::Lock)
+        matches!(self, PowerAction::Shutdown | PowerAction::Restart)
     }
 }
 
@@ -20,10 +20,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn hanya_kunci_layar_tanpa_konfirmasi() {
+    fn hanya_matikan_dan_mulai_ulang_perlu_konfirmasi() {
         assert!(PowerAction::Shutdown.needs_confirm());
         assert!(PowerAction::Restart.needs_confirm());
-        assert!(PowerAction::Sleep.needs_confirm());
+        assert!(!PowerAction::Sleep.needs_confirm());
         assert!(!PowerAction::Lock.needs_confirm());
     }
 }

@@ -363,6 +363,17 @@ async aiTest() : Promise<Result<string, string>> {
 }
 },
 /**
+ * Daftar model dari penyedia terpilih, untuk menu pilihan model di Setelan.
+ */
+async aiModels() : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("ai_models") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
  */
 async shelfAdd(paths: string[]) : Promise<void> {

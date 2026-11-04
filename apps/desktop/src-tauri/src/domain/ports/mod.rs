@@ -78,6 +78,11 @@ pub trait SecretScanner: Send + Sync {
 /// Otak AI: satu pertanyaan, satu jawaban teks. Prompt dan parsing ada di `application/review`.
 pub trait AiClient: Send + Sync {
     fn complete(&self, system: &str, user: &str) -> Result<String, AiError>;
+
+    /// Nama model yang bisa dipilih pengguna; kosong bila penyedia tidak punya daftar.
+    fn models(&self) -> Result<Vec<String>, AiError> {
+        Ok(Vec::new())
+    }
 }
 
 pub trait AiProviderFactory: Send + Sync {

@@ -18,6 +18,17 @@ pub fn ask_submit(svc: Svc, question: String) {
     svc.inner().submit(&question);
 }
 
+/// Daftar model dari penyedia terpilih, untuk menu pilihan model di Setelan.
+#[tauri::command]
+#[specta::specta]
+pub async fn ai_models(svc: Svc<'_>) -> Result<Vec<String>, String> {
+    let svc = Arc::clone(svc.inner());
+    tauri::async_runtime::spawn_blocking(move || svc.models())
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
 /// Uji koneksi ke otak AI yang sedang dipilih; membalas teks singkat dari model bila berhasil.
 #[tauri::command]
 #[specta::specta]

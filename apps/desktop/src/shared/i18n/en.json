@@ -65,6 +65,7 @@
   "settings.ai.open_router": "OpenRouter (API Key, many models)",
   "settings.ai.groq": "Groq (API Key)",
   "settings.ai.test": "Test connection",
+  "settings.ai.model_auto": "Automatic (default)",
   "settings.ai.connected": "Connected",
   "settings.ai.claude_api": "Claude (paid API Key)",
   "settings.ai.ollama": "Ollama (local, free)",

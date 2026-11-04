@@ -65,6 +65,7 @@
   "settings.ai.open_router": "OpenRouter (API Key, banyak model)",
   "settings.ai.groq": "Groq (API Key)",
   "settings.ai.test": "Tes koneksi",
+  "settings.ai.model_auto": "Otomatis (bawaan)",
   "settings.ai.connected": "Terhubung",
   "settings.ai.claude_api": "Claude (API Key berbayar)",
   "settings.ai.ollama": "Ollama (lokal, gratis)",

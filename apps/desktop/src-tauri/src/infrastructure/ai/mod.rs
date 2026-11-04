@@ -15,7 +15,9 @@ pub use claude_cli::ClaudeCli;
 
 const DEFAULT_CLAUDE_MODEL: &str = "claude-sonnet-5-5";
 const OLLAMA_URL: &str = "http://127.0.0.1:11434/api/chat";
+const OLLAMA_TAGS_URL: &str = "http://127.0.0.1:11434/api/tags";
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_MODELS_URL: &str = "https://api.anthropic.com/v1/models?limit=100";
 const TIMEOUT: Duration = Duration::from_secs(180);
 
 fn http() -> Result<reqwest::blocking::Client, AiError> {
@@ -30,8 +32,11 @@ fn post(
     body: &Value,
     what: &str,
 ) -> Result<Value, AiError> {
+    call(req.json(body), what)
+}
+
+fn call(req: reqwest::blocking::RequestBuilder, what: &str) -> Result<Value, AiError> {
     let res = req
-        .json(body)
         .send()
         .map_err(|e| AiError::Unavailable(format!("{what}: {e}")))?;
     let status = res.status();
@@ -64,6 +69,29 @@ fn error_detail(body: &str) -> String {
         .collect()
 }
 
+/// Nama model dari daftar jawaban penyedia. Hanya model percakapan: embedding, suara, dan gambar disaring.
+fn model_ids(v: &Value, list: &str, field: &str) -> Vec<String> {
+    const NOT_CHAT: [&str; 7] = [
+        "embed",
+        "whisper",
+        "tts",
+        "dall-e",
+        "moderation",
+        "image",
+        "audio",
+    ];
+    v.pointer(list)
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|m| m.get(field)?.as_str())
+                .map(|id| id.strip_prefix("models/").unwrap_or(id).to_string())
+                .filter(|id| !NOT_CHAT.iter().any(|w| id.to_lowercase().contains(w)))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 fn text_at(v: &Value, pointer: &str) -> Result<String, AiError> {
     v.pointer(pointer)
         .and_then(Value::as_str)
@@ -90,6 +118,14 @@ impl AiClient for AnthropicClient {
             .header("anthropic-version", "2023-06-01");
         text_at(&post(req, &body, "Claude API")?, "/content/0/text")
     }
+
+    fn models(&self) -> Result<Vec<String>, AiError> {
+        let req = http()?
+            .get(ANTHROPIC_MODELS_URL)
+            .header("x-api-key", &self.key)
+            .header("anthropic-version", "2023-06-01");
+        Ok(model_ids(&call(req, "Claude API")?, "/data", "id"))
+    }
 }
 
 /// Gemini, DeepSeek, Grok, OpenAI, OpenRouter, dan Groq semuanya berbicara dialek `chat/completions` OpenAI.
@@ -112,6 +148,12 @@ impl AiClient for OpenAiClient {
         let req = http()?.post(self.url).bearer_auth(&self.key);
         text_at(&post(req, &body, self.name)?, "/choices/0/message/content")
     }
+
+    fn models(&self) -> Result<Vec<String>, AiError> {
+        let url = self.url.replace("/chat/completions", "/models");
+        let req = http()?.get(url).bearer_auth(&self.key);
+        Ok(model_ids(&call(req, self.name)?, "/data", "id"))
+    }
 }
 
 pub struct OllamaClient {
@@ -131,6 +173,11 @@ impl AiClient for OllamaClient {
         });
         let req = http()?.post(OLLAMA_URL);
         text_at(&post(req, &body, "Ollama")?, "/message/content")
+    }
+
+    fn models(&self) -> Result<Vec<String>, AiError> {
+        let req = http()?.get(OLLAMA_TAGS_URL);
+        Ok(model_ids(&call(req, "Ollama")?, "/models", "name"))
     }
 }
 
@@ -282,6 +329,24 @@ mod tests {
         }
         assert!(AiProvider::Ollama.key_name().is_none());
         assert!(AiProvider::ClaudeApi.openai_compatible().is_none());
+    }
+
+    #[test]
+    fn daftar_model_hanya_model_percakapan_tanpa_awalan_models() {
+        let gemini = json!({ "data": [
+            { "id": "models/gemini-2.5-flash" },
+            { "id": "models/text-embedding-004" },
+            { "id": "models/gemini-2.5-pro" },
+            {}
+        ]});
+        assert_eq!(
+            model_ids(&gemini, "/data", "id"),
+            ["gemini-2.5-flash", "gemini-2.5-pro"]
+        );
+        let ollama =
+            json!({ "models": [{ "name": "llama3:latest" }, { "name": "nomic-embed-text" }] });
+        assert_eq!(model_ids(&ollama, "/models", "name"), ["llama3:latest"]);
+        assert!(model_ids(&json!({}), "/data", "id").is_empty());
     }
 
     #[test]

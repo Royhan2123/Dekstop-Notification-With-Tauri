@@ -72,6 +72,14 @@ impl QuickAskService {
         Ok(reply.trim().chars().take(60).collect())
     }
 
+    /// Model yang ditawarkan penyedia terpilih (butuh kunci yang sudah tersimpan), untuk menu model di Setelan.
+    pub fn models(&self) -> Result<Vec<String>, AiError> {
+        let settings = self.settings.get();
+        self.ai
+            .build(settings.ai_provider, &settings.ai_model)?
+            .models()
+    }
+
     fn answer(&self, question: &str) -> AskPhase {
         let settings = self.settings.get();
         let system = match settings.language {

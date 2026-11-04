@@ -19,6 +19,9 @@ import {
   type Settings,
   type PowerActionDto,
   type TaskDto,
+  type StartupAppDto,
+  type DiskEntryDto,
+  type DiskStatusDto,
 } from "../../bindings";
 
 export { commands };
@@ -41,6 +44,9 @@ export type {
   Settings,
   PowerActionDto,
   TaskDto,
+  StartupAppDto,
+  DiskEntryDto,
+  DiskStatusDto,
 };
 
 /** Ambil snapshot awal lalu dengarkan perubahan. Mengembalikan fungsi untuk berhenti. */

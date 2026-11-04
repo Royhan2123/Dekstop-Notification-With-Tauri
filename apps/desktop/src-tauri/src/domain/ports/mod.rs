@@ -1,12 +1,14 @@
 //! Port: kemampuan yang dibutuhkan domain/application dan diimplementasikan di luar.
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64};
 
 use crate::domain::bridge::BridgeCommand;
 use crate::domain::chat::ChatTurn;
+use crate::domain::disk::DiskReport;
 use crate::domain::error::{
-    AiError, BridgeError, CalendarError, ChatError, GitError, GithubError, LyricsError, MediaError,
-    PowerError, SettingsError, TaskError, ThemeError, UsageError,
+    AiError, BridgeError, CalendarError, ChatError, DiskError, GitError, GithubError, LyricsError,
+    MediaError, PowerError, SettingsError, StartupError, TaskError, ThemeError, UsageError,
 };
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
@@ -15,6 +17,7 @@ use crate::domain::model::review::{Diff, PushRef, SecretHit};
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, MediaInfo};
 use crate::domain::power::PowerAction;
+use crate::domain::startup::StartupApp;
 use crate::domain::task::Task;
 
 /// Penerima snapshot state pulau (mis. emit event ke frontend).
@@ -190,6 +193,35 @@ pub trait TaskStore: Send + Sync {
     fn set_done(&self, id: i32, done: bool) -> Result<(), TaskError>;
     fn remove(&self, id: i32) -> Result<(), TaskError>;
     fn clear_done(&self) -> Result<(), TaskError>;
+}
+
+/// Penyimpanan daftar aplikasi startup (urut menurut posisi).
+pub trait StartupStore: Send + Sync {
+    fn list(&self) -> Result<Vec<StartupApp>, StartupError>;
+    fn add(&self, name: &str, path: &str, delay_secs: u32) -> Result<(), StartupError>;
+    fn set_delay(&self, id: i32, delay_secs: u32) -> Result<(), StartupError>;
+    /// Posisi baru = urutan id pada `ids`.
+    fn reorder(&self, ids: &[i32]) -> Result<(), StartupError>;
+    fn remove(&self, id: i32) -> Result<(), StartupError>;
+}
+
+/// Membuka satu aplikasi/berkas seperti klik dua kali di Explorer.
+pub trait AppLauncher: Send + Sync {
+    fn launch(&self, path: &str) -> Result<(), StartupError>;
+}
+
+/// Menghitung ukuran isi folder. Hanya membaca; tidak boleh mengubah atau menghapus apa pun.
+pub trait DiskScanner: Send + Sync {
+    /// Akar yang bisa dipindai (drive di Windows).
+    fn drives(&self) -> Vec<String>;
+    /// Ukuran tiap isi langsung `root` (folder = total turunannya). Memblokir; berhenti dini bila `cancel` menyala.
+    /// `progress` bertambah per berkas yang dihitung.
+    fn scan(
+        &self,
+        root: &str,
+        cancel: &AtomicBool,
+        progress: &AtomicU64,
+    ) -> Result<DiskReport, DiskError>;
 }
 
 /// Catatan pemakaian per menit.

@@ -5,6 +5,7 @@ pub mod calendar_service;
 pub mod charger_service;
 pub mod clipboard_service;
 pub mod commit_service;
+pub mod disk_service;
 pub mod fullscreen_service;
 pub mod github_service;
 pub mod health_service;
@@ -17,6 +18,7 @@ pub mod power_service;
 pub mod quick_ask_service;
 pub mod review;
 pub mod settings_service;
+pub mod startup_service;
 pub mod task_service;
 #[cfg(test)]
 pub mod test_support;

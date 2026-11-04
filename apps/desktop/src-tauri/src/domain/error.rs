@@ -113,3 +113,25 @@ pub enum BridgeError {
     #[error("gagal mengirim ke ekstensi: {0}")]
     Failed(String),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum StartupError {
+    #[error("path aplikasi kosong")]
+    EmptyPath,
+    #[error("terlalu banyak aplikasi startup, hapus satu dulu")]
+    TooMany,
+    #[error("aplikasi tidak ditemukan di daftar")]
+    NotFound,
+    #[error("aplikasi startup sedang dijalankan")]
+    Busy,
+    #[error("gagal menyimpan daftar startup: {0}")]
+    Storage(String),
+    #[error("gagal membuka aplikasi: {0}")]
+    Launch(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum DiskError {
+    #[error("folder tidak bisa dibaca: {0}")]
+    Unreadable(String),
+}

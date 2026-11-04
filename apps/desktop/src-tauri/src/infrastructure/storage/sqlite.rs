@@ -39,6 +39,15 @@ fn migrations() -> Migrations<'static> {
             "ALTER TABLE tasks ADD COLUMN note INTEGER NOT NULL DEFAULT 0;
             ALTER TABLE tasks ADD COLUMN body TEXT NOT NULL DEFAULT '';",
         ),
+        M::up(
+            "CREATE TABLE startup_apps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                path TEXT NOT NULL,
+                delay_secs INTEGER NOT NULL DEFAULT 0,
+                position INTEGER NOT NULL
+            );",
+        ),
     ])
 }
 

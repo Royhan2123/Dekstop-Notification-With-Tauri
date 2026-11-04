@@ -16,6 +16,7 @@ use interface::commands::bridge::{
 };
 use interface::commands::calendar::calendar_next;
 use interface::commands::clipboard::{clipboard_clear, clipboard_copy, clipboard_list};
+use interface::commands::disk::{disk_drives, disk_reveal, disk_scan, disk_status};
 use interface::commands::github::{
     github_radar, github_token_clear, github_token_set, github_token_status,
 };
@@ -39,6 +40,9 @@ use interface::commands::settings::{
 use interface::commands::shelf::{
     shelf_add, shelf_clear, shelf_copy, shelf_open_file, shelf_remove, shelf_reveal, shelf_show,
 };
+use interface::commands::startup::{
+    startup_add, startup_list, startup_move, startup_remove, startup_run, startup_set_delay,
+};
 use interface::commands::tasks::{
     tasks_add, tasks_clear_done, tasks_list, tasks_remove, tasks_set_done, tasks_set_note,
     tasks_update_note,
@@ -46,6 +50,9 @@ use interface::commands::tasks::{
 use interface::commands::theme::{theme_fetch, wallpaper_current};
 use interface::dto::{IslandSnapshotEvent, SettingsChangedEvent};
 use interface::window::{review_window, settings_window};
+
+/// Argumen yang ditambahkan Windows saat membuka Isla Desk saat masuk (lihat plugin autostart).
+pub const STARTUP_FLAG: &str = "--autostart";
 
 fn specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
@@ -93,6 +100,16 @@ fn specta_builder() -> Builder<tauri::Wry> {
             tasks_set_note,
             tasks_update_note,
             power_perform,
+            startup_list,
+            startup_add,
+            startup_set_delay,
+            startup_move,
+            startup_remove,
+            startup_run,
+            disk_drives,
+            disk_scan,
+            disk_status,
+            disk_reveal,
             bridge_pair,
             bridge_paired,
             bridge_unpair,
@@ -138,9 +155,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
+        // Argumen ini membedakan start otomatis Windows dari peluncuran biasa (menjalankan daftar startup).
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
-            None,
+            Some(vec![STARTUP_FLAG]),
         ))
         .invoke_handler(builder.invoke_handler())
         .on_window_event(|window, event| {

@@ -1,8 +1,10 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
 import { useT, type MessageKey } from "../../../shared/i18n";
 import type { PowerActionDto } from "../../../shared/ipc";
 import { useSettingsStore } from "../../settings/store";
+import { DiskTab } from "./DiskTab";
+import { StartupTab } from "./StartupTab";
 import { COUNTDOWN_SECS, usePowerVM, type SlowAction } from "../viewmodel/usePowerVM";
 
 const POWER_ICONS: Record<PowerActionDto, React.ReactNode> = {
@@ -36,6 +38,13 @@ const DOING = {
   restart: "tools.doing.restart",
 } as const satisfies Record<SlowAction, MessageKey>;
 
+const TABS = [
+  { id: "power", label: "tools.tab_power" },
+  { id: "startup", label: "tools.tab_startup" },
+  { id: "disk", label: "tools.tab_disk" },
+] as const satisfies readonly { id: string; label: MessageKey }[];
+type Tab = (typeof TABS)[number]["id"];
+
 const RING_R = 28;
 const RING_LEN = 2 * Math.PI * RING_R;
 
@@ -57,10 +66,11 @@ function Glyph({ action, size = 22 }: { action: PowerActionDto; size?: number })
   );
 }
 
-/** Menu Alat di pulau. Sekarang berisi Daya (matikan, mulai ulang, tidur, kunci) dengan konfirmasi. */
+/** Menu Alat di pulau: Daya (matikan, mulai ulang, tidur, kunci), aplikasi Startup, dan ukuran Disk. */
 export function ToolsPanel({ onClose }: { onClose: () => void }) {
   const t = useT();
   const power = usePowerVM();
+  const [tab, setTab] = useState<Tab>("power");
   const systemReduce = useReducedMotion();
   const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
   const { step } = power;
@@ -71,13 +81,29 @@ export function ToolsPanel({ onClose }: { onClose: () => void }) {
       onClick={(e) => e.stopPropagation()}
     >
       <div className="shelf-head">
-        <span>{t("tools.title")}</span>
+        <div className="seg" role="tablist" aria-label={t("tools.title")}>
+          {TABS.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === x.id}
+              className={tab === x.id ? "on" : ""}
+              onClick={() => setTab(x.id)}
+            >
+              {t(x.label)}
+            </button>
+          ))}
+        </div>
         <button type="button" aria-label={t("island.dismiss")} onClick={onClose}>
           ×
         </button>
       </div>
 
-      {step.phase === "idle" && (
+      {tab === "startup" && <StartupTab />}
+      {tab === "disk" && <DiskTab />}
+
+      {tab === "power" && step.phase === "idle" && (
         <>
           <p className="tools-sec">{t("tools.power")}</p>
           <div className="tool-grid">
@@ -98,7 +124,7 @@ export function ToolsPanel({ onClose }: { onClose: () => void }) {
         </>
       )}
 
-      {step.phase === "confirm" && (
+      {tab === "power" && step.phase === "confirm" && (
         <div className="power-confirm" role="alertdialog">
           <div className={`power-icon power-${step.action}`}>
             <Glyph action={step.action} size={26} />
@@ -118,7 +144,7 @@ export function ToolsPanel({ onClose }: { onClose: () => void }) {
         </div>
       )}
 
-      {step.phase === "counting" && (
+      {tab === "power" && step.phase === "counting" && (
         <div className="power-confirm" role="status">
           <div className="power-count">
             <svg viewBox="0 0 64 64" aria-hidden="true">

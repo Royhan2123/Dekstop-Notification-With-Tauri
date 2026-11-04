@@ -1746,7 +1746,7 @@ html[data-window="island"] #root {
 }
 
 /* Panel Tugas: tab Tugas/Catatan, daftar catatan, penyunting. */
-:is(.tasks-panel, .health-panel) .seg {
+:is(.tasks-panel, .health-panel, .tools-panel) .seg {
   display: flex;
   gap: 4px;
   padding: 3px;
@@ -1754,7 +1754,7 @@ html[data-window="island"] #root {
   background: var(--surface-1);
 }
 
-:is(.tasks-panel, .health-panel) .seg button {
+:is(.tasks-panel, .health-panel, .tools-panel) .seg button {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1767,7 +1767,7 @@ html[data-window="island"] #root {
     color 0.2s;
 }
 
-:is(.tasks-panel, .health-panel) .seg button.on {
+:is(.tasks-panel, .health-panel, .tools-panel) .seg button.on {
   background: linear-gradient(
     135deg,
     var(--accent, #2fcf9c),
@@ -2042,6 +2042,226 @@ html[data-window="island"] #root {
 .tools-panel.calm *::before {
   animation: none !important;
   transition: none !important;
+}
+
+/* Alat: tab Startup dan Disk. */
+.startup-tab,
+.disk-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  animation: tool-in 0.35s var(--ease) both;
+}
+
+.startup-auto {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+}
+
+.startup-auto input {
+  margin-top: 2px;
+  accent-color: var(--accent, #2fcf9c);
+}
+
+.startup-auto span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.startup-tab small,
+.disk-tab small {
+  color: var(--ink-dim);
+  font-size: 10.5px;
+}
+
+.startup-rows,
+.disk-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.startup-rows {
+  max-height: 112px;
+}
+
+.disk-rows {
+  max-height: 150px;
+}
+
+.startup-rows li,
+.disk-rows li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: var(--surface-1);
+  animation: tool-in 0.35s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+.startup-n {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-dim);
+  font-size: 10px;
+}
+
+.startup-name,
+.disk-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.startup-delay {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.startup-delay input {
+  width: 46px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+}
+
+.tools-panel .row-act {
+  padding: 2px 8px;
+  background: transparent;
+  color: var(--ink-dim);
+}
+
+.startup-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.disk-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.disk-nav button.on {
+  background: var(--accent, #2fcf9c);
+  color: var(--accent-ink, #04231b);
+}
+
+.disk-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-dim);
+  font-size: 11px;
+}
+
+.disk-rows li {
+  padding-right: 4px;
+}
+
+.tools-panel button.disk-name {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 0;
+  background: transparent;
+  text-align: left;
+}
+
+.disk-name:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.disk-size {
+  flex: none;
+  min-width: 62px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+.disk-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  width: var(--w, 0%);
+  border-radius: 2px;
+  background: var(--accent, #2fcf9c);
+  transition: width 0.6s var(--pop);
+}
+
+.disk-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+}
+
+.disk-progress .disk-bar {
+  position: relative;
+  inset: auto;
+  height: 4px;
+  width: 100%;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.disk-bar.indet::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  border-radius: 4px;
+  background: var(--accent, #2fcf9c);
+  animation: disk-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes disk-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.disk-hint {
+  margin-top: auto;
 }
 
 /* Kesehatan v2: baris bawah ringkasan, latihan napas, peregangan. */

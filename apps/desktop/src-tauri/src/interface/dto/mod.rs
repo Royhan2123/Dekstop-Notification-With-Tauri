@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
 
+use crate::application::disk_service::DiskStatus;
 use crate::application::health_service::HealthSummary;
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::{AskPhase, Content, IslandState, View};
@@ -13,6 +14,7 @@ use crate::domain::model::review::Severity;
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, ReviewReport};
 use crate::domain::power::PowerAction;
+use crate::domain::startup::StartupApp;
 use crate::domain::task::Task;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
@@ -413,6 +415,78 @@ impl From<&IslandState> for IslandSnapshot {
                     .collect(),
                 _ => Vec::new(),
             },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct StartupAppDto {
+    pub id: i32,
+    pub name: String,
+    pub path: String,
+    pub delay_secs: u32,
+}
+
+impl From<&StartupApp> for StartupAppDto {
+    fn from(a: &StartupApp) -> Self {
+        Self {
+            id: a.id,
+            name: a.name.clone(),
+            path: a.path.clone(),
+            delay_secs: a.delay_secs,
+        }
+    }
+}
+
+/// Ukuran dikirim sebagai f64 (tepat sampai 9 PB) karena TypeScript tidak punya u64.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct DiskEntryDto {
+    pub name: String,
+    pub path: String,
+    pub size: f64,
+    pub is_dir: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct DiskStatusDto {
+    pub running: bool,
+    /// Folder yang sedang/terakhir dipindai.
+    pub path: String,
+    /// Folder induknya, kosong bila sudah di akar drive.
+    pub parent: Option<String>,
+    pub files_scanned: f64,
+    /// Ada hasil untuk `path`.
+    pub done: bool,
+    pub total: f64,
+    pub entries: Vec<DiskEntryDto>,
+    pub error: Option<String>,
+}
+
+impl From<&DiskStatus> for DiskStatusDto {
+    fn from(s: &DiskStatus) -> Self {
+        let report = s.report.as_ref();
+        Self {
+            running: s.running,
+            path: s.path.clone(),
+            parent: Path::new(&s.path)
+                .parent()
+                .map(|p| p.to_string_lossy().into_owned())
+                .filter(|p| !p.is_empty()),
+            files_scanned: s.files_scanned as f64,
+            done: report.is_some(),
+            total: report.map_or(0.0, |r| r.total as f64),
+            entries: report.map_or_else(Vec::new, |r| {
+                r.entries
+                    .iter()
+                    .map(|e| DiskEntryDto {
+                        name: e.name.clone(),
+                        path: e.path.clone(),
+                        size: e.size as f64,
+                        is_dir: e.is_dir,
+                    })
+                    .collect()
+            }),
+            error: s.error.clone(),
         }
     }
 }

@@ -28,7 +28,7 @@ const panelShapes = {
   net: { width: EXPANDED_W, height: 218, radius: 26, opacity: 1 },
   focus: { width: EXPANDED_W, height: 228, radius: 26, opacity: 1 },
   tasks: { width: EXPANDED_W, height: 308, radius: 26, opacity: 1 },
-  tools: { width: EXPANDED_W, height: 236, radius: 26, opacity: 1 },
+  tools: { width: EXPANDED_W, height: 340, radius: 26, opacity: 1 },
 };
 
 /** Selama animasi ukuran, hitbox dilaporkan paling sering sekali per jeda ini (bukan tiap frame). */

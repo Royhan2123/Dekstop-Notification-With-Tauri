@@ -11,6 +11,7 @@ use crate::application::calendar_service::CalendarService;
 use crate::application::charger_service::ChargerService;
 use crate::application::clipboard_service::ClipboardService;
 use crate::application::commit_service::CommitService;
+use crate::application::disk_service::DiskService;
 use crate::application::fullscreen_service::FullscreenService;
 use crate::application::github_service::GithubService;
 use crate::application::health_service::HealthService;
@@ -23,6 +24,7 @@ use crate::application::power_service::PowerService;
 use crate::application::quick_ask_service::QuickAskService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
+use crate::application::startup_service::StartupService;
 use crate::application::task_service::TaskService;
 use crate::application::theme_service::ThemeService;
 use crate::application::volume_service::VolumeService;
@@ -43,11 +45,14 @@ use crate::infrastructure::storage::chat_store::{MemoryChatStore, SqliteChatStor
 use crate::infrastructure::storage::keyring_store::KeyringStore;
 use crate::infrastructure::storage::settings_store::JsonSettingsStore;
 use crate::infrastructure::storage::sqlite::Database;
+use crate::infrastructure::storage::startup_store::SqliteStartupStore;
 use crate::infrastructure::storage::task_store::SqliteTaskStore;
 use crate::infrastructure::storage::usage_store::SqliteUsageStore;
+use crate::infrastructure::system::app_launcher::ShellLauncher;
 use crate::infrastructure::system::autostart::TauriAutostart;
 use crate::infrastructure::system::brightness::SystemBrightness;
 use crate::infrastructure::system::clipboard::SystemClipboard;
+use crate::infrastructure::system::disk_scan::FsDiskScanner;
 use crate::infrastructure::system::fullscreen::SystemFullscreen;
 use crate::infrastructure::system::idle::SystemIdle;
 use crate::infrastructure::system::network::SystemNet;
@@ -104,6 +109,7 @@ pub fn assemble(app: &App) {
     }
 
     app.manage(PowerService::new(Arc::new(SystemPowerControl)));
+    app.manage(DiskService::new(Arc::new(FsDiskScanner)));
 
     // Tanpa database, fitur riwayat (kesehatan, review) nonaktif; pulau tetap jalan.
     let mut chat: Arc<dyn ChatStore> = Arc::new(MemoryChatStore::default());
@@ -113,6 +119,17 @@ pub fn assemble(app: &App) {
             chat = Arc::new(SqliteChatStore(db.clone()));
             app.manage(db.clone());
             app.manage(TaskService::new(Arc::new(SqliteTaskStore(db.clone()))));
+            let startup = StartupService::new(
+                Arc::new(SqliteStartupStore(db.clone())),
+                Arc::new(ShellLauncher(handle.clone())),
+            );
+            // Hanya saat Windows membuka kita lewat autostart, bukan tiap kali aplikasi dijalankan.
+            if std::env::args().any(|a| a == crate::STARTUP_FLAG)
+                && let Err(e) = startup.run_all()
+            {
+                tracing::warn!("daftar startup tidak dijalankan: {e}");
+            }
+            app.manage(startup);
             let health = HealthService::new(
                 Arc::new(SystemIdle),
                 Arc::new(SystemBrightness),

@@ -1,6 +1,8 @@
+pub mod app_launcher;
 pub mod autostart;
 pub mod brightness;
 pub mod clipboard;
+pub mod disk_scan;
 pub mod fullscreen;
 pub mod idle;
 pub mod network;

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT, type MessageKey } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
 import { formatRemaining, usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
@@ -7,6 +7,9 @@ import { useIslandStore } from "../store";
 export type Panel = "clipboard" | "health" | "net" | "tasks" | "focus" | null;
 
 const ICONS = {
+  music: (
+    <path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm11-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+  ),
   net: <path d="M12 4v13m0 0-4-4m4 4 4-4M5 20h14" />,
   tasks: <path d="m4 7 2 2 3-4M12 7h8M4 16l2 2 3-4M12 16h8" />,
   health: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />,
@@ -49,8 +52,10 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   );
 }
 
-/** Tombol per halaman carousel dok. */
+/** Tombol per halaman carousel dok: tiga berlabel, atau lima hanya ikon saat dok sempit (sama dengan CSS `@container dock`). */
 const PER_PAGE = 3;
+const PER_PAGE_NARROW = 5;
+const NARROW_PX = 400;
 
 interface Item {
   id: keyof typeof ICONS;
@@ -58,6 +63,7 @@ interface Item {
   /** Teks di tombol bila bukan label (mis. hitung mundur). */
   text?: string;
   active: boolean;
+  disabled?: boolean;
   run: () => void;
 }
 
@@ -80,11 +86,38 @@ export function IslandDock({
   const scroller = useRef<HTMLDivElement>(null);
   const drag = useRef({ x: 0, page: 0, moved: false, down: false });
   const wheelLock = useRef(false);
+  const root = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
+  const [narrow, setNarrow] = useState(false);
+  const perPage = narrow ? PER_PAGE_NARROW : PER_PAGE;
   const kind = snapshot.content?.kind;
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([e]) => setNarrow(e.contentRect.width < NARROW_PX));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Jumlah tombol per halaman berubah: kembali ke halaman pertama supaya posisi gulir tidak meleset.
+  useEffect(() => {
+    setPage(0);
+    scroller.current?.scrollTo({ left: 0 });
+  }, [perPage]);
   const focusing = pomodoro.status.phase !== "idle";
 
   const items: Item[] = [
+    {
+      id: "music",
+      label: "dock.music",
+      active: kind === "media" && !panel,
+      disabled: !snapshot.media,
+      run: () => {
+        onPanel(null);
+        void commands.islandShowMedia();
+      },
+    },
     {
       id: "health",
       label: "dock.health",
@@ -142,8 +175,8 @@ export function IslandDock({
     },
   ];
 
-  const pages = Array.from({ length: Math.ceil(items.length / PER_PAGE) }, (_, i) =>
-    items.slice(i * PER_PAGE, (i + 1) * PER_PAGE),
+  const pages = Array.from({ length: Math.ceil(items.length / perPage) }, (_, i) =>
+    items.slice(i * perPage, (i + 1) * perPage),
   );
   const goTo = (p: number) => {
     const el = scroller.current;
@@ -153,7 +186,7 @@ export function IslandDock({
   };
 
   return (
-    <div className="island-dock" onClick={(e) => e.stopPropagation()}>
+    <div ref={root} className="island-dock" onClick={(e) => e.stopPropagation()}>
       <div className="dock-main">
         <div
           ref={scroller}
@@ -215,6 +248,7 @@ export function IslandDock({
                   title={t(it.label)}
                   aria-label={t(it.label)}
                   aria-pressed={it.active}
+                  disabled={it.disabled}
                   onClick={it.run}
                 >
                   <Icon name={it.id} />

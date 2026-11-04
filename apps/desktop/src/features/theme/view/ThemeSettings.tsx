@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useT } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
 import { readPhoto } from "../../../shared/theme/photo";
+import { PRESETS, renderPreset } from "../../../shared/theme/presets";
 import { MASCOTS, THEMES, accentOf } from "../../../shared/theme/themes";
 import { useSettingsVM } from "../../settings/viewmodel/useSettingsVM";
 
@@ -82,6 +83,38 @@ export function ThemeSettings() {
   return (
     <fieldset className="field">
       <legend>{t("settings.theme")}</legend>
+      <div className="theme-preview" aria-hidden="true">
+        <span className="pv-cover" />
+        <div>
+          <b>Isla Desk</b>
+          <small>{t("settings.theme.preview")}</small>
+          <div className="pv-bar" />
+        </div>
+      </div>
+      <div className="presets">
+        {PRESETS.map((p) => {
+          const src = renderPreset(p);
+          const active = background === src;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              className={active ? "preset active" : "preset"}
+              style={{ backgroundImage: `url(${src})` }}
+              aria-pressed={active}
+              onClick={() =>
+                void vm.update({
+                  background: src,
+                  custom_accent: p.accent,
+                  background_mode: "static",
+                })
+              }
+            >
+              <span>{p.name}</span>
+            </button>
+          );
+        })}
+      </div>
       <div className="swatches">
         {THEMES.map((th) => (
           <button
@@ -118,19 +151,21 @@ export function ThemeSettings() {
           </button>
         ))}
       </div>
-      <div className="row">
+      <div className="column">
         {t("settings.theme.mode")}
-        {BACKGROUND_MODES.map((m) => (
-          <button
-            key={m}
-            type="button"
-            className={m === background_mode ? "chip active" : "chip"}
-            aria-pressed={m === background_mode}
-            onClick={() => void vm.update({ background_mode: m })}
-          >
-            {t(`settings.theme.mode.${m}`)}
-          </button>
-        ))}
+        <div className="mode-grid">
+          {BACKGROUND_MODES.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={m === background_mode ? "chip active" : "chip"}
+              aria-pressed={m === background_mode}
+              onClick={() => void vm.update({ background_mode: m })}
+            >
+              {t(`settings.theme.mode.${m}`)}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="row">
         <button type="button" className="chip" onClick={() => photoInput.current?.click()}>

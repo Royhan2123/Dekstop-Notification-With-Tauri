@@ -9,6 +9,8 @@ pub enum IslandAction {
     Notice(String),
     Hover(bool),
     Clicked,
+    /// Tombol Musik di dok: tampilkan kartu musik lebar menggantikan kartu lain (bila ada lagu).
+    MediaShow,
     Dismissed,
     /// Timer dengan token tertentu habis; diabaikan bila token sudah usang.
     Timeout(u64),

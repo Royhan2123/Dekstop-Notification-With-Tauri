@@ -28,6 +28,21 @@ const panelShapes = {
   tasks: { width: 440, height: 290, radius: 26, opacity: 1 },
 };
 
+/** Selama animasi ukuran, hitbox dilaporkan paling sering sekali per jeda ini (bukan tiap frame). */
+const HITBOX_MS = 50;
+/** Sisa ruang di tepi jendela bila layar lebih sempit dari lebar kartu. */
+const EDGE = 16;
+
+function useViewportWidth() {
+  const [w, setW] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const on = () => setW(window.innerWidth);
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return w;
+}
+
 export function IslandShell() {
   const vm = useIslandVM();
   useDynamicBackground();
@@ -38,14 +53,28 @@ export function IslandShell() {
   const reduceMotion = systemReduce || settingReduce;
   const { reportHitbox } = vm;
 
-  // Lapor hitbox setiap ukuran berubah (selama animasi juga) agar klik tembus akurat.
+  // Lapor hitbox setiap ukuran berubah (selama animasi juga, dijarangkan) agar klik tembus akurat.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const observer = new ResizeObserver(() => reportHitbox(el.getBoundingClientRect()));
+    let timer: number | undefined;
+    let last = 0;
+    const send = () => {
+      timer = undefined;
+      last = performance.now();
+      reportHitbox(el.getBoundingClientRect());
+    };
+    const observer = new ResizeObserver(() => {
+      if (timer === undefined)
+        timer = window.setTimeout(send, Math.max(0, HITBOX_MS - (performance.now() - last)));
+    });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
   }, [reportHitbox]);
+  const viewport = useViewportWidth();
 
   const [menu, setMenu] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
@@ -56,7 +85,8 @@ export function IslandShell() {
   useEffect(() => {
     if (!expanded) setPanel(null);
   }, [expanded]);
-  const shape = menu ? menuShape : panelOpen && panel ? panelShapes[panel] : vm.shape;
+  const base = menu ? menuShape : panelOpen && panel ? panelShapes[panel] : vm.shape;
+  const shape = { ...base, width: Math.min(base.width, Math.max(0, viewport - EDGE)) };
   return (
     <motion.div
       ref={ref}

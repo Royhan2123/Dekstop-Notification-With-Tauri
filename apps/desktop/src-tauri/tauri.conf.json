@@ -27,8 +27,10 @@
       {
         "label": "settings",
         "title": "Isla Desk",
-        "width": 560,
-        "height": 680,
+        "width": 920,
+        "height": 720,
+        "minWidth": 360,
+        "minHeight": 480,
         "center": true,
         "visible": false
       },

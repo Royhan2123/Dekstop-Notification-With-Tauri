@@ -1,0 +1,22 @@
+/*
+ * Token desain bersama pulau dan Setelan. Permukaan memakai putih transparan di atas latar, jadi
+ * otomatis serasi dengan warna, foto, atau wallpaper apa pun; tanpa blur latar (mahal di Windows).
+ */
+:root {
+  --base: #07090f;
+  --ink: #f4f6fb;
+  --ink-dim: rgb(244 246 251 / 0.68);
+  --ink-faint: rgb(244 246 251 / 0.42);
+  --surface-1: rgb(255 255 255 / 0.07);
+  --surface-2: rgb(255 255 255 / 0.12);
+  --surface-3: rgb(255 255 255 / 0.18);
+  --line: rgb(255 255 255 / 0.09);
+  --line-strong: rgb(255 255 255 / 0.24);
+  --glow: color-mix(in srgb, var(--accent, #2fcf9c) 28%, transparent);
+  --glow-soft: color-mix(in srgb, var(--accent, #2fcf9c) 14%, transparent);
+  --primary: #4a6cf7;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

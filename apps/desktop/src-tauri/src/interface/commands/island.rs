@@ -30,6 +30,12 @@ pub fn island_click(svc: Svc) {
 
 #[tauri::command]
 #[specta::specta]
+pub fn island_show_media(svc: Svc) {
+    svc.inner().dispatch(IslandAction::MediaShow);
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn island_dismiss(svc: Svc) {
     svc.inner().dispatch(IslandAction::Dismissed);
 }

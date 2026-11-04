@@ -71,6 +71,11 @@ export function shapeFor(
   }
 }
 
+/** Hitbox klik-tembus untuk backend; fungsi tetap supaya pengamat ukuran tidak dipasang ulang tiap render. */
+function reportHitbox(r: DOMRect) {
+  void commands.islandHitbox({ x: r.x, y: r.y, width: r.width, height: r.height });
+}
+
 export function useIslandVM() {
   const snapshot = useIslandStore((s) => s.snapshot);
   const setSnapshot = useIslandStore((s) => s.setSnapshot);
@@ -107,7 +112,6 @@ export function useIslandVM() {
     onDismiss: () => void commands.islandDismiss(),
     // shortcut: klik kanan langsung membuka Setelan; menu cepat (Fokus, Jeda notifikasi) menyusul.
     onOpenSettings: () => void commands.openSettings(),
-    reportHitbox: (r: DOMRect) =>
-      void commands.islandHitbox({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    reportHitbox,
   };
 }

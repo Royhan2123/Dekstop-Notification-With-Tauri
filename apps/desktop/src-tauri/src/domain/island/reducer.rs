@@ -47,6 +47,12 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
                 s.view = View::Expanded(Content::Media);
             }
         }
+        IslandAction::MediaShow => {
+            if s.media.is_some() {
+                s.token += 1;
+                s.view = View::Expanded(Content::Media);
+            }
+        }
         IslandAction::Dismissed => match s.view {
             View::Idle | View::Compact(Content::Media) => {}
             View::Expanded(Content::Media) => s.view = View::Compact(Content::Media),
@@ -305,6 +311,17 @@ mod tests {
         assert!(matches!(s.view, View::Expanded(Content::HealthAlert(_))));
         let (s, _) = run(s, IslandAction::Timeout(token));
         assert_eq!(s.view, View::Idle);
+    }
+
+    #[test]
+    fn tombol_musik_membuka_kartu_musik_dari_kartu_lain_hanya_bila_ada_lagu() {
+        let (s, _) = run(IslandState::default(), IslandAction::MediaShow);
+        assert_eq!(s.view, View::Idle);
+        let (s, _) = run(IslandState::default(), IslandAction::MediaChanged(media()));
+        let (s, _) = run(s, IslandAction::AskOpen);
+        assert_eq!(s.view, View::Expanded(Content::Ask(AskPhase::Input)));
+        let (s, _) = run(s, IslandAction::MediaShow);
+        assert_eq!(s.view, View::Expanded(Content::Media));
     }
 
     #[test]

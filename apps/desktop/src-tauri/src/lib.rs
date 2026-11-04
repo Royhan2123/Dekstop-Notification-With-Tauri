@@ -22,7 +22,7 @@ use interface::commands::github::{
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_set_dnd,
-    island_snapshot,
+    island_show_media, island_snapshot,
 };
 use interface::commands::lyrics::lyrics_fetch;
 use interface::commands::media::{media_control, media_cycle};
@@ -52,6 +52,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             island_hover,
             island_click,
             island_dismiss,
+            island_show_media,
             island_hitbox,
             island_set_dnd,
             dev_simulate,

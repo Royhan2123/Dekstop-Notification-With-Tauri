@@ -19,12 +19,20 @@ html[data-window="island"] #root {
 .island {
   box-sizing: border-box;
   overflow: hidden;
-  background-color: #000;
-  background-image: var(--island-bg, none);
+  container: island / inline-size;
+  background-color: var(--base);
+  /* Latar pilihan (foto/wallpaper/gradasi) di bawah, pendar aksen di atasnya. */
+  background-image:
+    var(--island-bg, linear-gradient(transparent, transparent)),
+    radial-gradient(130% 120% at 0% 0%, var(--glow), transparent 58%),
+    radial-gradient(100% 140% at 100% 100%, var(--glow-soft), transparent 60%);
   background-size: cover;
   background-position: center;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 8px 24px -6px rgb(0 0 0 / 0.6);
   font-size: 13px;
   line-height: 1.3;
 }
@@ -74,7 +82,7 @@ html[data-window="island"] #root {
   padding: 4px 12px;
   border: 0;
   border-radius: 12px;
-  background: #333;
+  background: var(--surface-3);
   color: #fff;
   cursor: pointer;
 }
@@ -99,9 +107,10 @@ html[data-window="island"] #root {
   flex: none;
   width: 76px;
   height: 76px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   object-fit: cover;
-  background: #222;
+  background: var(--surface-2);
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.7);
 }
 
 .media-info {
@@ -174,9 +183,9 @@ html[data-window="island"] #root {
 
 .media-bar {
   flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: #333;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-3);
   overflow: hidden;
 }
 
@@ -189,21 +198,45 @@ html[data-window="island"] #root {
   gap: 12px;
 }
 
+.media-controls {
+  align-items: center;
+}
+
 .media-controls button {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 28px;
+  width: 34px;
+  height: 30px;
   padding: 0;
   border: 0;
-  border-radius: 14px;
+  border-radius: 15px;
   background: transparent;
-  color: #fff;
+  color: var(--ink);
   cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s var(--ease);
 }
 
 .media-controls button:hover {
-  background: #333;
+  background: var(--surface-2);
+}
+
+.media-controls button:active {
+  transform: scale(0.92);
+}
+
+/* Tombol putar/jeda di tengah menonjol sebagai lingkaran terang. */
+.media-controls button:nth-child(2) {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #0b0d12;
+}
+
+.media-controls button:nth-child(2):hover {
+  background: #fff;
 }
 
 .visualizer {
@@ -216,9 +249,11 @@ html[data-window="island"] #root {
 
 .visualizer i {
   width: 3px;
-  height: 4px;
-  border-radius: 1px;
+  height: 14px;
+  border-radius: 1.5px;
   background: currentColor;
+  transform: scaleY(0.22);
+  transform-origin: bottom;
 }
 
 .visualizer.playing i {
@@ -236,18 +271,15 @@ html[data-window="island"] #root {
 }
 
 @keyframes bar {
-  from {
-    height: 3px;
-  }
   to {
-    height: 14px;
+    transform: scaleY(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .visualizer.playing i {
     animation: none;
-    height: 8px;
+    transform: scaleY(0.55);
   }
 
   .island * {
@@ -336,7 +368,7 @@ html[data-window="island"] #root {
   padding: 5px 12px;
   border: 0;
   border-radius: 12px;
-  background: #333;
+  background: var(--surface-3);
   color: #fff;
   font: inherit;
   cursor: pointer;
@@ -348,7 +380,7 @@ html[data-window="island"] #root {
 }
 
 .review-card .review-actions .review-primary {
-  background: #4a6cf7;
+  background: var(--primary);
 }
 
 .media-expanded.with-extras {
@@ -385,7 +417,7 @@ html[data-window="island"] #root {
   padding: 3px 8px;
   border: 0;
   border-radius: 10px;
-  background: #222;
+  background: var(--surface-2);
   color: #fff;
 }
 
@@ -393,7 +425,7 @@ html[data-window="island"] #root {
   padding: 3px 10px;
   border: 0;
   border-radius: 10px;
-  background: #333;
+  background: var(--surface-3);
   color: #fff;
   cursor: pointer;
 }
@@ -420,7 +452,6 @@ html[data-window="island"] #root {
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.97);
-    filter: blur(4px);
   }
 }
 
@@ -469,7 +500,7 @@ html[data-window="island"] #root {
   padding: 6px 12px;
   border: 0;
   border-radius: 13.5px;
-  background: #222;
+  background: var(--surface-2);
   color: #fff;
   font-size: 14px;
   outline: none;
@@ -479,7 +510,7 @@ html[data-window="island"] #root {
   padding: 4px 12px;
   border: 0;
   border-radius: 14px;
-  background: #333;
+  background: var(--surface-3);
   color: #fff;
   cursor: pointer;
   transition:
@@ -488,7 +519,7 @@ html[data-window="island"] #root {
 }
 
 .ask-form button[type="submit"]:not(:disabled) {
-  background: color-mix(in srgb, var(--accent, #2fcf9c) 40%, #222);
+  background: color-mix(in srgb, var(--accent, #2fcf9c) 40%, var(--surface-2));
 }
 
 .ask-form button:not(:disabled):hover {
@@ -679,7 +710,7 @@ html[data-window="island"] #root {
   padding: 2px 6px;
   border: 0;
   border-radius: 8px;
-  background: #222;
+  background: var(--surface-2);
   color: #fff;
   font-size: 11px;
 }
@@ -702,7 +733,6 @@ html[data-window="island"] #root {
   from {
     opacity: 0;
     transform: scale(0.85);
-    filter: blur(5px);
     color: var(--accent, #2fcf9c);
   }
 }
@@ -745,7 +775,7 @@ html[data-window="island"] #root {
   flex: 1;
   height: 6px;
   border-radius: 3px;
-  background: #333;
+  background: var(--surface-3);
   overflow: hidden;
 }
 
@@ -785,7 +815,7 @@ html[data-window="island"] #root {
   padding: 2px 8px;
   border: 0;
   border-radius: 10px;
-  background: #333;
+  background: var(--surface-3);
   color: #fff;
   font-size: 11px;
   cursor: pointer;
@@ -846,7 +876,7 @@ html[data-window="island"] #root {
 }
 
 .island-menu button:hover {
-  background: #2a2a2a;
+  background: var(--surface-3);
 }
 
 .island-dock {
@@ -859,8 +889,9 @@ html[data-window="island"] #root {
   justify-content: center;
   gap: 5px;
   height: 50px;
-  padding: 0 10px 5px;
+  padding: 0 12px 5px;
   box-sizing: border-box;
+  container: dock / inline-size;
 }
 
 .dock-main {
@@ -904,10 +935,10 @@ html[data-window="island"] #root {
   padding: 0;
   border: 0;
   border-radius: 3px;
-  background: #3a3a3a;
+  background: var(--surface-3);
   cursor: pointer;
   transition:
-    width 0.2s,
+    width 0.2s var(--ease),
     background 0.2s;
 }
 
@@ -920,39 +951,106 @@ html[data-window="island"] #root {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 11px;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
   font-size: 12px;
+  font-weight: 500;
   white-space: nowrap;
   border: 0;
-  border-radius: 12px;
-  background: #1a1a1a;
-  color: #d8d8d8;
+  border-radius: 999px;
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-dim);
   cursor: pointer;
   transition:
-    background 0.15s,
-    color 0.15s;
+    background 0.18s,
+    color 0.18s,
+    transform 0.18s var(--ease);
 }
 
 .dock-btn:hover {
-  background: #2a2a2a;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.dock-btn:active {
+  transform: scale(0.95);
+}
+
+.dock-btn:focus-visible {
+  outline: 2px solid var(--accent, #2fcf9c);
+  outline-offset: 2px;
+}
+
+.dock-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .dock-btn.active {
-  background: var(--accent, #2fcf9c);
+  background: linear-gradient(
+    135deg,
+    var(--accent, #2fcf9c),
+    color-mix(in srgb, var(--accent, #2fcf9c) 62%, #fff)
+  );
+  box-shadow: 0 4px 14px -4px var(--accent, #2fcf9c);
   color: var(--accent-ink, #04231b);
+  font-weight: 600;
 }
 
 .dock-settings {
   justify-content: center;
   width: 34px;
   padding: 0;
-  background: #262626;
+  background: var(--surface-2);
 }
 
 .dock-settings span {
   display: none;
+}
+
+/* Dok sempit: hanya ikon, lebih banyak tombol per halaman (jumlahnya diatur IslandDock). */
+@container dock (max-width: 400px) {
+  .dock-btn:not(.dock-settings) {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .dock-btn:not(.dock-settings) span {
+    display: none;
+  }
+}
+
+/* Pulau sempit: kolom lirik disembunyikan, kartu musik tetap utuh. */
+@container island (max-width: 540px) {
+  .lyric-panel {
+    display: none;
+  }
+}
+
+/* Dasar tombol di panel (zero specificity): permukaan kaca, bukan gaya bawaan browser; aturan khusus tetap menang. */
+:where(.clip-panel, .health-panel, .net-panel, .tasks-panel, .focus-panel) button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+:where(.clip-panel, .health-panel, .net-panel, .tasks-panel, .focus-panel)
+  button:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+
+:where(.clip-panel, .health-panel, .net-panel, .tasks-panel, .focus-panel) button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .clip-panel {
@@ -981,7 +1079,7 @@ html[data-window="island"] #root {
   padding: 5px 10px;
   border: 0;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: var(--surface-1);
   color: #eee;
   font-size: 12px;
   text-align: left;
@@ -992,7 +1090,7 @@ html[data-window="island"] #root {
 }
 
 .clip-rows button:hover {
-  background: #2a2a2a;
+  background: var(--surface-3);
 }
 
 .health-panel {
@@ -1077,7 +1175,7 @@ html[data-window="island"] #root {
   padding: 6px 10px;
   border: 0;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: var(--surface-1);
   color: #fff;
   font: inherit;
   font-size: 12px;
@@ -1155,7 +1253,7 @@ html[data-window="island"] #root {
   padding: 6px 4px;
   border: 0;
   border-radius: 10px;
-  background: #1a1a1a;
+  background: var(--surface-1);
   color: #fff;
   font: inherit;
   font-size: 20px;

@@ -3,6 +3,7 @@
 pub enum PowerAction {
     Shutdown,
     Restart,
+    /// Layar mati sampai ada klik atau tombol; komputer tetap menyala.
     Sleep,
     Lock,
 }

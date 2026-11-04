@@ -34,14 +34,29 @@ impl PowerControl for SystemPowerControl {
                 PowerAction::Restart => run("shutdown", &["/r", "/t", "0"]),
                 PowerAction::Lock => run("rundll32.exe", &["user32.dll,LockWorkStation"]),
                 PowerAction::Sleep => {
-                    use windows::Win32::System::Power::SetSuspendState;
-                    // SAFETY: panggilan tanpa pointer; false,false,false = tidur biasa (bukan hibernasi).
-                    let ok = unsafe { SetSuspendState(false, false, false) };
-                    if ok {
-                        Ok(())
-                    } else {
-                        Err(PowerError::Failed("SetSuspendState gagal".into()))
-                    }
+                    // Tidur = layar mati, menyala lagi oleh klik atau tombol apa saja. Bukan sleep S0/hibernasi:
+                    // di laptop Modern Standby, SetSuspendState bangun hanya lewat tombol power.
+                    // Jeda singkat supaya gerak mouse dari klik konfirmasi tidak langsung menyalakannya lagi.
+                    std::thread::spawn(|| {
+                        use windows::Win32::Foundation::{LPARAM, WPARAM};
+                        use windows::Win32::UI::WindowsAndMessaging::{
+                            HWND_BROADCAST, PostMessageW, SC_MONITORPOWER, WM_SYSCOMMAND,
+                        };
+                        std::thread::sleep(std::time::Duration::from_millis(1500));
+                        // SAFETY: tanpa pointer; lparam 2 = matikan monitor.
+                        let sent = unsafe {
+                            PostMessageW(
+                                Some(HWND_BROADCAST),
+                                WM_SYSCOMMAND,
+                                WPARAM(SC_MONITORPOWER as usize),
+                                LPARAM(2),
+                            )
+                        };
+                        if let Err(e) = sent {
+                            tracing::warn!("gagal mematikan layar: {e}");
+                        }
+                    });
+                    Ok(())
                 }
             }
         }

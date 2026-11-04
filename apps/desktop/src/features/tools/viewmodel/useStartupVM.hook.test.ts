@@ -10,6 +10,7 @@ const apps = [
 const cmds = vi.hoisted(() => ({
   startupList: vi.fn(),
   startupAdd: vi.fn(),
+  startupInstalled: vi.fn(),
   startupRemove: vi.fn(),
   startupMove: vi.fn(),
   startupSetDelay: vi.fn(),
@@ -18,12 +19,18 @@ const cmds = vi.hoisted(() => ({
 }));
 vi.mock("../../../shared/ipc", () => ({ commands: cmds }));
 
-import { useStartupVM } from "./useStartupVM";
+import { filterApps, useStartupVM } from "./useStartupVM";
 
 beforeEach(() => {
   for (const f of Object.values(cmds)) f.mockReset();
   cmds.startupList.mockResolvedValue({ status: "ok", data: apps });
-  for (const k of ["startupRemove", "startupMove", "startupSetDelay", "startupRun"] as const) {
+  for (const k of [
+    "startupAdd",
+    "startupRemove",
+    "startupMove",
+    "startupSetDelay",
+    "startupRun",
+  ] as const) {
     cmds[k].mockResolvedValue(ok);
   }
 });
@@ -59,4 +66,28 @@ it("galat dari backend ditampilkan; coba jalankan menandai sudah dimulai hanya b
   await act(() => result.current.runNow());
   expect(result.current.error).toBeNull();
   expect(result.current.started).toBe(true);
+});
+
+it("pemilih memuat aplikasi terpasang, menambahkan pilihan, dan bisa ditutup", async () => {
+  const chrome = { name: "Google Chrome", path: "C:\\chrome.exe" };
+  cmds.startupInstalled.mockResolvedValue({ status: "ok", data: [chrome] });
+  const { result } = renderHook(() => useStartupVM());
+  await waitFor(() => expect(result.current.apps).toHaveLength(2));
+  expect(result.current.installed).toBeNull();
+  await act(() => result.current.openPicker());
+  expect(result.current.installed).toEqual([chrome]);
+  await act(() => result.current.add(chrome));
+  expect(cmds.startupAdd).toHaveBeenCalledWith("Google Chrome", "C:\\chrome.exe");
+  act(() => result.current.closePicker());
+  expect(result.current.installed).toBeNull();
+});
+
+it("pencarian aplikasi mengabaikan huruf besar/kecil dan spasi di ujung", () => {
+  const list = [
+    { name: "Google Chrome", path: "a" },
+    { name: "Visual Studio Code", path: "b" },
+  ];
+  expect(filterApps(list, "  CHROME ")).toEqual([list[0]]);
+  expect(filterApps(list, "")).toEqual(list);
+  expect(filterApps(list, "zzz")).toEqual([]);
 });

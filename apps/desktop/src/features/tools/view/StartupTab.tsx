@@ -1,10 +1,59 @@
+import { useState } from "react";
 import { useT } from "../../../shared/i18n";
-import { useStartupVM } from "../viewmodel/useStartupVM";
+import { filterApps, useStartupVM } from "../viewmodel/useStartupVM";
 
-/** Aplikasi yang dibuka otomatis saat Windows menyala: pilih, atur urutan dan jeda. */
+/** Aplikasi yang dibuka otomatis saat Windows menyala: pilih dari aplikasi terpasang, atur urutan dan jeda. */
 export function StartupTab() {
   const t = useT();
   const vm = useStartupVM();
+  const [query, setQuery] = useState("");
+
+  if (vm.installed) {
+    const added = new Set(vm.apps.map((a) => a.path.toLowerCase()));
+    const shown = filterApps(vm.installed, query);
+    return (
+      <div className="startup-tab">
+        <div className="startup-pick-head">
+          <button type="button" onClick={vm.closePicker}>
+            ← {t("startup.back")}
+          </button>
+          <input
+            type="search"
+            autoFocus
+            value={query}
+            placeholder={t("startup.search")}
+            aria-label={t("startup.search")}
+            onChange={(e) => setQuery(e.currentTarget.value)}
+          />
+        </div>
+        {vm.loading ? (
+          <p className="shelf-empty">{t("startup.loading")}</p>
+        ) : shown.length === 0 ? (
+          <p className="shelf-empty">{t("startup.none")}</p>
+        ) : (
+          <ul className="startup-pick">
+            {shown.map((a) => {
+              const done = added.has(a.path.toLowerCase());
+              return (
+                <li key={a.path}>
+                  <button
+                    type="button"
+                    disabled={done}
+                    title={a.path}
+                    onClick={() => void vm.add(a)}
+                  >
+                    <span className="startup-name">{a.name}</span>
+                    <span className="startup-tick">{done ? `✓ ${t("startup.added")}` : "+"}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {vm.error && <p className="shelf-empty">{vm.error}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="startup-tab">
@@ -79,7 +128,13 @@ export function StartupTab() {
 
       {vm.error && <p className="shelf-empty">{vm.error}</p>}
       <div className="startup-foot">
-        <button type="button" onClick={() => void vm.add()}>
+        <button
+          type="button"
+          onClick={() => {
+            setQuery("");
+            void vm.openPicker();
+          }}
+        >
           + {t("startup.add")}
         </button>
         <button type="button" disabled={vm.apps.length === 0} onClick={() => void vm.runNow()}>

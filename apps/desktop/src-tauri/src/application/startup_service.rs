@@ -4,15 +4,17 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crate::domain::error::StartupError;
-use crate::domain::ports::{AppLauncher, StartupStore};
+use crate::domain::ports::{AppLauncher, InstalledApps, StartupStore};
 use crate::domain::startup::{
-    MAX_DELAY_SECS, MAX_STARTUP_APPS, StartupApp, clean_path, moved, name_from_path,
+    InstalledApp, MAX_DELAY_SECS, MAX_STARTUP_APPS, StartupApp, clean_path, is_launchable, moved,
+    name_from_path,
 };
 
 /// Daftar aplikasi yang dibuka berurutan (dengan jeda) saat Windows menyala.
 pub struct StartupService {
     store: Arc<dyn StartupStore>,
     launcher: Arc<dyn AppLauncher>,
+    catalog: Arc<dyn InstalledApps>,
     running: AtomicBool,
 }
 
@@ -26,10 +28,15 @@ impl Drop for RunGuard {
 }
 
 impl StartupService {
-    pub fn new(store: Arc<dyn StartupStore>, launcher: Arc<dyn AppLauncher>) -> Arc<Self> {
+    pub fn new(
+        store: Arc<dyn StartupStore>,
+        launcher: Arc<dyn AppLauncher>,
+        catalog: Arc<dyn InstalledApps>,
+    ) -> Arc<Self> {
         Arc::new(Self {
             store,
             launcher,
+            catalog,
             running: AtomicBool::new(false),
         })
     }
@@ -38,12 +45,27 @@ impl StartupService {
         self.store.list()
     }
 
-    pub fn add(&self, path: &str) -> Result<(), StartupError> {
+    /// Aplikasi terpasang yang bisa dipilih.
+    pub fn installed(&self) -> Vec<InstalledApp> {
+        self.catalog.list()
+    }
+
+    /// Tambah satu aplikasi ke akhir daftar; `name` kosong berarti ambil dari nama berkas.
+    pub fn add(&self, name: &str, path: &str) -> Result<(), StartupError> {
         let path = clean_path(path).ok_or(StartupError::EmptyPath)?;
+        if !is_launchable(&path) {
+            return Err(StartupError::NotApp);
+        }
         if self.store.list()?.len() >= MAX_STARTUP_APPS {
             return Err(StartupError::TooMany);
         }
-        self.store.add(&name_from_path(&path), &path, 0)
+        let name = name.trim();
+        let name = if name.is_empty() {
+            name_from_path(&path)
+        } else {
+            name.to_string()
+        };
+        self.store.add(&name, &path, 0)
     }
 
     pub fn set_delay(&self, id: i32, delay_secs: u32) -> Result<(), StartupError> {
@@ -142,10 +164,25 @@ mod tests {
         }
     }
 
+    struct Catalog;
+
+    impl InstalledApps for Catalog {
+        fn list(&self) -> Vec<InstalledApp> {
+            vec![InstalledApp {
+                name: "Chrome".into(),
+                path: "C:\\chrome.exe".into(),
+            }]
+        }
+    }
+
     fn fixture() -> (Arc<StartupService>, Arc<Recorder>) {
         let rec = Arc::new(Recorder::default());
         (
-            StartupService::new(Arc::new(MemStore::default()), rec.clone()),
+            StartupService::new(
+                Arc::new(MemStore::default()),
+                rec.clone(),
+                Arc::new(Catalog),
+            ),
             rec,
         )
     }
@@ -153,20 +190,33 @@ mod tests {
     #[test]
     fn tambah_menolak_kosong_dan_batas_lalu_menamai_dari_berkas() {
         let (svc, _) = fixture();
-        assert!(matches!(svc.add("  \"\" "), Err(StartupError::EmptyPath)));
-        svc.add("C:\\Apps\\Code.exe").unwrap();
-        assert_eq!(svc.list().unwrap()[0].name, "Code");
-        for i in 1..MAX_STARTUP_APPS {
-            svc.add(&format!("C:\\a{i}.exe")).unwrap();
+        assert!(matches!(
+            svc.add("", "  \"\" "),
+            Err(StartupError::EmptyPath)
+        ));
+        assert!(matches!(
+            svc.add("", "C:\\a.pdf"),
+            Err(StartupError::NotApp)
+        ));
+        svc.add("", "C:\\Apps\\Code.exe").unwrap();
+        svc.add(" Chrome Browser ", "C:\\chrome.exe").unwrap();
+        let names: Vec<_> = svc.list().unwrap().into_iter().map(|a| a.name).collect();
+        assert_eq!(names, ["Code", "Chrome Browser"]);
+        assert_eq!(svc.installed().len(), 1);
+        for i in 2..MAX_STARTUP_APPS {
+            svc.add("", &format!("C:\\a{i}.exe")).unwrap();
         }
-        assert!(matches!(svc.add("C:\\x.exe"), Err(StartupError::TooMany)));
+        assert!(matches!(
+            svc.add("", "C:\\x.exe"),
+            Err(StartupError::TooMany)
+        ));
     }
 
     #[test]
     fn jeda_dibatasi_dan_urutan_bisa_digeser() {
         let (svc, _) = fixture();
-        svc.add("C:\\a.exe").unwrap();
-        svc.add("C:\\b.exe").unwrap();
+        svc.add("", "C:\\a.exe").unwrap();
+        svc.add("", "C:\\b.exe").unwrap();
         svc.set_delay(1, 99_999).unwrap();
         assert_eq!(svc.list().unwrap()[0].delay_secs, MAX_DELAY_SECS);
         svc.move_item(2, true).unwrap();
@@ -178,7 +228,7 @@ mod tests {
     fn menjalankan_berurutan_melewati_yang_gagal() {
         let (svc, rec) = fixture();
         for p in ["C:\\a.exe", "C:\\rusak.exe", "C:\\c.exe"] {
-            svc.add(p).unwrap();
+            svc.add("", p).unwrap();
         }
         svc.run_all().unwrap().join().unwrap();
         assert_eq!(*rec.0.lock().unwrap(), ["C:\\a.exe", "C:\\c.exe"]);
@@ -189,7 +239,7 @@ mod tests {
     #[test]
     fn panggilan_kedua_saat_masih_jalan_ditolak() {
         let (svc, _) = fixture();
-        svc.add("C:\\a.exe").unwrap();
+        svc.add("", "C:\\a.exe").unwrap();
         svc.set_delay(1, 1).unwrap();
         let h = svc.run_all().unwrap();
         assert!(matches!(svc.run_all(), Err(StartupError::Busy)));

@@ -299,5 +299,16 @@
   "disk.total": "Total {0}",
   "disk.empty": "Folder ini kosong.",
   "disk.reveal": "Tampilkan di Explorer",
-  "disk.hint": "Hanya untuk melihat. Hapus sendiri lewat Explorer."
+  "disk.hint": "Hanya untuk melihat. Hapus sendiri lewat Explorer.",
+  "startup.back": "Kembali",
+  "startup.search": "Cari aplikasi…",
+  "startup.loading": "Membaca daftar aplikasi…",
+  "startup.none": "Tidak ada aplikasi yang cocok.",
+  "startup.added": "Sudah ada",
+  "health.stretch.avatar_pick": "Pilih karakter",
+  "health.stretch.avatar.robo": "Robo",
+  "health.stretch.avatar.mimi": "Mimi si kucing",
+  "health.stretch.avatar.beno": "Beno si beruang",
+  "health.stretch.avatar.astro": "Astro",
+  "health.stretch.avatar.alien": "Alien hijau"
 }

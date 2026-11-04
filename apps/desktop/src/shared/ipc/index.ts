@@ -20,6 +20,7 @@ import {
   type PowerActionDto,
   type TaskDto,
   type StartupAppDto,
+  type InstalledAppDto,
   type DiskEntryDto,
   type DiskStatusDto,
 } from "../../bindings";
@@ -45,6 +46,7 @@ export type {
   PowerActionDto,
   TaskDto,
   StartupAppDto,
+  InstalledAppDto,
   DiskEntryDto,
   DiskStatusDto,
 };

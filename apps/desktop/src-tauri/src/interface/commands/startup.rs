@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use tauri::{AppHandle, Manager, WebviewWindow};
-use tauri_plugin_dialog::DialogExt;
+use tauri::{AppHandle, Manager};
 
 use crate::application::startup_service::StartupService;
-use crate::interface::dto::StartupAppDto;
+use crate::interface::dto::{InstalledAppDto, StartupAppDto};
 
 const OFF: &str = "daftar startup nonaktif (database tidak bisa dibuka)";
 
@@ -21,28 +20,22 @@ pub fn startup_list(app: AppHandle) -> Result<Vec<StartupAppDto>, String> {
     Ok(apps.iter().map(Into::into).collect())
 }
 
-/// Buka dialog pilih berkas lalu tambahkan ke daftar; `false` bila pengguna membatalkan.
+/// Aplikasi terpasang (dari registri, bisa memakan ratusan ms) untuk dipilih di daftar.
 #[tauri::command]
 #[specta::specta]
-pub async fn startup_add(app: AppHandle, window: WebviewWindow) -> Result<bool, String> {
+pub async fn startup_installed(app: AppHandle) -> Result<Vec<InstalledAppDto>, String> {
     let svc = service(&app)?;
-    // Dialog dimiliki jendela pulau supaya muncul di atasnya (pulau selalu di atas).
-    let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog()
-            .file()
-            .set_parent(&window)
-            .add_filter("Aplikasi", &["exe", "lnk", "bat", "cmd", "url"])
-            .blocking_pick_file()
-    })
-    .await
-    .map_err(|e| e.to_string())?;
-    let Some(file) = picked else {
-        return Ok(false);
-    };
-    let path = file.into_path().map_err(|e| e.to_string())?;
-    svc.add(&path.to_string_lossy())
+    let apps = tauri::async_runtime::spawn_blocking(move || svc.installed())
+        .await
         .map_err(|e| e.to_string())?;
-    Ok(true)
+    Ok(apps.iter().map(Into::into).collect())
+}
+
+/// Tambahkan aplikasi pilihan pengguna ke akhir daftar startup.
+#[tauri::command]
+#[specta::specta]
+pub fn startup_add(app: AppHandle, name: String, path: String) -> Result<(), String> {
+    service(&app)?.add(&name, &path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

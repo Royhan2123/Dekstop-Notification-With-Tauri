@@ -8,13 +8,26 @@ pub struct StartupApp {
     pub delay_secs: u32,
 }
 
+/// Aplikasi terpasang yang bisa dipilih (dari daftar program Windows).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InstalledApp {
+    pub name: String,
+    pub path: String,
+}
+
 pub const MAX_STARTUP_APPS: usize = 20;
 pub const MAX_DELAY_SECS: u32 = 300;
 
-/// Path dari kotak dialog: spasi dan tanda kutip di ujung dibuang; kosong ditolak.
+/// Path dari frontend: spasi dan tanda kutip di ujung dibuang; kosong ditolak.
 pub fn clean_path(raw: &str) -> Option<String> {
     let p = raw.trim().trim_matches('"').trim();
     (!p.is_empty()).then(|| p.to_string())
+}
+
+/// Hanya program (.exe) atau pintasannya (.lnk) yang boleh masuk daftar startup.
+pub fn is_launchable(path: &str) -> bool {
+    let p = path.to_ascii_lowercase();
+    p.ends_with(".exe") || p.ends_with(".lnk")
 }
 
 /// Nama tampilan = nama berkas tanpa ekstensi ("C:\\...\\chrome.exe" -> "chrome").
@@ -53,6 +66,14 @@ mod tests {
         );
         assert_eq!(name_from_path("D:/x/code.cmd"), "code");
         assert_eq!(name_from_path("tanpa-ekstensi"), "tanpa-ekstensi");
+    }
+
+    #[test]
+    fn hanya_exe_dan_pintasan_yang_bisa_dijalankan() {
+        assert!(is_launchable("C:\\A\\Chrome.EXE"));
+        assert!(is_launchable("C:\\Menu\\App.lnk"));
+        assert!(!is_launchable("C:\\a\\skrip.bat"));
+        assert!(!is_launchable("C:\\a\\dokumen.pdf"));
     }
 
     #[test]

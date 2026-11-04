@@ -1,14 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
-import { commands, type StartupAppDto } from "../../../shared/ipc";
+import { commands, type InstalledAppDto, type StartupAppDto } from "../../../shared/ipc";
 import { useSettingsStore } from "../../settings/store";
 
 type Done = { status: "ok" } | { status: "error"; error: string };
+
+/** Saring daftar aplikasi terpasang menurut kata kunci (huruf besar/kecil diabaikan). */
+export function filterApps(apps: InstalledAppDto[], query: string): InstalledAppDto[] {
+  const q = query.trim().toLowerCase();
+  return q ? apps.filter((a) => a.name.toLowerCase().includes(q)) : apps;
+}
 
 /** Daftar aplikasi yang dibuka saat Windows menyala + saklar "buka Isla Desk saat Windows menyala". */
 export function useStartupVM() {
   const [apps, setApps] = useState<StartupAppDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  /** `null` = pemilih tertutup; larik = pemilih terbuka (kosong selagi memuat). */
+  const [installed, setInstalled] = useState<InstalledAppDto[] | null>(null);
+  const [loading, setLoading] = useState(false);
   const settings = useSettingsStore((s) => s.settings);
   const setSettings = useSettingsStore((s) => s.setSettings);
 
@@ -40,12 +49,22 @@ export function useStartupVM() {
       if (r.status === "ok") setSettings(r.data);
       else setError(r.error);
     },
-    /** Membuka dialog pilih berkas; tidak melakukan apa-apa bila dibatalkan. */
-    add: async () => {
-      const r = await commands.startupAdd();
-      setError(r.status === "error" ? r.error : null);
-      await refresh();
+    installed,
+    loading,
+    /** Buka pemilih: aplikasi terpasang dibaca dari Windows. */
+    openPicker: async () => {
+      setInstalled([]);
+      setLoading(true);
+      const r = await commands.startupInstalled();
+      setLoading(false);
+      if (r.status === "ok") setInstalled(r.data);
+      else {
+        setError(r.error);
+        setInstalled(null);
+      }
     },
+    closePicker: () => setInstalled(null),
+    add: (a: InstalledAppDto) => run(commands.startupAdd(a.name, a.path)),
     remove: (a: StartupAppDto) => run(commands.startupRemove(a.id)),
     move: (a: StartupAppDto, up: boolean) => run(commands.startupMove(a.id, up)),
     setDelay: (a: StartupAppDto, secs: number) =>

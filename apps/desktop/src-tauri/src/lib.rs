@@ -41,7 +41,8 @@ use interface::commands::shelf::{
     shelf_add, shelf_clear, shelf_copy, shelf_open_file, shelf_remove, shelf_reveal, shelf_show,
 };
 use interface::commands::startup::{
-    startup_add, startup_list, startup_move, startup_remove, startup_run, startup_set_delay,
+    startup_add, startup_installed, startup_list, startup_move, startup_remove, startup_run,
+    startup_set_delay,
 };
 use interface::commands::tasks::{
     tasks_add, tasks_clear_done, tasks_list, tasks_remove, tasks_set_done, tasks_set_note,
@@ -101,6 +102,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             tasks_update_note,
             power_perform,
             startup_list,
+            startup_installed,
             startup_add,
             startup_set_delay,
             startup_move,
@@ -155,7 +157,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
-        .plugin(tauri_plugin_dialog::init())
         // Argumen ini membedakan start otomatis Windows dari peluncuran biasa (menjalankan daftar startup).
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,

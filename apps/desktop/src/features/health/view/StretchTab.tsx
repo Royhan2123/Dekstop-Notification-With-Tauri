@@ -1,10 +1,15 @@
+import { useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
+import { useSettingsStore } from "../../settings/store";
+import { AVATARS, saveAvatar, savedAvatar, type AvatarSpec } from "../viewmodel/avatars";
 import {
   STRETCH_MOVES,
   STRETCH_SECS,
   useStretchVM,
   type StretchMove,
 } from "../viewmodel/useStretchVM";
+import { Avatar3D } from "./Avatar3D";
 
 const NAME = {
   neck: "health.stretch.neck",
@@ -20,7 +25,7 @@ const HINT = {
   back: "health.stretch.back_hint",
 } as const;
 
-/** Figur garis sederhana; tiap gerakan menganimasikan bagian tubuhnya lewat CSS. */
+/** Cadangan bila WebGL tidak tersedia: figur garis sederhana, tiap gerakan dianimasikan lewat CSS. */
 function Figure({ move }: { move: StretchMove }) {
   return (
     <svg className={`fig ${move}`} viewBox="0 0 64 64" aria-hidden="true">
@@ -43,17 +48,48 @@ function Figure({ move }: { move: StretchMove }) {
   );
 }
 
+const hex = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
+
 /** Peregangan berpemandu: empat gerakan masing-masing 20 detik, bisa dilewati. */
 export function StretchTab({ onDone, count }: { onDone: () => void; count: number }) {
   const t = useT();
   const vm = useStretchVM(onDone);
   const { state, move } = vm;
+  const systemReduce = useReducedMotion();
+  const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
+  const [avatarId, setAvatarId] = useState<AvatarSpec["id"]>(savedAvatar);
+  const avatar = AVATARS.find((a) => a.id === avatarId) ?? AVATARS[0];
   const elapsed = (STRETCH_SECS - state.left + 1) / STRETCH_SECS;
 
   return (
     <div className="stretch" role="status">
-      <div className={state.done ? "stretch-fig done" : "stretch-fig"}>
-        <Figure move={state.running ? move : "neck"} />
+      <div className="stretch-side">
+        <div className={state.done ? "stretch-fig done" : "stretch-fig"}>
+          <Avatar3D
+            avatar={avatar}
+            mode={state.done ? "done" : state.running ? move : "idle"}
+            calm={systemReduce === true || settingReduce}
+            fallback={<Figure move={state.running ? move : "neck"} />}
+          />
+        </div>
+        <div className="avatar-pick" role="radiogroup" aria-label={t("health.stretch.avatar_pick")}>
+          {AVATARS.map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              role="radio"
+              aria-checked={a.id === avatarId}
+              aria-label={t(a.name)}
+              title={t(a.name)}
+              className={a.id === avatarId ? "on" : ""}
+              style={{ "--sk": hex(a.skin), "--bd": hex(a.body) } as React.CSSProperties}
+              onClick={() => {
+                setAvatarId(a.id);
+                saveAvatar(a.id);
+              }}
+            />
+          ))}
+        </div>
       </div>
       <div className="stretch-text">
         {state.done ? (

@@ -55,6 +55,7 @@ use crate::infrastructure::system::clipboard::SystemClipboard;
 use crate::infrastructure::system::disk_scan::FsDiskScanner;
 use crate::infrastructure::system::fullscreen::SystemFullscreen;
 use crate::infrastructure::system::idle::SystemIdle;
+use crate::infrastructure::system::installed_apps::RegistryApps;
 use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
 use crate::infrastructure::system::power_control::SystemPowerControl;
@@ -122,6 +123,7 @@ pub fn assemble(app: &App) {
             let startup = StartupService::new(
                 Arc::new(SqliteStartupStore(db.clone())),
                 Arc::new(ShellLauncher(handle.clone())),
+                Arc::new(RegistryApps),
             );
             // Hanya saat Windows membuka kita lewat autostart, bukan tiap kali aplikasi dijalankan.
             if std::env::args().any(|a| a == crate::STARTUP_FLAG)

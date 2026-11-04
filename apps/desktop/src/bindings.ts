@@ -340,11 +340,22 @@ export const commands = {
     }
   },
   /**
-   * Buka dialog pilih berkas lalu tambahkan ke daftar; `false` bila pengguna membatalkan.
+   * Aplikasi terpasang (dari registri, bisa memakan ratusan ms) untuk dipilih di daftar.
    */
-  async startupAdd(): Promise<Result<boolean, string>> {
+  async startupInstalled(): Promise<Result<InstalledAppDto[], string>> {
     try {
-      return { status: "ok", data: await TAURI_INVOKE("startup_add") };
+      return { status: "ok", data: await TAURI_INVOKE("startup_installed") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Tambahkan aplikasi pilihan pengguna ke akhir daftar startup.
+   */
+  async startupAdd(name: string, path: string): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("startup_add", { name, path }) };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: "error", error: e as any };
@@ -687,6 +698,7 @@ export type HealthSummaryDto = {
    */
   days: DayUsageDto[];
 };
+export type InstalledAppDto = { name: string; path: string };
 export type IslandContent = { kind: ContentKind; text: string; detail: string | null };
 export type IslandMode = "hidden" | "idle" | "compact" | "expanded";
 export type IslandSnapshot = {

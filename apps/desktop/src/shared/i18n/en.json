@@ -299,5 +299,16 @@
   "disk.total": "Total {0}",
   "disk.empty": "This folder is empty.",
   "disk.reveal": "Show in Explorer",
-  "disk.hint": "View only. Delete things yourself in Explorer."
+  "disk.hint": "View only. Delete things yourself in Explorer.",
+  "startup.back": "Back",
+  "startup.search": "Search apps…",
+  "startup.loading": "Reading the app list…",
+  "startup.none": "No matching apps.",
+  "startup.added": "Added",
+  "health.stretch.avatar_pick": "Pick a character",
+  "health.stretch.avatar.robo": "Robo",
+  "health.stretch.avatar.mimi": "Mimi the cat",
+  "health.stretch.avatar.beno": "Beno the bear",
+  "health.stretch.avatar.astro": "Astro",
+  "health.stretch.avatar.alien": "Green alien"
 }

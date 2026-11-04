@@ -118,6 +118,8 @@ pub enum BridgeError {
 pub enum StartupError {
     #[error("path aplikasi kosong")]
     EmptyPath,
+    #[error("hanya program (.exe) yang bisa ditambahkan")]
+    NotApp,
     #[error("terlalu banyak aplikasi startup, hapus satu dulu")]
     TooMany,
     #[error("aplikasi tidak ditemukan di daftar")]

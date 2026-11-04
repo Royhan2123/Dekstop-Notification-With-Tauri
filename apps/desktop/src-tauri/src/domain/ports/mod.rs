@@ -17,7 +17,7 @@ use crate::domain::model::review::{Diff, PushRef, SecretHit};
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, MediaInfo};
 use crate::domain::power::PowerAction;
-use crate::domain::startup::StartupApp;
+use crate::domain::startup::{InstalledApp, StartupApp};
 use crate::domain::task::Task;
 
 /// Penerima snapshot state pulau (mis. emit event ke frontend).
@@ -203,6 +203,11 @@ pub trait StartupStore: Send + Sync {
     /// Posisi baru = urutan id pada `ids`.
     fn reorder(&self, ids: &[i32]) -> Result<(), StartupError>;
     fn remove(&self, id: i32) -> Result<(), StartupError>;
+}
+
+/// Daftar aplikasi terpasang (seperti Program dan Fitur di Control Panel), tiap entri punya .exe.
+pub trait InstalledApps: Send + Sync {
+    fn list(&self) -> Vec<InstalledApp>;
 }
 
 /// Membuka satu aplikasi/berkas seperti klik dua kali di Explorer.

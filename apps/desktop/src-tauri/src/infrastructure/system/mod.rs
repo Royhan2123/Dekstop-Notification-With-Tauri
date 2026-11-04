@@ -5,6 +5,7 @@ pub mod clipboard;
 pub mod disk_scan;
 pub mod fullscreen;
 pub mod idle;
+pub mod installed_apps;
 pub mod network;
 pub mod power;
 pub mod power_control;

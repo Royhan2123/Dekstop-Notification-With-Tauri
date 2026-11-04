@@ -14,7 +14,7 @@ use crate::domain::model::review::Severity;
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, ReviewReport};
 use crate::domain::power::PowerAction;
-use crate::domain::startup::StartupApp;
+use crate::domain::startup::{InstalledApp, StartupApp};
 use crate::domain::task::Task;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
@@ -434,6 +434,21 @@ impl From<&StartupApp> for StartupAppDto {
             name: a.name.clone(),
             path: a.path.clone(),
             delay_secs: a.delay_secs,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct InstalledAppDto {
+    pub name: String,
+    pub path: String,
+}
+
+impl From<&InstalledApp> for InstalledAppDto {
+    fn from(a: &InstalledApp) -> Self {
+        Self {
+            name: a.name.clone(),
+            path: a.path.clone(),
         }
     }
 }

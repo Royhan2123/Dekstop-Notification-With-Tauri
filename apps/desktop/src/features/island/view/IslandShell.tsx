@@ -81,6 +81,12 @@ export function IslandShell() {
   const { content, mode } = vm;
   const expanded = mode === "expanded";
   const panelOpen = panel !== null && expanded;
+  // Panel hanya lapisan di depan kartu backend; menutupnya juga menutup kartu buatan pengguna di belakangnya
+  // (Rak, Tanya AI, Musik) supaya pulau tidak "berpindah" ke kartu itu. Hasil review tetap menunggu.
+  const closePanel = () => {
+    setPanel(null);
+    if (content && ["ask", "shelf", "media"].includes(content.kind)) vm.onDismiss();
+  };
   // Panel hanya hidup selama pulau terbuka.
   useEffect(() => {
     if (!expanded) setPanel(null);
@@ -125,15 +131,15 @@ export function IslandShell() {
               <IslandMenu onClose={() => setMenu(false)} onOpenSettings={vm.onOpenSettings} />
             ) : panelOpen ? (
               panel === "health" ? (
-                <HealthPanel onClose={() => setPanel(null)} />
+                <HealthPanel onClose={closePanel} />
               ) : panel === "focus" ? (
-                <FocusPanel onClose={() => setPanel(null)} />
+                <FocusPanel onClose={closePanel} />
               ) : panel === "net" ? (
-                <NetPanel onClose={() => setPanel(null)} />
+                <NetPanel onClose={closePanel} />
               ) : panel === "tasks" ? (
-                <TasksPanel onClose={() => setPanel(null)} />
+                <TasksPanel onClose={closePanel} />
               ) : (
-                <ClipboardPanel onClose={() => setPanel(null)} />
+                <ClipboardPanel onClose={closePanel} />
               )
             ) : !content ? null : content.kind === "brightness" ? (
               <VolumeHud level={Number(content.text) || 0} muted={false} kind="brightness" />

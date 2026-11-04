@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { commands, subscribeIsland, type IslandSnapshot } from "../../../shared/ipc";
+import { useLyricsSync, useLyricsVM } from "../../media/viewmodel/useLyricsVM";
 import { useIslandStore } from "../store";
 
 /** Tinggi dok fitur di dasar pulau terbuka. */
@@ -13,8 +14,11 @@ export interface Shape {
   opacity: number;
 }
 
+/** Lebar kartu media yang membuka kolom lirik di sisi kanan. */
+const LYRICS_W = 600;
+
 /** Ukuran pulau (piksel logis) untuk tiap mode; `hovered` hanya melebarkan sedikit saat idle. */
-export function shapeFor(s: IslandSnapshot): Shape {
+export function shapeFor(s: IslandSnapshot, lyrics = false): Shape {
   switch (s.mode) {
     case "hidden":
       return { width: 0, height: 0, radius: 0, opacity: 0 };
@@ -45,15 +49,22 @@ export function shapeFor(s: IslandSnapshot): Shape {
       }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {
-        return { width: 440, height: 170 + DOCK_H, radius: 28, opacity: 1 };
+        return { width: lyrics ? LYRICS_W : 440, height: 170 + DOCK_H, radius: 28, opacity: 1 };
       }
-      return { width: 440, height: 112 + DOCK_H, radius: 28, opacity: 1 };
+      return {
+        width: lyrics && s.content?.kind === "media" ? LYRICS_W : 440,
+        height: 112 + DOCK_H,
+        radius: 28,
+        opacity: 1,
+      };
   }
 }
 
 export function useIslandVM() {
   const snapshot = useIslandStore((s) => s.snapshot);
   const setSnapshot = useIslandStore((s) => s.setSnapshot);
+  useLyricsSync();
+  const hasLyrics = useLyricsVM().length > 0;
 
   useEffect(() => {
     const stop = subscribeIsland(setSnapshot);
@@ -74,7 +85,7 @@ export function useIslandVM() {
 
   return {
     mode: snapshot.mode,
-    shape: shapeFor(snapshot),
+    shape: shapeFor(snapshot, hasLyrics),
     content: snapshot.content,
     hasFindings: (snapshot.review?.findings.length ?? 0) > 0,
     onHover: (hovered: boolean) => void commands.islandHover(hovered),

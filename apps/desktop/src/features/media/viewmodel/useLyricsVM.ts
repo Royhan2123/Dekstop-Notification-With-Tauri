@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { create } from "zustand";
 import { commands, type LyricLineDto } from "../../../shared/ipc";
 import { useIslandStore } from "../../island/store";
 
@@ -42,23 +43,29 @@ export function currentLyric(
   return { text, fraction: Math.min(1, Math.max(0, (positionMs - ms) / sing)) };
 }
 
-/** Lirik berwaktu lagu yang sedang diputar; kosong bila tidak ada. Diambil sekali per lagu. */
+const useLyricsStore = create<{ lines: LyricLineDto[] }>(() => ({ lines: [] }));
+
+/** Lirik berwaktu lagu yang sedang diputar; kosong bila tidak ada. */
 export function useLyricsVM(): LyricLineDto[] {
+  return useLyricsStore((s) => s.lines);
+}
+
+/** Mengambil lirik sekali per lagu; dipasang satu kali di pulau supaya ukuran pulau dan kartu media memakai data yang sama. */
+export function useLyricsSync(): void {
   const content = useIslandStore((s) => s.snapshot.content);
   const duration = useIslandStore((s) => s.snapshot.media?.duration_ms ?? 0);
   const title = content?.kind === "media" ? content.text : "";
   const artist = content?.kind === "media" ? (content.detail ?? "") : "";
-  const [lines, setLines] = useState<LyricLineDto[]>([]);
 
   useEffect(() => {
-    setLines([]);
+    useLyricsStore.setState({ lines: [] });
     if (!title || duration <= 0) return;
     let alive = true;
     let timer: number | undefined;
     const attempt = (n: number) => {
       void commands.lyricsFetch(artist, title, duration).then((r) => {
         if (!alive) return;
-        if (r.status === "ok") setLines(r.data);
+        if (r.status === "ok") useLyricsStore.setState({ lines: r.data });
         else if (n < MAX_RETRIES) timer = window.setTimeout(() => attempt(n + 1), RETRY_MS);
       });
     };
@@ -68,6 +75,4 @@ export function useLyricsVM(): LyricLineDto[] {
       window.clearTimeout(timer);
     };
   }, [artist, title, Math.round(duration / 1000)]);
-
-  return lines;
 }

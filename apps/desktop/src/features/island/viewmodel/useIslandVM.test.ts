@@ -18,6 +18,17 @@ it("hover melebarkan pulau idle sedikit", () => {
   );
 });
 
+it("kartu media melebar untuk kolom lirik, kartu lain tidak", () => {
+  const media = {
+    ...idleSnapshot,
+    mode: "expanded" as const,
+    content: { kind: "media" as const, text: "t", detail: "a" },
+  };
+  expect(shapeFor(media, true).width).toBeGreaterThan(shapeFor(media).width);
+  const plain = { ...idleSnapshot, mode: "expanded" as const };
+  expect(shapeFor(plain, true).width).toBe(shapeFor(plain).width);
+});
+
 it("store menyimpan snapshot terbaru", () => {
   const next = { ...idleSnapshot, mode: "compact" as const };
   useIslandStore.getState().setSnapshot(next);

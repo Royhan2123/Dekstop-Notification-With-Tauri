@@ -2,9 +2,9 @@ import { useT } from "../../../shared/i18n";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "../../../shared/ui/icons";
 import { useState } from "react";
 import { useIslandStore } from "../../island/store";
-import { currentLyric, useLyricsVM } from "../viewmodel/useLyricsVM";
+import { useLyricsVM } from "../viewmodel/useLyricsVM";
 import { LYRIC_TICK_MS, formatTime, useMediaVM } from "../viewmodel/useMediaVM";
-import { KaraokeLine } from "./KaraokeLine";
+import { LyricPanel } from "./LyricPanel";
 import { Visualizer } from "./Visualizer";
 
 export function MediaExpanded() {
@@ -16,7 +16,6 @@ export function MediaExpanded() {
   const [rate, setRate] = useState(1);
   const [query, setQuery] = useState("");
   if (!media || !content) return null;
-  const lyric = media.playing ? currentLyric(lyrics, vm.positionMs) : null;
   const ratio = media.duration_ms > 0 ? vm.positionMs / media.duration_ms : 0;
   return (
     <div
@@ -33,14 +32,10 @@ export function MediaExpanded() {
           <span className="island-text">{content.text}</span>
           <Visualizer color={media.color} playing={media.playing} />
         </div>
-        {lyric ? (
-          <KaraokeLine text={lyric.text} fraction={lyric.fraction} />
-        ) : (
-          <span className="island-detail">
-            {content.detail}
-            {media.session_count > 1 && ` · ${media.session_index + 1}/${media.session_count}`}
-          </span>
-        )}
+        <span className="island-detail">
+          {content.detail}
+          {media.session_count > 1 && ` · ${media.session_index + 1}/${media.session_count}`}
+        </span>
         {media.duration_ms > 0 && (
           <div className="media-progress">
             <span>{formatTime(vm.positionMs)}</span>
@@ -102,6 +97,7 @@ export function MediaExpanded() {
           </div>
         )}
       </div>
+      {lyrics.length > 0 && <LyricPanel lines={lyrics} positionMs={vm.positionMs} />}
     </div>
   );
 }

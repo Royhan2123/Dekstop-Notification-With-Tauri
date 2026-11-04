@@ -79,6 +79,12 @@ pub enum ThemeError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum ChatError {
+    #[error("gagal menyimpan riwayat chat: {0}")]
+    Storage(String),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum TaskError {
     #[error("judul tugas kosong")]
     EmptyTitle,

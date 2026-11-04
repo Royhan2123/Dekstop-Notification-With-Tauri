@@ -27,6 +27,14 @@ fn migrations() -> Migrations<'static> {
                 done INTEGER NOT NULL DEFAULT 0
             );",
         ),
+        M::up(
+            "CREATE TABLE chat_turns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                model TEXT NOT NULL
+            );",
+        ),
     ])
 }
 

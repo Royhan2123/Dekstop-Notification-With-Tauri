@@ -391,6 +391,28 @@ async aiActive() : Promise<AiActiveDto> {
     return await TAURI_INVOKE("ai_active");
 },
 /**
+ * Riwayat Tanya AI, dari yang terlama ke terbaru.
+ */
+async askHistory() : Promise<Result<ChatTurnDto[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("ask_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Hapus seluruh riwayat Tanya AI.
+ */
+async askClear() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("ask_clear") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
  */
 async shelfAdd(paths: string[]) : Promise<void> {
@@ -447,7 +469,6 @@ settingsChangedEvent: "settings-changed-event"
 /** user-defined types **/
 
 /**
- * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
  * Penyedia dan model yang menjawab Tanya AI; `model` kosong bila penyedia menentukannya sendiri.
  */
 export type AiActiveDto = { provider: AiProvider; model: string }
@@ -455,6 +476,11 @@ export type AiActiveDto = { provider: AiProvider; model: string }
  * "Otak" AI untuk review kode (dipakai mulai Fase 4).
  */
 export type AiProvider = "claude_api" | "gemini" | "deep_seek" | "grok" | "open_ai" | "open_router" | "groq" | "ollama" | "claude_cli"
+/**
+ * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
+ * Satu pertanyaan dan jawabannya di riwayat Tanya AI; `by` adalah AI yang menjawab.
+ */
+export type ChatTurnDto = { question: string; answer: string; by: string }
 export type CiDto = "passing" | "failing" | "pending" | "unknown"
 export type ClipEntryDto = { id: number; text: string }
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume" | "brightness" | "shelf"

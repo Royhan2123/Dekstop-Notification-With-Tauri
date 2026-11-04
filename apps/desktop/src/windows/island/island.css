@@ -579,11 +579,86 @@ html[data-window="island"] #root {
 .ask-answer {
   margin: 0;
   /* Ruang jawaban: 260 (tinggi kartu berjawaban di shapeFor) - 16 padding atas - 30 kotak tulis - 2x8 jarak - 22 pemilih AI. */
-  max-height: 176px;
+  max-height: 54px;
   overflow-y: auto;
   font-size: 13px;
   line-height: 1.4;
   white-space: pre-wrap;
+}
+
+.ask-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ask-clear {
+  flex: none;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(255 255 255 / 0.55);
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.ask-clear:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.ask-clear.confirming {
+  color: #fff;
+  background: #c0392b;
+}
+
+.ask-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 176px;
+  overflow-y: auto;
+  padding-right: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ask-card[data-phase="thinking"] .ask-log {
+  max-height: 138px;
+}
+
+.ask-card[data-phase="failed"] .ask-log {
+  max-height: 112px;
+}
+
+.ask-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ask-log p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ask-q {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 4px 10px;
+  border-radius: 12px 12px 3px 12px;
+  background: color-mix(in srgb, var(--accent, #2fcf9c) 28%, #1c1c1c);
+  font-size: 12px;
+}
+
+.ask-model {
+  font-size: 10px;
+  opacity: 0.45;
 }
 
 .ask-by {

@@ -24,9 +24,21 @@ it("kartu media melebar untuk kolom lirik, kartu lain tidak", () => {
     mode: "expanded" as const,
     content: { kind: "media" as const, text: "t", detail: "a" },
   };
-  expect(shapeFor(media, true).width).toBeGreaterThan(shapeFor(media).width);
+  expect(shapeFor(media, { lyrics: true }).width).toBeGreaterThan(shapeFor(media).width);
   const plain = { ...idleSnapshot, mode: "expanded" as const };
-  expect(shapeFor(plain, true).width).toBe(shapeFor(plain).width);
+  expect(shapeFor(plain, { lyrics: true }).width).toBe(shapeFor(plain).width);
+});
+
+it("kartu Tanya AI memanjang bila ada riwayat chat", () => {
+  const ask = {
+    ...idleSnapshot,
+    mode: "expanded" as const,
+    content: { kind: "ask" as const, text: "", detail: "input" },
+  };
+  expect(shapeFor(ask, { chat: true }).height).toBeGreaterThan(shapeFor(ask).height);
+  expect(shapeFor({ ...ask, content: { ...ask.content, detail: "done" } }).height).toBe(
+    shapeFor(ask, { chat: true }).height,
+  );
 });
 
 it("store menyimpan snapshot terbaru", () => {

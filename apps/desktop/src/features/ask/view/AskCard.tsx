@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
 import { useSettingsStore } from "../../settings/store";
@@ -7,6 +7,8 @@ import { AiSwitch } from "./AiSwitch";
 
 /** Jawaban muncul kata demi kata; kata setelah ini muncul bersamaan supaya jawaban panjang tidak lambat. */
 const MAX_STAGGER_WORDS = 60;
+/** Klik kedua tombol hapus harus datang dalam waktu ini. */
+const CONFIRM_MS = 3000;
 
 function Reveal({ text }: { text: string }) {
   let word = 0;
@@ -33,13 +35,32 @@ export function AskCard() {
   const t = useT();
   const vm = useAskVM();
   const input = useRef<HTMLInputElement>(null);
+  const log = useRef<HTMLDivElement>(null);
   const systemReduce = useReducedMotion();
   const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
+  const [confirming, setConfirming] = useState(false);
+  // Hanya jawaban yang datang selama kartu ini terbuka yang dianimasikan; riwayat lama tampil biasa.
+  const seen = useRef(vm.turns.length);
 
-  // Fokus ke kotak tiap kali kembali ke fase input (dibuka ulang lewat pintasan).
+  // Fokus ke kotak tiap kali siap menerima pertanyaan (dibuka, atau setelah jawaban/galat).
   useEffect(() => {
-    if (vm.phase === "input") input.current?.focus();
+    if (vm.phase !== "thinking") input.current?.focus();
   }, [vm.phase]);
+
+  // Gulir ke chat terbaru saat dibuka dan tiap ada giliran baru.
+  useEffect(() => {
+    const el = log.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [vm.turns.length, vm.phase]);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const id = window.setTimeout(() => setConfirming(false), CONFIRM_MS);
+    return () => window.clearTimeout(id);
+  }, [confirming]);
+
+  const thinking = vm.phase === "thinking";
+  const showLog = vm.turns.length > 0;
 
   return (
     <div
@@ -60,21 +81,35 @@ export function AskCard() {
             autoFocus
             value={vm.question}
             placeholder={t("ask.placeholder")}
-            disabled={vm.phase === "thinking"}
+            disabled={thinking}
             onChange={(e) => vm.setQuestion(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") vm.close();
             }}
           />
         </span>
-        <button type="submit" disabled={vm.phase === "thinking" || !vm.question.trim()}>
+        <button type="submit" disabled={thinking || !vm.question.trim()}>
           {t("ask.send")}
         </button>
         <button type="button" aria-label={t("ask.close")} onClick={vm.close}>
           ×
         </button>
       </form>
-      {vm.phase === "thinking" && (
+      {showLog && (
+        <div className="ask-log" ref={log}>
+          {vm.turns.map((turn, i) => (
+            <div className="ask-turn" key={i}>
+              <p className="ask-q">{turn.question}</p>
+              <p className="ask-a">
+                {i >= seen.current ? <Reveal text={turn.answer} /> : turn.answer}
+              </p>
+              <span className="ask-model">{turn.by}</span>
+            </div>
+          ))}
+          {thinking && vm.pending && <p className="ask-q">{vm.pending}</p>}
+        </div>
+      )}
+      {thinking && (
         <div className="ask-status" role="status">
           <span className="ask-dots" aria-hidden="true">
             <i />
@@ -85,18 +120,28 @@ export function AskCard() {
           <span className="ask-shimmer" aria-hidden="true" />
         </div>
       )}
-      {vm.phase === "done" && (
-        <p className="ask-answer" key={vm.answer}>
-          <Reveal text={vm.answer} />
-        </p>
-      )}
-      {vm.phase === "failed" && (
+      {vm.error && (
         <p role="alert" className="ask-answer ask-error">
-          {vm.answer}
+          {vm.error}
         </p>
       )}
-      {vm.phase !== "thinking" && (
-        <AiSwitch label={t(vm.phase === "input" ? "ask.use" : "ask.answered_by")} />
+      {!thinking && (
+        <div className="ask-foot">
+          <AiSwitch label={t("ask.use")} />
+          {showLog && (
+            <button
+              type="button"
+              className={confirming ? "ask-clear confirming" : "ask-clear"}
+              onClick={() => {
+                if (!confirming) return setConfirming(true);
+                setConfirming(false);
+                void vm.clear();
+              }}
+            >
+              {confirming ? t("ask.clear_confirm") : t("ask.clear")}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

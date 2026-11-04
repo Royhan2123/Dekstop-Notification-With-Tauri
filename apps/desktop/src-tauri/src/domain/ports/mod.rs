@@ -3,8 +3,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::domain::bridge::BridgeCommand;
+use crate::domain::chat::ChatTurn;
 use crate::domain::error::{
-    AiError, BridgeError, CalendarError, GitError, GithubError, LyricsError, MediaError,
+    AiError, BridgeError, CalendarError, ChatError, GitError, GithubError, LyricsError, MediaError,
     SettingsError, TaskError, ThemeError, UsageError,
 };
 use crate::domain::health::DayUsage;
@@ -162,6 +163,15 @@ pub trait FullscreenDetector: Send + Sync {
 /// Total byte jaringan fisik sejak boot (unduh, unggah); `None` bila OS tidak mendukung.
 pub trait NetCounters: Send + Sync {
     fn totals(&self) -> Option<(u64, u64)>;
+}
+
+/// Penyimpanan riwayat Tanya AI.
+pub trait ChatStore: Send + Sync {
+    /// Dari yang terlama ke terbaru.
+    fn list(&self) -> Result<Vec<ChatTurn>, ChatError>;
+    /// Menambah satu giliran; yang melewati `MAX_CHAT_TURNS` terlama dibuang.
+    fn add(&self, turn: &ChatTurn) -> Result<(), ChatError>;
+    fn clear(&self) -> Result<(), ChatError>;
 }
 
 /// Penyimpanan daftar tugas.

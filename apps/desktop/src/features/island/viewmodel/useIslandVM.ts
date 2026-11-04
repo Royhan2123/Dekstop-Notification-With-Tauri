@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { commands, subscribeIsland, type IslandSnapshot } from "../../../shared/ipc";
+import { useChatStore } from "../../ask/store";
+import { useChatSync } from "../../ask/viewmodel/useChatSync";
 import { useLyricsSync, useLyricsVM } from "../../media/viewmodel/useLyricsVM";
 import { useIslandStore } from "../store";
 
@@ -17,8 +19,17 @@ export interface Shape {
 /** Lebar kartu media yang membuka kolom lirik di sisi kanan. */
 const LYRICS_W = 600;
 
+/** Hal di luar snapshot yang ikut menentukan ukuran: ada lirik (kartu media) dan ada riwayat chat (Tanya AI). */
+export interface ShapeExtras {
+  lyrics?: boolean;
+  chat?: boolean;
+}
+
 /** Ukuran pulau (piksel logis) untuk tiap mode; `hovered` hanya melebarkan sedikit saat idle. */
-export function shapeFor(s: IslandSnapshot, lyrics = false): Shape {
+export function shapeFor(
+  s: IslandSnapshot,
+  { lyrics = false, chat = false }: ShapeExtras = {},
+): Shape {
   switch (s.mode) {
     case "hidden":
       return { width: 0, height: 0, radius: 0, opacity: 0 };
@@ -42,10 +53,10 @@ export function shapeFor(s: IslandSnapshot, lyrics = false): Shape {
           opacity: 1,
         };
       }
-      // Quick Ask: kotak pertanyaan kecil, memanjang saat ada jawaban.
+      // Quick Ask: kotak pertanyaan kecil; memanjang bila ada riwayat chat atau jawaban sedang datang.
       if (s.content?.kind === "ask") {
-        const answered = s.content.detail === "done" || s.content.detail === "failed";
-        return { width: 520, height: (answered ? 260 : 86) + DOCK_H, radius: 28, opacity: 1 };
+        const busy = s.content.detail === "done" || s.content.detail === "failed";
+        return { width: 520, height: (busy || chat ? 260 : 86) + DOCK_H, radius: 28, opacity: 1 };
       }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {
@@ -65,6 +76,8 @@ export function useIslandVM() {
   const setSnapshot = useIslandStore((s) => s.setSnapshot);
   useLyricsSync();
   const hasLyrics = useLyricsVM().length > 0;
+  useChatSync();
+  const hasChat = useChatStore((s) => s.turns.length > 0);
 
   useEffect(() => {
     const stop = subscribeIsland(setSnapshot);
@@ -85,7 +98,7 @@ export function useIslandVM() {
 
   return {
     mode: snapshot.mode,
-    shape: shapeFor(snapshot, hasLyrics),
+    shape: shapeFor(snapshot, { lyrics: hasLyrics, chat: hasChat }),
     content: snapshot.content,
     hasFindings: (snapshot.review?.findings.length ?? 0) > 0,
     onHover: (hovered: boolean) => void commands.islandHover(hovered),

@@ -12,6 +12,7 @@ import {
   type Mood,
   type PomodoroStatusDto,
   type AiActiveDto,
+  type ChatTurnDto,
   type AiProvider,
   type RadarDto,
   type ReviewDto,
@@ -22,6 +23,7 @@ import {
 export { commands };
 export type {
   AiActiveDto,
+  ChatTurnDto,
   AiProvider,
   RadarDto,
   ClipEntryDto,

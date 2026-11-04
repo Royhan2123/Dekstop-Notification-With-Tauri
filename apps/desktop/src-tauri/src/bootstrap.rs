@@ -28,7 +28,7 @@ use crate::application::volume_service::VolumeService;
 use crate::domain::bridge::clean_query;
 use crate::domain::island::action::IslandAction;
 use crate::domain::model::review::PushRef;
-use crate::domain::ports::SecretStore;
+use crate::domain::ports::{ChatStore, SecretStore};
 use crate::infrastructure::ai::DefaultAiFactory;
 use crate::infrastructure::bridge::ws_server::WsBridge;
 use crate::infrastructure::calendar::HttpCalendarFeed;
@@ -38,6 +38,7 @@ use crate::infrastructure::github::GithubGraphql;
 use crate::infrastructure::lyrics::Lrclib;
 use crate::infrastructure::media::default_source;
 use crate::infrastructure::security::regex_scanner::RegexScanner;
+use crate::infrastructure::storage::chat_store::{MemoryChatStore, SqliteChatStore};
 use crate::infrastructure::storage::keyring_store::KeyringStore;
 use crate::infrastructure::storage::settings_store::JsonSettingsStore;
 use crate::infrastructure::storage::sqlite::Database;
@@ -101,9 +102,11 @@ pub fn assemble(app: &App) {
     }
 
     // Tanpa database, fitur riwayat (kesehatan, review) nonaktif; pulau tetap jalan.
+    let mut chat: Arc<dyn ChatStore> = Arc::new(MemoryChatStore::default());
     match Database::open(&data_dir.join("isla.db")) {
         Ok(db) => {
             let db = Arc::new(db);
+            chat = Arc::new(SqliteChatStore(db.clone()));
             app.manage(db.clone());
             app.manage(TaskService::new(Arc::new(SqliteTaskStore(db.clone()))));
             let health = HealthService::new(
@@ -134,6 +137,7 @@ pub fn assemble(app: &App) {
     app.manage(review.clone());
     let ask = QuickAskService::new(
         Arc::new(DefaultAiFactory::new(secrets.clone())),
+        chat,
         settings.clone(),
         island.clone(),
     );

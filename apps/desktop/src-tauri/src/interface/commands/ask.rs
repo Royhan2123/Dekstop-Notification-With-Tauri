@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::application::quick_ask_service::QuickAskService;
-use crate::interface::dto::AiActiveDto;
+use crate::interface::dto::{AiActiveDto, ChatTurnDto};
 
 type Svc<'a> = State<'a, Arc<QuickAskService>>;
 
@@ -17,6 +17,28 @@ pub fn ask_open(svc: Svc) {
 #[specta::specta]
 pub fn ask_submit(svc: Svc, question: String) {
     svc.inner().submit(&question);
+}
+
+/// Riwayat Tanya AI, dari yang terlama ke terbaru.
+#[tauri::command]
+#[specta::specta]
+pub fn ask_history(svc: Svc) -> Result<Vec<ChatTurnDto>, String> {
+    let turns = svc.history().map_err(|e| e.to_string())?;
+    Ok(turns
+        .into_iter()
+        .map(|t| ChatTurnDto {
+            question: t.question,
+            answer: t.answer,
+            by: t.by,
+        })
+        .collect())
+}
+
+/// Hapus seluruh riwayat Tanya AI.
+#[tauri::command]
+#[specta::specta]
+pub fn ask_clear(svc: Svc) -> Result<(), String> {
+    svc.clear_history().map_err(|e| e.to_string())
 }
 
 /// Penyedia dan model yang sedang dipakai Tanya AI, untuk pemilih di kartu jawaban.

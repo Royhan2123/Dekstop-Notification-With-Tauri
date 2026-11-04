@@ -177,6 +177,8 @@
   "ask.thinking": "Thinking...",
   "ask.answered_by": "Answered by",
   "ask.use": "Use",
+  "ask.clear": "Clear chat",
+  "ask.clear_confirm": "Sure? Click again",
   "settings.ask": "Quick Ask",
   "settings.ask.hint": "Press Ctrl+Space to ask the AI brain you picked; the answer shows in the island. Your question is sent to that AI provider.",
   "settings.link": "Isla Link (browser extension)",

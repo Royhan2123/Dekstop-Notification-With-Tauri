@@ -1,6 +1,7 @@
 //! Domain: Rust murni, tanpa tauri, OS, atau I/O. Hanya model, aturan, dan port (trait).
 pub mod bridge;
 pub mod calendar;
+pub mod chat;
 pub mod clipboard;
 pub mod diff;
 pub mod error;

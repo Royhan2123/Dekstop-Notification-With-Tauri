@@ -4,18 +4,22 @@ use std::thread;
 
 use crate::application::island_service::IslandService;
 use crate::application::settings_service::SettingsService;
-use crate::domain::error::AiError;
+use crate::domain::chat::ChatTurn;
+use crate::domain::error::{AiError, ChatError};
 use crate::domain::island::action::IslandAction;
 use crate::domain::island::state::AskPhase;
 use crate::domain::model::settings::{AiProvider, Language};
-use crate::domain::ports::AiProviderFactory;
+use crate::domain::ports::{AiProviderFactory, ChatStore};
 
 const MAX_QUESTION_CHARS: usize = 1000;
 const MAX_ANSWER_CHARS: usize = 4000;
 
-/// Quick Ask: satu pertanyaan ke otak AI yang dipilih di setelan, jawabannya tampil di pulau.
+/// Quick Ask: satu pertanyaan ke otak AI yang dipilih di setelan, jawabannya tampil di pulau dan
+/// disimpan di riwayat chat.
+/// shortcut: tiap pertanyaan berdiri sendiri (AI tidak diberi riwayat sebagai konteks); upgrade bila ingin percakapan bersambung.
 pub struct QuickAskService {
     ai: Arc<dyn AiProviderFactory>,
+    chat: Arc<dyn ChatStore>,
     settings: Arc<SettingsService>,
     island: Arc<IslandService>,
     /// Naik tiap pertanyaan baru atau pulau dibuka ulang; jawaban yang terlambat jadi tidak berlaku.
@@ -25,11 +29,13 @@ pub struct QuickAskService {
 impl QuickAskService {
     pub fn new(
         ai: Arc<dyn AiProviderFactory>,
+        chat: Arc<dyn ChatStore>,
         settings: Arc<SettingsService>,
         island: Arc<IslandService>,
     ) -> Arc<Self> {
         Arc::new(Self {
             ai,
+            chat,
             settings,
             island,
             generation: AtomicU64::new(0),
@@ -53,9 +59,44 @@ impl QuickAskService {
             .dispatch(IslandAction::AskUpdate(AskPhase::Thinking));
         let this = Arc::clone(self);
         thread::spawn(move || {
+            let by = this.by_label();
             let phase = this.answer(&q);
+            this.record(&q, &by, &phase);
             this.finish(generation, phase);
         });
+    }
+
+    /// Riwayat chat, dari yang terlama ke terbaru.
+    pub fn history(&self) -> Result<Vec<ChatTurn>, ChatError> {
+        self.chat.list()
+    }
+
+    pub fn clear_history(&self) -> Result<(), ChatError> {
+        self.chat.clear()
+    }
+
+    /// "Claude · claude-sonnet-5-5": AI yang menjawab, dicatat bersama jawabannya.
+    fn by_label(&self) -> String {
+        let (provider, model) = self.active();
+        if model.is_empty() {
+            provider.label().to_string()
+        } else {
+            format!("{} · {model}", provider.label())
+        }
+    }
+
+    /// Jawaban yang berhasil masuk riwayat, juga bila pulau sudah dibuka ulang (jawabannya tetap terbaca nanti).
+    fn record(&self, question: &str, by: &str, phase: &AskPhase) {
+        if let AskPhase::Done(answer) = phase {
+            let turn = ChatTurn {
+                question: question.to_string(),
+                answer: answer.clone(),
+                by: by.to_string(),
+            };
+            if let Err(e) = self.chat.add(&turn) {
+                tracing::warn!("{e}");
+            }
+        }
     }
 
     /// Uji otak AI yang dipilih dengan satu pertanyaan pendek; dipakai Setelan untuk memastikan
@@ -122,6 +163,23 @@ mod tests {
     use crate::domain::island::state::{Content, View};
     use crate::domain::model::settings::Settings;
     use crate::domain::ports::AiClient;
+    use std::sync::Mutex;
+
+    #[derive(Default)]
+    struct MemChat(Mutex<Vec<ChatTurn>>);
+    impl ChatStore for MemChat {
+        fn list(&self) -> Result<Vec<ChatTurn>, ChatError> {
+            Ok(self.0.lock().unwrap().clone())
+        }
+        fn add(&self, turn: &ChatTurn) -> Result<(), ChatError> {
+            self.0.lock().unwrap().push(turn.clone());
+            Ok(())
+        }
+        fn clear(&self) -> Result<(), ChatError> {
+            self.0.lock().unwrap().clear();
+            Ok(())
+        }
+    }
 
     struct Echo(Result<String, String>);
     impl AiClient for Echo {
@@ -152,7 +210,12 @@ mod tests {
     ) {
         let (settings, island, rt) = services(Settings::default());
         (
-            QuickAskService::new(Arc::new(Factory(reply)), settings, island.clone()),
+            QuickAskService::new(
+                Arc::new(Factory(reply)),
+                Arc::new(MemChat::default()),
+                settings,
+                island.clone(),
+            ),
             island,
             rt,
         )
@@ -187,6 +250,26 @@ mod tests {
         assert_eq!(AiProvider::ClaudeCli.effective_model(""), "");
         assert_eq!(AiProvider::Ollama.effective_model("llama3"), "llama3");
         assert!(!AiProvider::Gemini.effective_model("").is_empty());
+    }
+
+    #[test]
+    fn jawaban_masuk_riwayat_galat_tidak_dan_hapus_mengosongkan() {
+        let (svc, _island, _rt) = fx(Ok("x".into()));
+        let by = svc.by_label();
+        assert_eq!(by, "Claude · claude-sonnet-5-5");
+        svc.record("hai", &by, &AskPhase::Done("halo".into()));
+        svc.record("gagal", &by, &AskPhase::Failed("mati".into()));
+        svc.record("sedang", &by, &AskPhase::Thinking);
+        assert_eq!(
+            svc.history().unwrap(),
+            [ChatTurn {
+                question: "hai".into(),
+                answer: "halo".into(),
+                by
+            }]
+        );
+        svc.clear_history().unwrap();
+        assert!(svc.history().unwrap().is_empty());
     }
 
     #[test]

@@ -59,6 +59,14 @@ impl From<&crate::domain::github::Radar> for RadarDto {
 }
 
 /// Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
+/// Satu pertanyaan dan jawabannya di riwayat Tanya AI; `by` adalah AI yang menjawab.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct ChatTurnDto {
+    pub question: String,
+    pub answer: String,
+    pub by: String,
+}
+
 /// Penyedia dan model yang menjawab Tanya AI; `model` kosong bila penyedia menentukannya sendiri.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
 pub struct AiActiveDto {

@@ -18,14 +18,14 @@ import { ShelfCard } from "../../shelf/view/ShelfCard";
 import { ReviewCard } from "../../review/view/ReviewCard";
 import { useSettingsStore } from "../../settings/store";
 import { useDynamicBackground } from "../../theme/viewmodel/useDynamicBackground";
-import { useIslandVM } from "../viewmodel/useIslandVM";
+import { EXPANDED_W, useIslandVM } from "../viewmodel/useIslandVM";
 
 const panelShapes = {
-  clipboard: { width: 440, height: 248, radius: 26, opacity: 1 },
-  health: { width: 440, height: 280, radius: 26, opacity: 1 },
-  net: { width: 440, height: 208, radius: 26, opacity: 1 },
-  focus: { width: 440, height: 218, radius: 26, opacity: 1 },
-  tasks: { width: 440, height: 298, radius: 26, opacity: 1 },
+  clipboard: { width: EXPANDED_W, height: 248, radius: 26, opacity: 1 },
+  health: { width: EXPANDED_W, height: 280, radius: 26, opacity: 1 },
+  net: { width: EXPANDED_W, height: 208, radius: 26, opacity: 1 },
+  focus: { width: EXPANDED_W, height: 218, radius: 26, opacity: 1 },
+  tasks: { width: EXPANDED_W, height: 298, radius: 26, opacity: 1 },
 };
 
 /** Selama animasi ukuran, hitbox dilaporkan paling sering sekali per jeda ini (bukan tiap frame). */

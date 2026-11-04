@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { shapeFor } from "./useIslandVM";
+import { EXPANDED_W, shapeFor } from "./useIslandVM";
 import { idleSnapshot, useIslandStore } from "../store";
 
 it("tiap mode punya ukuran yang makin besar, hidden tidak terlihat", () => {
@@ -18,15 +18,15 @@ it("hover melebarkan pulau idle sedikit", () => {
   );
 });
 
-it("kartu media melebar untuk kolom lirik, kartu lain tidak", () => {
-  const media = {
-    ...idleSnapshot,
-    mode: "expanded" as const,
-    content: { kind: "media" as const, text: "t", detail: "a" },
-  };
-  expect(shapeFor(media, { lyrics: true }).width).toBeGreaterThan(shapeFor(media).width);
-  const plain = { ...idleSnapshot, mode: "expanded" as const };
-  expect(shapeFor(plain, { lyrics: true }).width).toBe(shapeFor(plain).width);
+it("semua kartu terbuka selebar sama (musik, Tanya AI, rak, polos)", () => {
+  const open = { ...idleSnapshot, mode: "expanded" as const };
+  const withKind = (kind: "media" | "ask" | "shelf") => ({
+    ...open,
+    content: { kind, text: "t", detail: "a" },
+  });
+  for (const s of [open, withKind("media"), withKind("ask"), withKind("shelf")]) {
+    expect(shapeFor(s).width).toBe(EXPANDED_W);
+  }
 });
 
 it("kartu Tanya AI memanjang bila ada riwayat chat", () => {

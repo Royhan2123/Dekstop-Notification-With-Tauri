@@ -58,6 +58,8 @@ const PER_PAGE_NARROW = 5;
 const NARROW_PX = 400;
 /** Jeda tanpa event roda yang menandai usapan touchpad baru (satu usapan = satu halaman, inersianya diabaikan). */
 const WHEEL_GESTURE_GAP_MS = 160;
+/** Gerak pointer sampai sejauh ini masih dianggap klik (jari/kursor bergetar), bukan geseran. */
+const DRAG_PX = 10;
 
 interface Item {
   id: keyof typeof ICONS;
@@ -214,7 +216,7 @@ export function IslandDock({
             const el = scroller.current;
             if (!d.down || !el) return;
             const dx = e.clientX - d.x;
-            if (Math.abs(dx) > 4) {
+            if (Math.abs(dx) > DRAG_PX) {
               d.moved = true;
               el.style.scrollSnapType = "none";
             }

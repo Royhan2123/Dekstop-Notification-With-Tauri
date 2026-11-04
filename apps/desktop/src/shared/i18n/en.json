@@ -203,5 +203,16 @@
   "settings.health.today": "Active today (h:mm)",
   "settings.health.brightness": "brightness",
   "settings.health.week": "Active hours, last 7 days",
+  "health.goal": "of {0}",
+  "health.eye_start": "Eye break",
+  "health.eye_running": "Look far away… {0}s",
+  "health.eye_hint": "Look at something 6 meters away for {0} seconds",
+  "health.eye_done": "Eyes refreshed!",
+  "health.eye_cancel": "Cancel",
+  "health.water_add": "Drink water",
+  "health.tip.1": "Blink more often; staring at a screen makes us blink less.",
+  "health.tip.2": "Roll your shoulders back a few times, then sit up straight.",
+  "health.tip.3": "Stretch your wrists: palm forward, gently pull the fingers back.",
+  "health.tip.4": "Stand up and walk around for a bit; long sitting is hard on the body.",
   "settings.health.week_brightness": "Average brightness this week: {0}%"
 }

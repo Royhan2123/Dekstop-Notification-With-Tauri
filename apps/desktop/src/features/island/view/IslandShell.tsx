@@ -22,7 +22,7 @@ import { useIslandVM } from "../viewmodel/useIslandVM";
 
 const panelShapes = {
   clipboard: { width: 440, height: 248, radius: 26, opacity: 1 },
-  health: { width: 440, height: 218, radius: 26, opacity: 1 },
+  health: { width: 440, height: 280, radius: 26, opacity: 1 },
   net: { width: 440, height: 208, radius: 26, opacity: 1 },
   focus: { width: 440, height: 218, radius: 26, opacity: 1 },
   tasks: { width: 440, height: 298, radius: 26, opacity: 1 },

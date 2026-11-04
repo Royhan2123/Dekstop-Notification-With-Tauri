@@ -203,5 +203,16 @@
   "settings.health.today": "Aktif hari ini (jam:menit)",
   "settings.health.brightness": "kecerahan",
   "settings.health.week": "Jam aktif 7 hari terakhir",
+  "health.goal": "dari {0}",
+  "health.eye_start": "Istirahat mata",
+  "health.eye_running": "Pandang yang jauh… {0} dtk",
+  "health.eye_hint": "Lihat objek sejauh 6 meter selama {0} detik",
+  "health.eye_done": "Mata segar lagi!",
+  "health.eye_cancel": "Batal",
+  "health.water_add": "Minum air",
+  "health.tip.1": "Kedipkan mata lebih sering; menatap layar membuat kita jarang berkedip.",
+  "health.tip.2": "Putar bahu ke belakang beberapa kali, lalu tegakkan punggung.",
+  "health.tip.3": "Regangkan pergelangan tangan: telapak ke depan, tarik jari pelan-pelan.",
+  "health.tip.4": "Berdiri dan berjalan sebentar; duduk lama itu capek buat badan.",
   "settings.health.week_brightness": "Rata-rata kecerahan minggu ini: {0}%"
 }

@@ -1,6 +1,8 @@
 pub mod ask;
 pub mod bridge;
+pub mod calendar;
 pub mod clipboard;
+pub mod github;
 pub mod health;
 pub mod island;
 pub mod lyrics;

@@ -167,6 +167,56 @@ async lyricsFetch(artist: string, title: string, durationMs: number) : Promise<R
 }
 },
 /**
+ * Rapat berikutnya dari kalender di setelan; kosong bila tautan belum diisi atau tidak ada rapat.
+ * Galat (tautan salah, tanpa internet) dikembalikan sebagai teks untuk ditampilkan di Setelan.
+ */
+async calendarNext() : Promise<Result<MeetingDto | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("calendar_next") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async githubTokenStatus() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("github_token_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Token hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
+ */
+async githubTokenSet(token: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("github_token_set", { token }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async githubTokenClear() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("github_token_clear") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Keadaan GitHub terbaru (dipakai ulang bila belum semenit); galat dikembalikan sebagai teks.
+ */
+async githubRadar() : Promise<Result<RadarDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("github_radar") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Isi berkas tema dari sebuah tautan https; penerapannya lewat jalur impor berkas di Setelan.
  */
 async themeFetch(url: string) : Promise<Result<string, string>> {
@@ -361,6 +411,7 @@ settingsChangedEvent: "settings-changed-event"
  * "Otak" AI untuk review kode (dipakai mulai Fase 4).
  */
 export type AiProvider = "claude_api" | "ollama" | "claude_cli"
+export type CiDto = "passing" | "failing" | "pending" | "unknown"
 export type ClipEntryDto = { id: number; text: string }
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume" | "brightness" | "shelf"
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
@@ -417,10 +468,16 @@ export type MediaCommandDto = "previous" | "toggle_play" | "next"
  * Data tambahan saat pulau menampilkan media.
  */
 export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
+/**
+ * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
+ */
+export type MeetingDto = { title: string; time: string; date: string }
 export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy"
 export type NetRateDto = { down_bps: number; up_bps: number }
 export type PomodoroPhaseDto = "idle" | "focus" | "break"
 export type PomodoroStatusDto = { phase: PomodoroPhaseDto; remaining_secs: number }
+export type PrDto = { repo: string; title: string; url: string; ci: CiDto }
+export type RadarDto = { review_requests: PrDto[]; mine: PrDto[] }
 export type Rect = { x: number; y: number; width: number; height: number }
 /**
  * Laporan review untuk kartu di pulau dan jendela rincian.
@@ -478,7 +535,11 @@ sound_enabled: boolean;
 /**
  * Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
  */
-lyrics_enabled: boolean }
+lyrics_enabled: boolean; 
+/**
+ * Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
+ */
+calendar_url: string }
 /**
  * Dikirim ke semua jendela setiap setelan berubah.
  */

@@ -53,6 +53,24 @@ pub enum LyricsError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum GithubError {
+    #[error("token GitHub belum diisi")]
+    NoToken,
+    #[error("{0}")]
+    Invalid(String),
+    #[error("GitHub tidak bisa dihubungi: {0}")]
+    Unavailable(String),
+    #[error(transparent)]
+    Secrets(#[from] SettingsError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CalendarError {
+    #[error("kalender tidak bisa diunduh: {0}")]
+    Unavailable(String),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum ThemeError {
     #[error("tema tidak bisa dipakai: {0}")]
     Invalid(String),

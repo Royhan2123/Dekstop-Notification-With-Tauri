@@ -7,10 +7,12 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 
 use crate::application::bridge_service::BridgeService;
 use crate::application::brightness_service::BrightnessService;
+use crate::application::calendar_service::CalendarService;
 use crate::application::charger_service::ChargerService;
 use crate::application::clipboard_service::ClipboardService;
 use crate::application::commit_service::CommitService;
 use crate::application::fullscreen_service::FullscreenService;
+use crate::application::github_service::GithubService;
 use crate::application::health_service::HealthService;
 use crate::application::island_service::IslandService;
 use crate::application::lyrics_service::LyricsService;
@@ -29,8 +31,10 @@ use crate::domain::model::review::PushRef;
 use crate::domain::ports::SecretStore;
 use crate::infrastructure::ai::DefaultAiFactory;
 use crate::infrastructure::bridge::ws_server::WsBridge;
+use crate::infrastructure::calendar::HttpCalendarFeed;
 use crate::infrastructure::git::cli_git::CliGit;
 use crate::infrastructure::git::hook::GitHookInstaller;
+use crate::infrastructure::github::GithubGraphql;
 use crate::infrastructure::lyrics::Lrclib;
 use crate::infrastructure::media::default_source;
 use crate::infrastructure::security::regex_scanner::RegexScanner;
@@ -163,6 +167,12 @@ pub fn assemble(app: &App) {
 
     app.manage(NetService::new(Arc::new(SystemNet)));
     app.manage(LyricsService::new(Arc::new(Lrclib), settings.clone()));
+    let github = GithubService::new(Arc::new(GithubGraphql), secrets.clone(), island.clone());
+    app.manage(github.clone());
+    spawn_github_watch(github);
+    let calendar = CalendarService::new(Arc::new(HttpCalendarFeed), settings.clone());
+    app.manage(calendar.clone());
+    spawn_calendar_watch(calendar, island.clone());
     app.manage(ThemeService::new(
         Arc::new(HttpThemeFetcher),
         Arc::new(SystemWallpaper),
@@ -254,6 +264,34 @@ fn spawn_brightness_watch(brightness: Arc<BrightnessService>) {
 }
 
 /// Periksa aplikasi layar penuh tiap 2 detik; satu panggilan Shell API murah.
+/// Tiap 5 menit cek GitHub; tanpa token atau tanpa internet pengecekan dilewati diam-diam.
+fn spawn_github_watch(github: Arc<GithubService>) {
+    std::thread::spawn(move || {
+        loop {
+            if github.has_token().unwrap_or(false)
+                && let Err(e) = github.refresh()
+            {
+                tracing::debug!("radar GitHub dilewati: {e}");
+            }
+            std::thread::sleep(Duration::from_secs(300));
+        }
+    });
+}
+
+/// Tiap 30 detik cek rapat berikutnya dan kabari pulau lima menit sebelum mulai.
+fn spawn_calendar_watch(calendar: Arc<CalendarService>, island: Arc<IslandService>) {
+    std::thread::spawn(move || {
+        loop {
+            let now = chrono::Local::now();
+            let offset = chrono::Offset::fix(now.offset()).local_minus_utc();
+            if let Some(text) = calendar.due_reminder(now.naive_local(), offset) {
+                island.dispatch(IslandAction::Notice(text));
+            }
+            std::thread::sleep(Duration::from_secs(30));
+        }
+    });
+}
+
 fn spawn_fullscreen_watch(fullscreen: Arc<FullscreenService>) {
     tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(2));

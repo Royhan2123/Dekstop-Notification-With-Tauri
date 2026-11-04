@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use crate::domain::bridge::BridgeCommand;
 use crate::domain::error::{
-    AiError, BridgeError, GitError, LyricsError, MediaError, SettingsError, TaskError, ThemeError,
-    UsageError,
+    AiError, BridgeError, CalendarError, GitError, GithubError, LyricsError, MediaError,
+    SettingsError, TaskError, ThemeError, UsageError,
 };
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
@@ -127,6 +127,16 @@ pub trait LyricsSource: Send + Sync {
 /// Mengunduh isi berkas tema dari URL yang sudah lolos pemeriksaan.
 pub trait ThemeFetcher: Send + Sync {
     fn fetch(&self, url: &str) -> Result<String, ThemeError>;
+}
+
+/// Mengunduh isi kalender iCal dari URL yang sudah lolos pemeriksaan.
+pub trait CalendarSource: Send + Sync {
+    fn fetch(&self, url: &str) -> Result<String, CalendarError>;
+}
+
+/// GitHub: PR yang menunggu review kita dan status CI PR kita, dengan token pribadi.
+pub trait GithubApi: Send + Sync {
+    fn radar(&self, token: &str) -> Result<crate::domain::github::Radar, GithubError>;
 }
 
 /// Wallpaper desktop saat ini sebagai data URL gambar kecil.

@@ -4,9 +4,10 @@
 pub const MAX_THEME_BYTES: usize = 600_000;
 const MAX_URL_LEN: usize = 2048;
 
-/// Hanya `https` ke nama host biasa. Alamat IP, `localhost`, dan nama internal ditolak supaya
-/// tautan dari orang lain tidak bisa membuat aplikasi membuka layanan di jaringan pengguna.
-pub fn is_allowed_theme_url(url: &str) -> bool {
+/// URL yang boleh diunduh aplikasi atas permintaan pengguna (tema, kalender): hanya `https` ke nama
+/// host biasa. Alamat IP, `localhost`, dan nama internal ditolak supaya tautan dari orang lain tidak
+/// bisa membuat aplikasi membuka layanan di jaringan pengguna.
+pub fn is_public_https_url(url: &str) -> bool {
     if url.len() > MAX_URL_LEN || url.chars().any(|c| c.is_whitespace() || c.is_control()) {
         return false;
     }
@@ -49,7 +50,7 @@ mod tests {
             "https://raw.githubusercontent.com/u/r/main/a.isla-theme.json?x=1",
             "https://gist.github.com:443/a",
         ] {
-            assert!(is_allowed_theme_url(ok), "{ok}");
+            assert!(is_public_https_url(ok), "{ok}");
         }
     }
 
@@ -72,10 +73,10 @@ mod tests {
             "https://exa mple.com/a",
             "https:///a",
         ] {
-            assert!(!is_allowed_theme_url(bad), "{bad}");
+            assert!(!is_public_https_url(bad), "{bad}");
         }
         let long = format!("https://example.com/{}", "a".repeat(3000));
-        assert!(!is_allowed_theme_url(&long));
+        assert!(!is_public_https_url(&long));
     }
 
     #[test]

@@ -16,6 +16,58 @@ use crate::domain::task::Task;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
 #[serde(rename_all = "snake_case")]
+pub enum CiDto {
+    Passing,
+    Failing,
+    Pending,
+    Unknown,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct PrDto {
+    pub repo: String,
+    pub title: String,
+    pub url: String,
+    pub ci: CiDto,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct RadarDto {
+    pub review_requests: Vec<PrDto>,
+    pub mine: Vec<PrDto>,
+}
+
+impl From<&crate::domain::github::Radar> for RadarDto {
+    fn from(r: &crate::domain::github::Radar) -> Self {
+        use crate::domain::github::Ci;
+        let pr = |p: &crate::domain::github::Pr| PrDto {
+            repo: p.repo.clone(),
+            title: p.title.clone(),
+            url: p.url.clone(),
+            ci: match p.ci {
+                Ci::Passing => CiDto::Passing,
+                Ci::Failing => CiDto::Failing,
+                Ci::Pending => CiDto::Pending,
+                Ci::Unknown => CiDto::Unknown,
+            },
+        };
+        Self {
+            review_requests: r.review_requests.iter().map(pr).collect(),
+            mine: r.mine.iter().map(pr).collect(),
+        }
+    }
+}
+
+/// Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct MeetingDto {
+    pub title: String,
+    pub time: String,
+    pub date: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
+#[serde(rename_all = "snake_case")]
 pub enum IslandMode {
     Hidden,
     Idle,

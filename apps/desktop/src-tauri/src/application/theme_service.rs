@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::domain::error::ThemeError;
 use crate::domain::ports::{ThemeFetcher, WallpaperSource};
-use crate::domain::theme::{is_allowed_theme_url, is_theme_file};
+use crate::domain::theme::{is_public_https_url, is_theme_file};
 
 /// Tema dari luar aplikasi: berkas tema lewat URL dan wallpaper Windows untuk latar pulau.
 pub struct ThemeService {
@@ -19,7 +19,7 @@ impl ThemeService {
     /// saat tema diterapkan, seperti impor dari berkas.
     pub fn fetch_theme(&self, url: &str) -> Result<String, ThemeError> {
         let url = url.trim();
-        if !is_allowed_theme_url(url) {
+        if !is_public_https_url(url) {
             return Err(ThemeError::Invalid(
                 "gunakan tautan https ke situs biasa".into(),
             ));

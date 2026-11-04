@@ -10,6 +10,8 @@ import { HealthSettings } from "../../health/view/HealthSettings";
 import { AiBrainPicker } from "./AiBrainPicker";
 import { ReviewSettings } from "./ReviewSettings";
 import { ThemeSettings } from "../../theme/view/ThemeSettings";
+import { CalendarSettings } from "../../calendar/view/CalendarSettings";
+import { GithubSettings } from "../../github/view/GithubSettings";
 
 const LANGUAGES: Language[] = ["id", "en"];
 
@@ -85,6 +87,8 @@ export function SettingsForm() {
       </label>
 
       <ThemeSettings />
+      <CalendarSettings />
+      <GithubSettings />
 
       <AiBrainPicker />
 

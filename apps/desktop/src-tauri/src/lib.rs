@@ -12,7 +12,11 @@ use interface::commands::ask::{ask_open, ask_submit};
 use interface::commands::bridge::{
     bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
 };
+use interface::commands::calendar::calendar_next;
 use interface::commands::clipboard::{clipboard_clear, clipboard_copy, clipboard_list};
+use interface::commands::github::{
+    github_radar, github_token_clear, github_token_set, github_token_status,
+};
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_set_dnd,
@@ -67,6 +71,11 @@ fn specta_builder() -> Builder<tauri::Wry> {
             health_peek,
             net_rate,
             lyrics_fetch,
+            calendar_next,
+            github_token_status,
+            github_token_set,
+            github_token_clear,
+            github_radar,
             theme_fetch,
             wallpaper_current,
             tasks_list,

@@ -1,3 +1,4 @@
+use crate::domain::theme::is_public_https_url;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -94,6 +95,8 @@ pub struct Settings {
     pub sound_enabled: bool,
     /// Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
     pub lyrics_enabled: bool,
+    /// Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
+    pub calendar_url: String,
 }
 
 impl Default for Settings {
@@ -121,6 +124,7 @@ impl Default for Settings {
             hide_on_fullscreen: true,
             sound_enabled: true,
             lyrics_enabled: true,
+            calendar_url: String::new(),
         }
     }
 }
@@ -163,6 +167,10 @@ impl Settings {
         }
         if !is_image_data_url(&self.background) {
             self.background.clear();
+        }
+        self.calendar_url = self.calendar_url.trim().to_string();
+        if !is_public_https_url(&self.calendar_url) {
+            self.calendar_url.clear();
         }
         if !is_hex_color(&self.custom_accent) {
             self.custom_accent.clear();

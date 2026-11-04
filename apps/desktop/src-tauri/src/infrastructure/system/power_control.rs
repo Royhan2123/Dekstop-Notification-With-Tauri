@@ -22,11 +22,9 @@ fn run(program: &str, args: &[&str]) -> Result<(), PowerError> {
 
 impl PowerControl for SystemPowerControl {
     fn perform(&self, action: PowerAction) -> Result<(), PowerError> {
-        // Build debug (dev, tes) hanya mencatat: jangan sampai pengujian benar-benar mematikan mesin.
-        if cfg!(debug_assertions) && std::env::var_os("ISLA_POWER_REAL").is_none() {
-            tracing::warn!(
-                "mode dev: perintah daya {action:?} dilewati (set ISLA_POWER_REAL=1 untuk menjalankan)"
-            );
+        // Hanya untuk pengujian otomatis: ISLA_POWER_DRY_RUN=1 mencatat perintah tanpa menjalankannya.
+        if std::env::var_os("ISLA_POWER_DRY_RUN").is_some() {
+            tracing::warn!("dry-run: perintah daya {action:?} dilewati");
             return Ok(());
         }
         #[cfg(windows)]

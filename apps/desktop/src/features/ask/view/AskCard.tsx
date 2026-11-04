@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
+import { commands } from "../../../shared/ipc";
 import { useSettingsStore } from "../../settings/store";
 import { useAskVM } from "../viewmodel/useAskVM";
 
@@ -34,6 +35,12 @@ export function AskCard() {
   const input = useRef<HTMLInputElement>(null);
   const systemReduce = useReducedMotion();
   const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
+
+  // Nama AI dan model yang menjawab, dibaca saat jawaban atau galat tampil (setelan bisa berubah di antara dua pertanyaan).
+  const [who, setWho] = useState("");
+  useEffect(() => {
+    if (vm.phase === "done" || vm.phase === "failed") void commands.aiActive().then(setWho);
+  }, [vm.phase, vm.answer]);
 
   // Fokus ke kotak tiap kali kembali ke fase input (dibuka ulang lewat pintasan).
   useEffect(() => {
@@ -92,6 +99,11 @@ export function AskCard() {
       {vm.phase === "failed" && (
         <p role="alert" className="ask-answer ask-error">
           {vm.answer}
+        </p>
+      )}
+      {(vm.phase === "done" || vm.phase === "failed") && who && (
+        <p className="ask-by">
+          {t("ask.answered_by")} {who}
         </p>
       )}
     </div>

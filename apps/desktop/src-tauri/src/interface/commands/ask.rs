@@ -18,6 +18,13 @@ pub fn ask_submit(svc: Svc, question: String) {
     svc.inner().submit(&question);
 }
 
+/// Nama AI dan model yang sedang dipakai Tanya AI, untuk ditampilkan di kartu jawaban.
+#[tauri::command]
+#[specta::specta]
+pub fn ai_active(svc: Svc) -> String {
+    svc.active_label()
+}
+
 /// Daftar model dari penyedia terpilih, untuk menu pilihan model di Setelan.
 #[tauri::command]
 #[specta::specta]

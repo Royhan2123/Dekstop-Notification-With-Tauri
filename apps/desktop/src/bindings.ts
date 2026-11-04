@@ -374,6 +374,12 @@ async aiModels() : Promise<Result<string[], string>> {
 }
 },
 /**
+ * Nama AI dan model yang sedang dipakai Tanya AI, untuk ditampilkan di kartu jawaban.
+ */
+async aiActive() : Promise<string> {
+    return await TAURI_INVOKE("ai_active");
+},
+/**
  * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
  */
 async shelfAdd(paths: string[]) : Promise<void> {

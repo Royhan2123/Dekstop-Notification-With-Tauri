@@ -13,7 +13,6 @@ mod claude_cli;
 
 pub use claude_cli::ClaudeCli;
 
-const DEFAULT_CLAUDE_MODEL: &str = "claude-sonnet-5-5";
 const OLLAMA_URL: &str = "http://127.0.0.1:11434/api/chat";
 const OLLAMA_TAGS_URL: &str = "http://127.0.0.1:11434/api/tags";
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
@@ -224,23 +223,9 @@ impl DefaultAiFactory {
             .ok_or_else(|| {
                 AiError::NotConfigured(format!(
                     "API Key {} belum diisi di Setelan",
-                    provider_name(provider)
+                    provider.label()
                 ))
             })
-    }
-}
-
-fn provider_name(provider: AiProvider) -> &'static str {
-    match provider {
-        AiProvider::ClaudeApi => "Claude",
-        AiProvider::Gemini => "Gemini",
-        AiProvider::DeepSeek => "DeepSeek",
-        AiProvider::Grok => "Grok",
-        AiProvider::OpenAi => "OpenAI",
-        AiProvider::OpenRouter => "OpenRouter",
-        AiProvider::Groq => "Groq",
-        AiProvider::Ollama => "Ollama",
-        AiProvider::ClaudeCli => "Claude CLI",
     }
 }
 
@@ -251,7 +236,7 @@ impl AiProviderFactory for DefaultAiFactory {
             AiProvider::ClaudeApi => {
                 let key = self.key(provider)?;
                 let model = if model.is_empty() {
-                    DEFAULT_CLAUDE_MODEL
+                    provider.default_model().unwrap_or_default()
                 } else {
                     model
                 };
@@ -270,7 +255,7 @@ impl AiProviderFactory for DefaultAiFactory {
             other => {
                 let (url, default_model) = other.openai_compatible().ok_or(AiError::BadResponse)?;
                 Ok(Arc::new(OpenAiClient {
-                    name: provider_name(other),
+                    name: other.label(),
                     url,
                     key: self.key(other)?,
                     model: if model.is_empty() {

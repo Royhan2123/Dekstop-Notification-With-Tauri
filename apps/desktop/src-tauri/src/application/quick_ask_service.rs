@@ -72,6 +72,12 @@ impl QuickAskService {
         Ok(reply.trim().chars().take(60).collect())
     }
 
+    /// Nama AI dan model yang menjawab Tanya AI saat ini, mis. "Claude · claude-sonnet-5-5".
+    pub fn active_label(&self) -> String {
+        let s = self.settings.get();
+        s.ai_provider.describe(&s.ai_model)
+    }
+
     /// Model yang ditawarkan penyedia terpilih (butuh kunci yang sudah tersimpan), untuk menu model di Setelan.
     pub fn models(&self) -> Result<Vec<String>, AiError> {
         let settings = self.settings.get();
@@ -165,6 +171,18 @@ mod tests {
         assert_eq!(svc.answer("hai"), AskPhase::Done("halo: hai".into()));
         let (svc, _island, _rt) = fx(Err("mati".into()));
         assert!(matches!(svc.answer("hai"), AskPhase::Failed(m) if m.contains("mati")));
+    }
+
+    #[test]
+    fn nama_ai_memakai_model_pilihan_atau_bawaan_penyedia() {
+        let (svc, _island, _rt) = fx(Ok("x".into()));
+        assert_eq!(svc.active_label(), "Claude · claude-sonnet-5-5");
+        assert_eq!(
+            AiProvider::Gemini.describe("  gemini-pro  "),
+            "Gemini · gemini-pro"
+        );
+        assert_eq!(AiProvider::ClaudeCli.describe(""), "Claude CLI");
+        assert_eq!(AiProvider::Ollama.describe("llama3"), "Ollama · llama3");
     }
 
     #[test]

@@ -30,6 +30,40 @@ pub enum AiProvider {
 }
 
 impl AiProvider {
+    /// Nama penyedia untuk ditampilkan ke pengguna.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::ClaudeApi => "Claude",
+            Self::Gemini => "Gemini",
+            Self::DeepSeek => "DeepSeek",
+            Self::Grok => "Grok",
+            Self::OpenAi => "OpenAI",
+            Self::OpenRouter => "OpenRouter",
+            Self::Groq => "Groq",
+            Self::Ollama => "Ollama",
+            Self::ClaudeCli => "Claude CLI",
+        }
+    }
+
+    /// Model yang dipakai bila pengguna tidak memilih; `None` bila penyedia menentukannya sendiri.
+    pub fn default_model(self) -> Option<&'static str> {
+        match self {
+            Self::ClaudeApi => Some("claude-sonnet-5-5"),
+            Self::Ollama | Self::ClaudeCli => None,
+            other => other.openai_compatible().map(|(_, model)| model),
+        }
+    }
+
+    /// "Claude · claude-sonnet-5-5": penyedia dan model yang benar-benar dipakai untuk `model` pilihan pengguna.
+    pub fn describe(self, model: &str) -> String {
+        let model = model.trim();
+        match (model.is_empty(), self.default_model()) {
+            (false, _) => format!("{} · {model}", self.label()),
+            (true, Some(default)) => format!("{} · {default}", self.label()),
+            (true, None) => self.label().to_string(),
+        }
+    }
+
     /// Nama entri API Key di brankas OS; `None` bila penyedia ini tanpa kunci (Ollama, Claude CLI).
     /// Claude memakai nama lama supaya kunci yang sudah tersimpan tetap terbaca.
     pub fn key_name(self) -> Option<&'static str> {

@@ -175,6 +175,7 @@
   "ask.send": "Tanya",
   "ask.close": "Tutup",
   "ask.thinking": "Memikirkan jawaban...",
+  "ask.answered_by": "Dijawab oleh",
   "settings.ask": "Quick Ask",
   "settings.ask.hint": "Tekan Ctrl+Space untuk bertanya ke otak AI yang kamu pilih; jawabannya tampil di pulau. Pertanyaan dikirim ke penyedia AI tersebut.",
   "settings.link": "Isla Link (ekstensi browser)",

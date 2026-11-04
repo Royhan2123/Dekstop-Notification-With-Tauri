@@ -8,7 +8,7 @@ use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{Builder, collect_commands, collect_events};
 
-use interface::commands::ask::{ai_models, ai_test, ask_open, ask_submit};
+use interface::commands::ask::{ai_active, ai_models, ai_test, ask_open, ask_submit};
 use interface::commands::bridge::{
     bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
 };
@@ -98,6 +98,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             ask_submit,
             ai_test,
             ai_models,
+            ai_active,
             shelf_add,
             shelf_show,
             shelf_remove,

@@ -409,7 +409,8 @@ html[data-window="island"] #root {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 20px;
+  /* Bawah menyisakan tinggi dok (50px) supaya jawaban yang panjang digulir di atas dok, bukan di bawahnya. */
+  padding: 16px 20px 50px;
   box-sizing: border-box;
   height: 100%;
   animation: ask-in 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
@@ -577,6 +578,8 @@ html[data-window="island"] #root {
 
 .ask-answer {
   margin: 0;
+  /* Ruang jawaban: 260 (tinggi kartu berjawaban di shapeFor) - 16 padding atas - 30 kotak tulis - 8 jarak - 6 napas. */
+  max-height: 200px;
   overflow-y: auto;
   font-size: 13px;
   line-height: 1.4;

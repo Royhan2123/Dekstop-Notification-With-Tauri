@@ -45,7 +45,7 @@ export function shapeFor(s: IslandSnapshot, lyrics = false): Shape {
       // Quick Ask: kotak pertanyaan kecil, memanjang saat ada jawaban.
       if (s.content?.kind === "ask") {
         const answered = s.content.detail === "done" || s.content.detail === "failed";
-        return { width: 520, height: (answered ? 230 : 86) + DOCK_H, radius: 28, opacity: 1 };
+        return { width: 520, height: (answered ? 260 : 86) + DOCK_H, radius: 28, opacity: 1 };
       }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {

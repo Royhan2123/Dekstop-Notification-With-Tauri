@@ -92,6 +92,30 @@ fn model_ids(v: &Value, list: &str, field: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// Teks balasan Claude: gabungan semua blok bertipe `text`. Blok lain (mis. berpikir) dilewati,
+/// jadi balasan yang tidak diawali blok teks tetap terbaca.
+fn claude_text(v: &Value) -> Result<String, AiError> {
+    let text: String = v
+        .get("content")
+        .and_then(Value::as_array)
+        .map(|blocks| {
+            blocks
+                .iter()
+                .filter(|b| b.get("type").and_then(Value::as_str) == Some("text"))
+                .filter_map(|b| b.get("text")?.as_str())
+                .collect::<Vec<_>>()
+                .join("")
+        })
+        .unwrap_or_default();
+    if text.trim().is_empty() {
+        let reason = v.get("stop_reason").and_then(Value::as_str).unwrap_or("?");
+        return Err(AiError::Unavailable(format!(
+            "Claude API: balasan tanpa teks (stop_reason: {reason})"
+        )));
+    }
+    Ok(text)
+}
+
 fn text_at(v: &Value, pointer: &str) -> Result<String, AiError> {
     v.pointer(pointer)
         .and_then(Value::as_str)
@@ -116,7 +140,7 @@ impl AiClient for AnthropicClient {
             .post(ANTHROPIC_URL)
             .header("x-api-key", &self.key)
             .header("anthropic-version", "2023-06-01");
-        text_at(&post(req, &body, "Claude API")?, "/content/0/text")
+        claude_text(&post(req, &body, "Claude API")?)
     }
 
     fn models(&self) -> Result<Vec<String>, AiError> {
@@ -329,6 +353,21 @@ mod tests {
         }
         assert!(AiProvider::Ollama.key_name().is_none());
         assert!(AiProvider::ClaudeApi.openai_compatible().is_none());
+    }
+
+    #[test]
+    fn balasan_claude_dibaca_dari_blok_teks_di_mana_pun() {
+        let biasa = json!({ "content": [{ "type": "text", "text": "halo" }] });
+        assert_eq!(claude_text(&biasa).unwrap(), "halo");
+        let berpikir = json!({ "content": [
+            { "type": "thinking", "thinking": "hmm" },
+            { "type": "text", "text": "ha" },
+            { "type": "text", "text": "lo" }
+        ]});
+        assert_eq!(claude_text(&berpikir).unwrap(), "halo");
+        let kosong = json!({ "content": [], "stop_reason": "max_tokens" });
+        let err = claude_text(&kosong).unwrap_err().to_string();
+        assert!(err.contains("max_tokens"), "{err}");
     }
 
     #[test]

@@ -99,7 +99,7 @@ export function IslandDock({
       id: "music",
       label: "dock.music",
       active: kind === "media" && !panel,
-      disabled: !snapshot.media,
+      disabled: !snapshot.has_media,
       run: () => {
         onPanel(null);
         void commands.islandShowMedia();

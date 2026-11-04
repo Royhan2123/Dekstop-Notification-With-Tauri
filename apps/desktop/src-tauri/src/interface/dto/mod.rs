@@ -147,6 +147,8 @@ pub struct IslandSnapshot {
     pub mode: IslandMode,
     pub content: Option<IslandContent>,
     pub media: Option<MediaDto>,
+    /// Ada lagu yang bisa ditampilkan, walau pulau sedang menampilkan kartu lain (tombol Musik di dok).
+    pub has_media: bool,
     /// Laporan lengkap bila pulau menampilkan hasil review.
     pub review: Option<ReviewDto>,
     /// Ekspresi Lumi untuk keadaan pulau saat ini.
@@ -367,6 +369,7 @@ impl From<&IslandState> for IslandSnapshot {
             mode,
             content,
             media,
+            has_media: s.media.is_some(),
             review,
             mood: mood_for(s),
             extension_connected: s.extension,

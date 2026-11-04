@@ -556,6 +556,10 @@ export type IslandSnapshot = {
   content: IslandContent | null;
   media: MediaDto | null;
   /**
+   * Ada lagu yang bisa ditampilkan, walau pulau sedang menampilkan kartu lain (tombol Musik di dok).
+   */
+  has_media: boolean;
+  /**
    * Laporan lengkap bila pulau menampilkan hasil review.
    */
   review: ReviewDto | null;

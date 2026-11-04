@@ -5,6 +5,7 @@ export const idleSnapshot: IslandSnapshot = {
   mode: "idle",
   content: null,
   media: null,
+  has_media: false,
   review: null,
   mood: "idle",
   extension_connected: false,

@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useT, type MessageKey } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
+import { instant } from "../../../shared/motion/springs";
 import { formatRemaining, usePomodoroVM } from "../../pomodoro/viewmodel/usePomodoroVM";
+import { useSettingsStore } from "../../settings/store";
 import { useIslandStore } from "../store";
 
 export type Panel = "clipboard" | "health" | "net" | "tasks" | "focus" | null;
@@ -38,8 +41,8 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="16"
-      height="16"
+      width="18"
+      height="18"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
@@ -52,19 +55,13 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   );
 }
 
-/** Tombol per halaman carousel dok: tiga berlabel, atau lima hanya ikon saat dok sempit (sama dengan CSS `@container dock`). */
-const PER_PAGE = 3;
-const PER_PAGE_NARROW = 5;
-const NARROW_PX = 380;
-/** Jeda tanpa event roda yang menandai usapan touchpad baru (satu usapan = satu halaman, inersianya diabaikan). */
-const WHEEL_GESTURE_GAP_MS = 160;
-/** Gerak pointer sampai sejauh ini masih dianggap klik (jari/kursor bergetar), bukan geseran. */
-const DRAG_PX = 10;
+/** Pegas highlight aktif yang meluncur antar tombol dan label yang melebar. */
+const glide = { type: "spring", stiffness: 520, damping: 38, mass: 0.8 } as const;
 
 interface Item {
   id: keyof typeof ICONS;
   label: MessageKey;
-  /** Teks di tombol bila bukan label (mis. hitung mundur). */
+  /** Teks di tombol bila bukan label (mis. hitung mundur); tampil terus walau tidak aktif. */
   text?: string;
   active: boolean;
   disabled?: boolean;
@@ -72,8 +69,9 @@ interface Item {
 }
 
 /**
- * Dok fitur di dasar pulau yang terbuka: carousel per halaman (3 tombol) yang bisa digeser dengan
- * seret, roda mouse, atau titik indikator, plus tombol Setelan yang selalu terlihat di kanan.
+ * Dok fitur di dasar pulau yang terbuka: satu baris ikon dalam wadah kaca. Tombol aktif memegang
+ * highlight beraksen yang meluncur dan memperlihatkan labelnya; yang lain menampilkan label lewat
+ * tooltip saat disorot. Di dok sempit label hilang dan baris bisa digulir.
  */
 export function IslandDock({
   panel,
@@ -87,28 +85,10 @@ export function IslandDock({
   const t = useT();
   const snapshot = useIslandStore((s) => s.snapshot);
   const pomodoro = usePomodoroVM();
-  const scroller = useRef<HTMLDivElement>(null);
-  const drag = useRef({ x: 0, page: 0, moved: false, down: false });
-  const lastWheel = useRef(0);
-  const root = useRef<HTMLDivElement>(null);
-  const [page, setPage] = useState(0);
-  const [narrow, setNarrow] = useState(false);
-  const perPage = narrow ? PER_PAGE_NARROW : PER_PAGE;
+  const systemReduce = useReducedMotion();
+  const settingReduce = useSettingsStore((s) => s.settings?.reduce_motion === true);
+  const calm = systemReduce || settingReduce;
   const kind = snapshot.content?.kind;
-
-  useEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const observer = new ResizeObserver(([e]) => setNarrow(e.contentRect.width < NARROW_PX));
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // Jumlah tombol per halaman berubah: kembali ke halaman pertama supaya posisi gulir tidak meleset.
-  useEffect(() => {
-    setPage(0);
-    scroller.current?.scrollTo({ left: 0 });
-  }, [perPage]);
   const focusing = pomodoro.status.phase !== "idle";
 
   const items: Item[] = [
@@ -179,112 +159,59 @@ export function IslandDock({
     },
   ];
 
-  const pages = Array.from({ length: Math.ceil(items.length / perPage) }, (_, i) =>
-    items.slice(i * perPage, (i + 1) * perPage),
-  );
-  const goTo = (p: number) => {
-    const el = scroller.current;
-    if (!el) return;
-    const target = Math.max(0, Math.min(pages.length - 1, p));
-    el.scrollTo({ left: target * el.clientWidth, behavior: "smooth" });
-  };
-
   return (
-    <div ref={root} className="island-dock" onClick={(e) => e.stopPropagation()}>
-      <div className="dock-main">
-        <div
-          ref={scroller}
-          className="dock-scroll"
-          onScroll={(e) => {
-            const el = e.currentTarget;
-            setPage(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
-          }}
-          onWheel={(e) => {
-            // Touchpad mengirim puluhan event per usapan (plus inersia): hanya event pertama yang menggeser.
-            const now = performance.now();
-            const startsGesture = now - lastWheel.current > WHEEL_GESTURE_GAP_MS;
-            lastWheel.current = now;
-            if (!startsGesture) return;
-            const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-            if (d !== 0) goTo(page + (d > 0 ? 1 : -1));
-          }}
-          onPointerDown={(e) => {
-            drag.current = { x: e.clientX, page, moved: false, down: true };
-          }}
-          onPointerMove={(e) => {
-            const d = drag.current;
-            const el = scroller.current;
-            if (!d.down || !el) return;
-            const dx = e.clientX - d.x;
-            if (Math.abs(dx) > DRAG_PX) {
-              d.moved = true;
-              el.style.scrollSnapType = "none";
-            }
-            if (d.moved) el.scrollLeft = d.page * el.clientWidth - dx;
-          }}
-          onPointerUp={(e) => {
-            const d = drag.current;
-            if (!d.down) return;
-            d.down = false;
-            if (!d.moved || !scroller.current) return;
-            scroller.current.style.scrollSnapType = "";
-            const dx = e.clientX - d.x;
-            goTo(d.page + (dx < -40 ? 1 : dx > 40 ? -1 : 0));
-          }}
-          onPointerLeave={() => {
-            if (!drag.current.down) return;
-            drag.current.down = false;
-            if (scroller.current) scroller.current.style.scrollSnapType = "";
-            goTo(page);
-          }}
-          // Seretan tidak boleh dihitung sebagai klik pada tombol.
-          onClickCapture={(e) => {
-            if (drag.current.moved) {
-              e.stopPropagation();
-              drag.current.moved = false;
-            }
-          }}
-        >
-          {pages.map((p, i) => (
-            <div className="dock-page" key={i}>
-              {p.map((it) => (
-                <button
-                  key={it.id}
-                  type="button"
-                  className={it.active ? "dock-btn active" : "dock-btn"}
-                  title={t(it.label)}
-                  aria-label={t(it.label)}
-                  aria-pressed={it.active}
-                  disabled={it.disabled}
-                  onClick={it.run}
-                >
-                  <Icon name={it.id} />
-                  <span>{it.text ?? t(it.label)}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+    <div className={calm ? "island-dock calm" : "island-dock"} onClick={(e) => e.stopPropagation()}>
+      <div className="dock-tray">
+        {items.map((it, i) => {
+          const showLabel = it.active || it.text !== undefined;
+          return (
+            <button
+              key={it.id}
+              type="button"
+              className={it.active ? "dock-btn active" : "dock-btn"}
+              style={{ "--i": i } as CSSProperties}
+              data-label={t(it.label)}
+              aria-label={t(it.label)}
+              aria-pressed={it.active}
+              disabled={it.disabled}
+              onClick={it.run}
+            >
+              {it.active && (
+                <motion.span
+                  layoutId="dock-glow"
+                  className="dock-glow"
+                  transition={calm ? instant : glide}
+                />
+              )}
+              <Icon name={it.id} />
+              <AnimatePresence initial={false}>
+                {showLabel && (
+                  <motion.span
+                    key="label"
+                    className="dock-label"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "auto", opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={calm ? instant : glide}
+                  >
+                    <span>{it.text ?? t(it.label)}</span>
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+          );
+        })}
+        <span className="dock-sep" aria-hidden="true" />
         <button
           type="button"
           className="dock-btn dock-settings"
-          title={t("dock.settings")}
+          style={{ "--i": items.length } as CSSProperties}
+          data-label={t("dock.settings")}
           aria-label={t("dock.settings")}
           onClick={onOpenSettings}
         >
           <Icon name="settings" />
         </button>
-      </div>
-      <div className="dock-dots">
-        {pages.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            className={i === page ? "dot active" : "dot"}
-            aria-label={`${i + 1}/${pages.length}`}
-            onClick={() => goTo(i)}
-          />
-        ))}
       </div>
     </div>
   );

@@ -891,152 +891,202 @@ html[data-window="island"] #root {
   bottom: 0;
   left: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 5px;
   height: 58px;
-  padding: 4px 22px 10px;
+  padding: 6px 20px 10px;
   box-sizing: border-box;
   container: dock / inline-size;
 }
 
-.dock-main {
+/* Wadah kaca berbentuk kapsul yang memuat semua tombol dalam satu baris. */
+.dock-tray {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.dock-scroll {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  cursor: grab;
-}
-
-.dock-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.dock-page {
-  display: flex;
-  flex: 0 0 100%;
-  gap: 10px;
-  justify-content: center;
-  scroll-snap-align: start;
-}
-
-.dock-dots {
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  height: 6px;
-}
-
-.dock-dots .dot {
-  width: 6px;
-  height: 6px;
-  padding: 0;
-  border: 0;
-  border-radius: 3px;
-  background: var(--surface-3);
-  cursor: pointer;
-  transition:
-    width 0.2s var(--ease),
-    background 0.2s;
-}
-
-.dock-dots .dot.active {
-  width: 16px;
-  background: var(--accent, #2fcf9c);
+  gap: 4px;
+  max-width: 100%;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--surface-1);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 8px 20px -10px rgb(0 0 0 / 0.7);
 }
 
 .dock-btn {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
-  gap: 7px;
-  height: 32px;
-  padding: 0 13px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
+  justify-content: center;
+  height: 34px;
+  min-width: 34px;
+  padding: 0 8px;
+  box-sizing: border-box;
   border: 0;
   border-radius: 999px;
-  background: var(--surface-1);
-  box-shadow: inset 0 0 0 1px var(--line);
+  background: transparent;
   color: var(--ink-dim);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition:
-    background 0.18s,
     color 0.18s,
-    transform 0.18s var(--ease);
+    transform 0.32s var(--pop);
+  /* Masuk bertahap dari kiri ke kanan tiap dok muncul. */
+  animation: dock-pop 0.5s var(--pop) both;
+  animation-delay: calc(var(--i, 0) * 38ms);
 }
 
-.dock-btn:hover {
-  background: var(--surface-2);
+.dock-btn > svg,
+.dock-label {
+  position: relative;
+  z-index: 1;
+}
+
+.dock-btn:hover:not(:disabled) {
   color: var(--ink);
+  transform: translateY(-3px) scale(1.15);
 }
 
-.dock-btn:active {
-  transform: scale(0.95);
+/* Tetangga ikut terangkat sedikit, seperti dok magnifikasi. */
+.dock-btn:hover:not(:disabled) + .dock-btn,
+.dock-btn:has(+ .dock-btn:hover:not(:disabled)) {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.dock-btn:active:not(:disabled) {
+  transform: scale(0.9);
 }
 
 .dock-btn:focus-visible {
   outline: 2px solid var(--accent, #2fcf9c);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 .dock-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: default;
 }
 
 .dock-btn.active {
+  color: var(--accent-ink, #04231b);
+}
+
+/* Highlight beraksen: satu elemen yang meluncur ke tombol aktif (layoutId). */
+.dock-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 999px;
   background: linear-gradient(
     135deg,
     var(--accent, #2fcf9c),
-    color-mix(in srgb, var(--accent, #2fcf9c) 62%, #fff)
+    color-mix(in srgb, var(--accent, #2fcf9c) 58%, #fff)
   );
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
     0 1px 2px rgb(0 0 0 / 0.35);
-  color: var(--accent-ink, #04231b);
-  font-weight: 600;
 }
 
-.dock-settings {
-  justify-content: center;
-  width: 34px;
-  padding: 0;
-  background: var(--surface-2);
+.dock-btn.active > svg {
+  animation: dock-bounce 0.55s var(--pop);
 }
 
-.dock-settings span {
+.dock-label {
+  display: block;
+  overflow: hidden;
+}
+
+.dock-label > span {
+  display: block;
+  padding-left: 7px;
+}
+
+/* Label tombol yang tidak aktif muncul sebagai gelembung di atasnya saat disorot. */
+.dock-btn::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgb(8 10 16 / 0.94);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 500;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px) scale(0.9);
+  transition:
+    opacity 0.15s,
+    transform 0.22s var(--ease);
+}
+
+.dock-btn:hover::after,
+.dock-btn:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.dock-btn.active::after {
   display: none;
 }
 
-/* Dok menengah (kartu 440-520 px): tombol dirapatkan supaya tiga tombol berlabel muat tanpa meluber ke sudut. */
-@container dock (max-width: 520px) {
-  .dock-btn:not(.dock-settings) {
-    gap: 5px;
-    padding: 0 10px;
+.dock-sep {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--line-strong);
+}
+
+.dock-settings > svg {
+  transition: transform 0.4s var(--ease);
+}
+
+.dock-settings:hover > svg {
+  transform: rotate(90deg);
+}
+
+@keyframes dock-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
   }
 }
 
-/* Dok sempit: hanya ikon, lebih banyak tombol per halaman (jumlahnya diatur IslandDock). */
-@container dock (max-width: 379px) {
-  .dock-btn:not(.dock-settings) {
-    width: 36px;
-    padding: 0;
-    justify-content: center;
+@keyframes dock-bounce {
+  from {
+    transform: scale(0.55) rotate(-14deg);
+  }
+}
+
+/* Dok sempit: tanpa label dan tooltip, baris digulir mendatar. */
+@container dock (max-width: 470px) {
+  .dock-tray {
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .dock-btn:not(.dock-settings) span {
+  .dock-tray::-webkit-scrollbar {
     display: none;
   }
+
+  .dock-label,
+  .dock-btn::after {
+    display: none;
+  }
+}
+
+/* "Kurangi animasi" atau preferensi sistem: dok diam. */
+.island-dock.calm *,
+.island-dock.calm *::after {
+  animation: none !important;
+  transition: none !important;
 }
 
 /* Pulau sempit: kolom lirik disembunyikan, kartu musik tetap utuh. */

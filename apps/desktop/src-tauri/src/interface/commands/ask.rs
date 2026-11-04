@@ -17,3 +17,14 @@ pub fn ask_open(svc: Svc) {
 pub fn ask_submit(svc: Svc, question: String) {
     svc.inner().submit(&question);
 }
+
+/// Uji koneksi ke otak AI yang sedang dipilih; membalas teks singkat dari model bila berhasil.
+#[tauri::command]
+#[specta::specta]
+pub async fn ai_test(svc: Svc<'_>) -> Result<String, String> {
+    let svc = Arc::clone(svc.inner());
+    tauri::async_runtime::spawn_blocking(move || svc.test_connection())
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}

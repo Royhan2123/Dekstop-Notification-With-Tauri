@@ -57,9 +57,9 @@ async settingsUpdate(settings: Settings) : Promise<Result<Settings, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async apiKeyStatus() : Promise<Result<boolean, string>> {
+async apiKeyStatus(provider: AiProvider) : Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("api_key_status") };
+    return { status: "ok", data: await TAURI_INVOKE("api_key_status", { provider }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -68,17 +68,17 @@ async apiKeyStatus() : Promise<Result<boolean, string>> {
 /**
  * API Key hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
  */
-async apiKeySet(key: string) : Promise<Result<null, string>> {
+async apiKeySet(provider: AiProvider, key: string) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("api_key_set", { key }) };
+    return { status: "ok", data: await TAURI_INVOKE("api_key_set", { provider, key }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async apiKeyClear() : Promise<Result<null, string>> {
+async apiKeyClear(provider: AiProvider) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("api_key_clear") };
+    return { status: "ok", data: await TAURI_INVOKE("api_key_clear", { provider }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -352,6 +352,17 @@ async askSubmit(question: string) : Promise<void> {
     await TAURI_INVOKE("ask_submit", { question });
 },
 /**
+ * Uji koneksi ke otak AI yang sedang dipilih; membalas teks singkat dari model bila berhasil.
+ */
+async aiTest() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("ai_test") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
  */
 async shelfAdd(paths: string[]) : Promise<void> {
@@ -410,7 +421,7 @@ settingsChangedEvent: "settings-changed-event"
 /**
  * "Otak" AI untuk review kode (dipakai mulai Fase 4).
  */
-export type AiProvider = "claude_api" | "ollama" | "claude_cli"
+export type AiProvider = "claude_api" | "gemini" | "deep_seek" | "grok" | "open_ai" | "open_router" | "groq" | "ollama" | "claude_cli"
 export type CiDto = "passing" | "failing" | "pending" | "unknown"
 export type ClipEntryDto = { id: number; text: string }
 export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume" | "brightness" | "shelf"

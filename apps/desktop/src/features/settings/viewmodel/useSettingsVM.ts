@@ -5,12 +5,20 @@ import { useSettingsStore } from "../store";
 export function useSettingsVM() {
   const { settings, apiKeySaved, error, setSettings, setApiKeySaved, setError } =
     useSettingsStore();
+  const provider = settings?.ai_provider;
 
+  // Kunci disimpan per penyedia, jadi statusnya dibaca ulang tiap penyedia berganti.
   useEffect(() => {
-    void commands.apiKeyStatus().then((r) => {
-      if (r.status === "ok") setApiKeySaved(r.data);
+    if (!provider) return;
+    setApiKeySaved(false);
+    let alive = true;
+    void commands.apiKeyStatus(provider).then((r) => {
+      if (alive && r.status === "ok") setApiKeySaved(r.data);
     });
-  }, [setApiKeySaved]);
+    return () => {
+      alive = false;
+    };
+  }, [provider, setApiKeySaved]);
 
   async function update(patch: Partial<Settings>) {
     if (!settings) return;
@@ -24,7 +32,8 @@ export function useSettingsVM() {
   }
 
   async function saveApiKey(key: string): Promise<boolean> {
-    const r = await commands.apiKeySet(key);
+    if (!provider) return false;
+    const r = await commands.apiKeySet(provider, key);
     if (r.status === "ok") {
       setApiKeySaved(true);
       setError(null);
@@ -35,7 +44,8 @@ export function useSettingsVM() {
   }
 
   async function removeApiKey() {
-    const r = await commands.apiKeyClear();
+    if (!provider) return;
+    const r = await commands.apiKeyClear(provider);
     if (r.status === "ok") setApiKeySaved(false);
     else setError(r.error);
   }

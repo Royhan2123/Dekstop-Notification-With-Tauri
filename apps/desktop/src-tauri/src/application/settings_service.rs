@@ -2,11 +2,9 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::application::island_service::IslandService;
 use crate::domain::error::SettingsError;
-use crate::domain::model::settings::Settings;
+use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::ports::{Autostart, SecretStore, SettingsRepository, SettingsSink};
 
-/// Nama entri API Key Claude di brankas OS.
-const ANTHROPIC_KEY: &str = "anthropic_api_key";
 const MAX_KEY_LEN: usize = 512;
 
 /// Memegang setelan aktif, menyimpannya, dan menerapkannya ke bagian aplikasi lain.
@@ -62,20 +60,27 @@ impl SettingsService {
         Ok(next)
     }
 
-    pub fn has_api_key(&self) -> Result<bool, SettingsError> {
-        Ok(self.secrets.get(ANTHROPIC_KEY)?.is_some())
+    pub fn has_api_key(&self, provider: AiProvider) -> Result<bool, SettingsError> {
+        let Some(name) = provider.key_name() else {
+            return Ok(false);
+        };
+        Ok(self.secrets.get(name)?.is_some())
     }
 
-    pub fn set_api_key(&self, key: &str) -> Result<(), SettingsError> {
+    pub fn set_api_key(&self, provider: AiProvider, key: &str) -> Result<(), SettingsError> {
         let key = key.trim();
+        let name = provider.key_name().ok_or(SettingsError::InvalidKey)?;
         if key.is_empty() || key.len() > MAX_KEY_LEN || key.chars().any(char::is_control) {
             return Err(SettingsError::InvalidKey);
         }
-        self.secrets.set(ANTHROPIC_KEY, key)
+        self.secrets.set(name, key)
     }
 
-    pub fn clear_api_key(&self) -> Result<(), SettingsError> {
-        self.secrets.delete(ANTHROPIC_KEY)
+    pub fn clear_api_key(&self, provider: AiProvider) -> Result<(), SettingsError> {
+        match provider.key_name() {
+            Some(name) => self.secrets.delete(name),
+            None => Ok(()),
+        }
     }
 
     fn lock(&self) -> MutexGuard<'_, Settings> {
@@ -232,29 +237,48 @@ mod tests {
 
     #[tokio::test]
     async fn api_key_divalidasi_disimpan_di_brankas_dan_bisa_dihapus() {
+        const CLAUDE: AiProvider = AiProvider::ClaudeApi;
         let f = fixture();
-        assert!(!f.svc.has_api_key().unwrap());
+        assert!(!f.svc.has_api_key(CLAUDE).unwrap());
         for bad in ["", "   ", "a\nb", &"k".repeat(MAX_KEY_LEN + 1)] {
             assert!(matches!(
-                f.svc.set_api_key(bad),
+                f.svc.set_api_key(CLAUDE, bad),
                 Err(SettingsError::InvalidKey)
             ));
         }
-        f.svc.set_api_key("  sk-ant-contoh  ").unwrap();
-        assert!(f.svc.has_api_key().unwrap());
+        f.svc.set_api_key(CLAUDE, "  sk-ant-contoh  ").unwrap();
+        assert!(f.svc.has_api_key(CLAUDE).unwrap());
         assert_eq!(
             f.secrets
                 .0
                 .lock()
                 .unwrap()
-                .get(ANTHROPIC_KEY)
+                .get("anthropic_api_key")
                 .map(String::as_str),
             Some("sk-ant-contoh")
         );
         // kunci tidak ikut ke berkas setelan
         let json = serde_json::to_string(&f.svc.get()).unwrap();
         assert!(!json.contains("sk-ant"));
-        f.svc.clear_api_key().unwrap();
-        assert!(!f.svc.has_api_key().unwrap());
+        f.svc.clear_api_key(CLAUDE).unwrap();
+        assert!(!f.svc.has_api_key(CLAUDE).unwrap());
+    }
+
+    #[tokio::test]
+    async fn kunci_tiap_penyedia_terpisah_dan_penyedia_tanpa_kunci_ditolak() {
+        let f = fixture();
+        f.svc
+            .set_api_key(AiProvider::Gemini, "AIza-contoh")
+            .unwrap();
+        assert!(f.svc.has_api_key(AiProvider::Gemini).unwrap());
+        assert!(!f.svc.has_api_key(AiProvider::DeepSeek).unwrap());
+        assert!(!f.svc.has_api_key(AiProvider::ClaudeApi).unwrap());
+        assert!(matches!(
+            f.svc.set_api_key(AiProvider::Ollama, "x"),
+            Err(SettingsError::InvalidKey)
+        ));
+        assert!(!f.svc.has_api_key(AiProvider::Ollama).unwrap());
+        f.svc.clear_api_key(AiProvider::Gemini).unwrap();
+        assert!(!f.svc.has_api_key(AiProvider::Gemini).unwrap());
     }
 }

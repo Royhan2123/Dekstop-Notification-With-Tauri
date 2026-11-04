@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 
 use crate::application::settings_service::SettingsService;
 use crate::domain::error::SettingsError;
-use crate::domain::model::settings::Settings;
+use crate::domain::model::settings::{AiProvider, Settings};
 use crate::interface::window::settings_window;
 
 type Svc<'a> = State<'a, Arc<SettingsService>>;
@@ -35,21 +35,21 @@ pub async fn settings_update(svc: Svc<'_>, settings: Settings) -> Result<Setting
 
 #[tauri::command]
 #[specta::specta]
-pub async fn api_key_status(svc: Svc<'_>) -> Result<bool, String> {
-    blocking(&svc, |s| s.has_api_key()).await
+pub async fn api_key_status(svc: Svc<'_>, provider: AiProvider) -> Result<bool, String> {
+    blocking(&svc, move |s| s.has_api_key(provider)).await
 }
 
 /// API Key hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
 #[tauri::command]
 #[specta::specta]
-pub async fn api_key_set(svc: Svc<'_>, key: String) -> Result<(), String> {
-    blocking(&svc, move |s| s.set_api_key(&key)).await
+pub async fn api_key_set(svc: Svc<'_>, provider: AiProvider, key: String) -> Result<(), String> {
+    blocking(&svc, move |s| s.set_api_key(provider, &key)).await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn api_key_clear(svc: Svc<'_>) -> Result<(), String> {
-    blocking(&svc, |s| s.clear_api_key()).await
+pub async fn api_key_clear(svc: Svc<'_>, provider: AiProvider) -> Result<(), String> {
+    blocking(&svc, move |s| s.clear_api_key(provider)).await
 }
 
 #[tauri::command]

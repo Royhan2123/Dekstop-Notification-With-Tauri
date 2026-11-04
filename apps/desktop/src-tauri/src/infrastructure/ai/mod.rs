@@ -1,4 +1,5 @@
-//! Adapter AI: Claude API, Ollama lokal, dan Claude CLI. Semuanya hanya `complete(system, user)`.
+//! Adapter AI: Claude API, penyedia bergaya OpenAI (Gemini, DeepSeek, Grok, ...), Ollama lokal, dan
+//! Claude CLI. Semuanya hanya `complete(system, user)`.
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -12,7 +13,6 @@ mod claude_cli;
 
 pub use claude_cli::ClaudeCli;
 
-const ANTHROPIC_KEY: &str = "anthropic_api_key";
 const DEFAULT_CLAUDE_MODEL: &str = "claude-sonnet-5-5";
 const OLLAMA_URL: &str = "http://127.0.0.1:11434/api/chat";
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
@@ -36,9 +36,32 @@ fn post(
         .map_err(|e| AiError::Unavailable(format!("{what}: {e}")))?;
     let status = res.status();
     if !status.is_success() {
-        return Err(AiError::Unavailable(format!("{what}: HTTP {status}")));
+        // Isi galat (kunci salah, model tidak ada, kuota habis) membuat penyebabnya terlihat di Setelan.
+        let detail = res.text().unwrap_or_default();
+        return Err(AiError::Unavailable(format!(
+            "{what}: HTTP {status} {}",
+            error_detail(&detail)
+        )));
     }
     res.json().map_err(|_| AiError::BadResponse)
+}
+
+/// Pesan galat dari badan jawaban (`error.message` bila ada), satu baris dan dipendekkan.
+fn error_detail(body: &str) -> String {
+    let msg = serde_json::from_str::<Value>(body)
+        .ok()
+        .and_then(|v| {
+            // Bentuk umum: {"error":{"message":..}}, {"error":".."}, atau daftar seperti Gemini.
+            let e = v.get(0).unwrap_or(&v).get("error")?.clone();
+            e.get("message").unwrap_or(&e).as_str().map(str::to_string)
+        })
+        .unwrap_or_else(|| body.to_string());
+    msg.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(200)
+        .collect()
 }
 
 fn text_at(v: &Value, pointer: &str) -> Result<String, AiError> {
@@ -66,6 +89,28 @@ impl AiClient for AnthropicClient {
             .header("x-api-key", &self.key)
             .header("anthropic-version", "2023-06-01");
         text_at(&post(req, &body, "Claude API")?, "/content/0/text")
+    }
+}
+
+/// Gemini, DeepSeek, Grok, OpenAI, OpenRouter, dan Groq semuanya berbicara dialek `chat/completions` OpenAI.
+pub struct OpenAiClient {
+    name: &'static str,
+    url: &'static str,
+    key: String,
+    model: String,
+}
+
+impl AiClient for OpenAiClient {
+    fn complete(&self, system: &str, user: &str) -> Result<String, AiError> {
+        let body = json!({
+            "model": self.model,
+            "messages": [
+                { "role": "system", "content": system },
+                { "role": "user", "content": user },
+            ],
+        });
+        let req = http()?.post(self.url).bearer_auth(&self.key);
+        text_at(&post(req, &body, self.name)?, "/choices/0/message/content")
     }
 }
 
@@ -99,18 +144,41 @@ impl DefaultAiFactory {
     }
 }
 
+impl DefaultAiFactory {
+    fn key(&self, provider: AiProvider) -> Result<String, AiError> {
+        let name = provider.key_name().ok_or(AiError::BadResponse)?;
+        self.secrets
+            .get(name)
+            .map_err(|e| AiError::Unavailable(e.to_string()))?
+            .ok_or_else(|| {
+                AiError::NotConfigured(format!(
+                    "API Key {} belum diisi di Setelan",
+                    provider_name(provider)
+                ))
+            })
+    }
+}
+
+fn provider_name(provider: AiProvider) -> &'static str {
+    match provider {
+        AiProvider::ClaudeApi => "Claude",
+        AiProvider::Gemini => "Gemini",
+        AiProvider::DeepSeek => "DeepSeek",
+        AiProvider::Grok => "Grok",
+        AiProvider::OpenAi => "OpenAI",
+        AiProvider::OpenRouter => "OpenRouter",
+        AiProvider::Groq => "Groq",
+        AiProvider::Ollama => "Ollama",
+        AiProvider::ClaudeCli => "Claude CLI",
+    }
+}
+
 impl AiProviderFactory for DefaultAiFactory {
     fn build(&self, provider: AiProvider, model: &str) -> Result<Arc<dyn AiClient>, AiError> {
         let model = model.trim();
         match provider {
             AiProvider::ClaudeApi => {
-                let key = self
-                    .secrets
-                    .get(ANTHROPIC_KEY)
-                    .map_err(|e| AiError::Unavailable(e.to_string()))?
-                    .ok_or_else(|| {
-                        AiError::NotConfigured("API Key Claude belum diisi di Setelan".into())
-                    })?;
+                let key = self.key(provider)?;
                 let model = if model.is_empty() {
                     DEFAULT_CLAUDE_MODEL
                 } else {
@@ -128,6 +196,20 @@ impl AiProviderFactory for DefaultAiFactory {
                 model: model.into(),
             })),
             AiProvider::ClaudeCli => Ok(Arc::new(ClaudeCli::new(model))),
+            other => {
+                let (url, default_model) = other.openai_compatible().ok_or(AiError::BadResponse)?;
+                Ok(Arc::new(OpenAiClient {
+                    name: provider_name(other),
+                    url,
+                    key: self.key(other)?,
+                    model: if model.is_empty() {
+                        default_model
+                    } else {
+                        model
+                    }
+                    .into(),
+                }))
+            }
         }
     }
 }
@@ -175,5 +257,48 @@ mod tests {
         assert!(tanpa_kunci.build(AiProvider::ClaudeCli, "").is_ok());
         let dengan_kunci = DefaultAiFactory::new(Arc::new(Secrets(Some("k".into()))));
         assert!(dengan_kunci.build(AiProvider::ClaudeApi, "").is_ok());
+    }
+
+    #[test]
+    fn semua_penyedia_bergaya_openai_butuh_kunci_dan_punya_alamat_https() {
+        let tanpa_kunci = DefaultAiFactory::new(Arc::new(Secrets(None)));
+        let dengan_kunci = DefaultAiFactory::new(Arc::new(Secrets(Some("k".into()))));
+        for p in [
+            AiProvider::Gemini,
+            AiProvider::DeepSeek,
+            AiProvider::Grok,
+            AiProvider::OpenAi,
+            AiProvider::OpenRouter,
+            AiProvider::Groq,
+        ] {
+            let (url, model) = p.openai_compatible().unwrap();
+            assert!(url.starts_with("https://") && !model.is_empty(), "{p:?}");
+            assert!(p.key_name().is_some(), "{p:?}");
+            assert!(
+                matches!(tanpa_kunci.build(p, "").err(), Some(AiError::NotConfigured(m)) if !m.is_empty()),
+                "{p:?}"
+            );
+            assert!(dengan_kunci.build(p, "").is_ok(), "{p:?}");
+        }
+        assert!(AiProvider::Ollama.key_name().is_none());
+        assert!(AiProvider::ClaudeApi.openai_compatible().is_none());
+    }
+
+    #[test]
+    fn pesan_galat_penyedia_diambil_ringkas() {
+        assert_eq!(
+            error_detail(r#"{"error":{"message":"model tidak ada","code":404}}"#),
+            "model tidak ada"
+        );
+        assert_eq!(error_detail(r#"{"error":"kunci salah"}"#), "kunci salah");
+        assert_eq!(
+            error_detail(r#"[{"error":{"message":"API key not valid"}}]"#),
+            "API key not valid"
+        );
+        assert_eq!(
+            error_detail("<html>\n  gagal\n</html>"),
+            "<html> gagal </html>"
+        );
+        assert_eq!(error_detail(&"x".repeat(900)).len(), 200);
     }
 }

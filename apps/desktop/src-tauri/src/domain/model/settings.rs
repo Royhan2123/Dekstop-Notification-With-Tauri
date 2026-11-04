@@ -19,8 +19,54 @@ pub enum Language {
 pub enum AiProvider {
     #[default]
     ClaudeApi,
+    Gemini,
+    DeepSeek,
+    Grok,
+    OpenAi,
+    OpenRouter,
+    Groq,
     Ollama,
     ClaudeCli,
+}
+
+impl AiProvider {
+    /// Nama entri API Key di brankas OS; `None` bila penyedia ini tanpa kunci (Ollama, Claude CLI).
+    /// Claude memakai nama lama supaya kunci yang sudah tersimpan tetap terbaca.
+    pub fn key_name(self) -> Option<&'static str> {
+        Some(match self {
+            Self::ClaudeApi => "anthropic_api_key",
+            Self::Gemini => "gemini_api_key",
+            Self::DeepSeek => "deepseek_api_key",
+            Self::Grok => "grok_api_key",
+            Self::OpenAi => "openai_api_key",
+            Self::OpenRouter => "openrouter_api_key",
+            Self::Groq => "groq_api_key",
+            Self::Ollama | Self::ClaudeCli => return None,
+        })
+    }
+
+    /// Alamat `chat/completions` bergaya OpenAI dan model bawaan; `None` untuk penyedia lain.
+    /// shortcut: nama model bawaan bisa usang; pengguna bisa menimpanya di Setelan, perbarui bila berganti.
+    pub fn openai_compatible(self) -> Option<(&'static str, &'static str)> {
+        Some(match self {
+            Self::Gemini => (
+                "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+                "gemini-flash-latest",
+            ),
+            Self::DeepSeek => ("https://api.deepseek.com/chat/completions", "deepseek-chat"),
+            Self::Grok => ("https://api.x.ai/v1/chat/completions", "grok-4"),
+            Self::OpenAi => ("https://api.openai.com/v1/chat/completions", "gpt-4o-mini"),
+            Self::OpenRouter => (
+                "https://openrouter.ai/api/v1/chat/completions",
+                "openrouter/auto",
+            ),
+            Self::Groq => (
+                "https://api.groq.com/openai/v1/chat/completions",
+                "llama-3.3-70b-versatile",
+            ),
+            Self::ClaudeApi | Self::Ollama | Self::ClaudeCli => return None,
+        })
+    }
 }
 
 /// Yang dilakukan bila pengguna tidak merespons review dalam batas waktu.

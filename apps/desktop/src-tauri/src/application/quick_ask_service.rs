@@ -4,6 +4,7 @@ use std::thread;
 
 use crate::application::island_service::IslandService;
 use crate::application::settings_service::SettingsService;
+use crate::domain::error::AiError;
 use crate::domain::island::action::IslandAction;
 use crate::domain::island::state::AskPhase;
 use crate::domain::model::settings::Language;
@@ -57,6 +58,20 @@ impl QuickAskService {
         });
     }
 
+    /// Uji otak AI yang dipilih dengan satu pertanyaan pendek; dipakai Setelan untuk memastikan
+    /// kunci dan model benar begitu kunci ditempel. Mengembalikan balasan singkatnya.
+    pub fn test_connection(&self) -> Result<String, AiError> {
+        let settings = self.settings.get();
+        let reply = self
+            .ai
+            .build(settings.ai_provider, &settings.ai_model)?
+            .complete(
+                "Balas hanya dengan satu kata: siap. Gunakan bahasa Indonesia.",
+                "Tes koneksi",
+            )?;
+        Ok(reply.trim().chars().take(60).collect())
+    }
+
     fn answer(&self, question: &str) -> AskPhase {
         let settings = self.settings.get();
         let system = match settings.language {
@@ -90,7 +105,6 @@ impl QuickAskService {
 mod tests {
     use super::*;
     use crate::application::test_support::services;
-    use crate::domain::error::AiError;
     use crate::domain::island::state::{Content, View};
     use crate::domain::model::settings::{AiProvider, Settings};
     use crate::domain::ports::AiClient;
@@ -143,6 +157,19 @@ mod tests {
         assert_eq!(svc.answer("hai"), AskPhase::Done("halo: hai".into()));
         let (svc, _island, _rt) = fx(Err("mati".into()));
         assert!(matches!(svc.answer("hai"), AskPhase::Failed(m) if m.contains("mati")));
+    }
+
+    #[test]
+    fn uji_koneksi_mengembalikan_balasan_atau_galat_penyedia() {
+        let (svc, _island, _rt) = fx(Ok("siap".into()));
+        assert_eq!(svc.test_connection().unwrap(), "siap: Tes koneksi");
+        let (svc, _island, _rt) = fx(Err("kunci salah".into()));
+        assert!(
+            svc.test_connection()
+                .unwrap_err()
+                .to_string()
+                .contains("kunci salah")
+        );
     }
 
     #[test]

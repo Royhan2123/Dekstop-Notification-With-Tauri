@@ -447,8 +447,8 @@ html[data-window="island"] #root {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* Bawah menyisakan tinggi dok (58px) supaya jawaban yang panjang digulir di atas dok, bukan di bawahnya. */
-  padding: 16px 20px 58px;
+  /* Bawah menyisakan tinggi dok (68px) supaya jawaban yang panjang digulir di atas dok, bukan di bawahnya. */
+  padding: 16px 20px 68px;
   box-sizing: border-box;
   height: 100%;
   animation: ask-in 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
@@ -893,8 +893,8 @@ html[data-window="island"] #root {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 58px;
-  padding: 6px 20px 10px;
+  height: 68px;
+  padding: 8px 8px 12px;
   box-sizing: border-box;
   container: dock / inline-size;
 }
@@ -904,9 +904,9 @@ html[data-window="island"] #root {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   max-width: 100%;
-  padding: 5px;
+  padding: 6px 10px;
   border-radius: 999px;
   background: var(--surface-1);
   box-shadow:
@@ -920,9 +920,9 @@ html[data-window="island"] #root {
   flex: none;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  min-width: 34px;
-  padding: 0 8px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 10px;
   box-sizing: border-box;
   border: 0;
   border-radius: 999px;
@@ -967,12 +967,21 @@ html[data-window="island"] #root {
 }
 
 .dock-btn:disabled {
-  opacity: 0.35;
   cursor: default;
+}
+
+.dock-btn:disabled > svg {
+  opacity: 0.35;
 }
 
 .dock-btn.active {
   color: var(--accent-ink, #04231b);
+}
+
+/* Sakelar yang sedang menyala (Jangan Ganggu, Fokus berjalan) tanpa merebut highlight. */
+.dock-btn.lit:not(.active) {
+  color: var(--accent, #2fcf9c);
+  background: color-mix(in srgb, var(--accent, #2fcf9c) 18%, transparent);
 }
 
 /* Highlight beraksen: satu elemen yang meluncur ke tombol aktif (layoutId). */
@@ -1040,7 +1049,7 @@ html[data-window="island"] #root {
   flex: none;
   width: 1px;
   height: 18px;
-  margin: 0 4px;
+  margin: 0 2px;
   background: var(--line-strong);
 }
 
@@ -1068,12 +1077,19 @@ html[data-window="island"] #root {
 /* Dok sempit: tanpa label dan tooltip, baris digulir mendatar. */
 @container dock (max-width: 470px) {
   .dock-tray {
+    gap: 3px;
+    padding: 6px 8px;
     overflow-x: auto;
     scrollbar-width: none;
   }
 
   .dock-tray::-webkit-scrollbar {
     display: none;
+  }
+
+  .dock-btn {
+    min-width: 32px;
+    padding: 0 7px;
   }
 
   .dock-label,

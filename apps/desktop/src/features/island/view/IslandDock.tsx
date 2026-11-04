@@ -63,7 +63,10 @@ interface Item {
   label: MessageKey;
   /** Teks di tombol bila bukan label (mis. hitung mundur); tampil terus walau tidak aktif. */
   text?: string;
+  /** Tombol yang sedang "dipegang" highlight meluncur (satu saja pada satu waktu). */
   active: boolean;
+  /** Sakelar menyala yang tidak memegang highlight. */
+  lit?: boolean;
   disabled?: boolean;
   run: () => void;
 }
@@ -111,14 +114,16 @@ export function IslandDock({
     {
       id: "dnd",
       label: "dock.dnd",
-      active: snapshot.dnd,
+      active: false,
+      lit: snapshot.dnd,
       run: () => void commands.islandSetDnd(!snapshot.dnd),
     },
     {
       id: "focus",
       label: "dock.focus",
       text: focusing ? formatRemaining(pomodoro.status.remaining_secs) : undefined,
-      active: focusing || panel === "focus",
+      active: panel === "focus",
+      lit: focusing,
       run: () => onPanel(panel === "focus" ? null : "focus"),
     },
     {
@@ -168,11 +173,11 @@ export function IslandDock({
             <button
               key={it.id}
               type="button"
-              className={it.active ? "dock-btn active" : "dock-btn"}
+              className={it.active ? "dock-btn active" : it.lit ? "dock-btn lit" : "dock-btn"}
               style={{ "--i": i } as CSSProperties}
               data-label={t(it.label)}
               aria-label={t(it.label)}
-              aria-pressed={it.active}
+              aria-pressed={it.active || it.lit === true}
               disabled={it.disabled}
               onClick={it.run}
             >

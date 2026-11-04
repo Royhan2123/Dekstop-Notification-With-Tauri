@@ -38,9 +38,9 @@
   padding-left: 48px;
 }
 
-/* Di pulau terbuka Mino duduk di tengah area isi (di atas dok 58px). */
+/* Di pulau terbuka Mino duduk di tengah area isi (di atas dok 68px). */
 .island[data-mode="expanded"] .lumi {
-  top: calc((100% - 58px - 64px) / 2);
+  top: calc((100% - 68px - 64px) / 2);
   left: 12px;
   width: 64px;
   height: 64px;

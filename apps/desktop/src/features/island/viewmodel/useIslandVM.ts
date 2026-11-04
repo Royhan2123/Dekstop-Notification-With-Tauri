@@ -7,7 +7,7 @@ import { useLyricsSync } from "../../media/viewmodel/useLyricsVM";
 import { useIslandStore } from "../store";
 
 /** Tinggi dok fitur di dasar pulau terbuka. */
-export const DOCK_H = 58;
+export const DOCK_H = 68;
 
 export interface Shape {
   width: number;

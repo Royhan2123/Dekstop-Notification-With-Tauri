@@ -19,6 +19,7 @@ use crate::application::lyrics_service::LyricsService;
 use crate::application::media_service::MediaService;
 use crate::application::net_service::NetService;
 use crate::application::pomodoro_service::PomodoroService;
+use crate::application::power_service::PowerService;
 use crate::application::quick_ask_service::QuickAskService;
 use crate::application::review::service::ReviewService;
 use crate::application::settings_service::SettingsService;
@@ -51,6 +52,7 @@ use crate::infrastructure::system::fullscreen::SystemFullscreen;
 use crate::infrastructure::system::idle::SystemIdle;
 use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
+use crate::infrastructure::system::power_control::SystemPowerControl;
 use crate::infrastructure::system::sound::SystemSound;
 use crate::infrastructure::system::volume::SystemVolume;
 use crate::infrastructure::system::wallpaper::SystemWallpaper;
@@ -100,6 +102,8 @@ pub fn assemble(app: &App) {
         Ok(port) => tracing::info!("Isla Link mendengarkan di 127.0.0.1:{port}"),
         Err(e) => tracing::error!("gagal membuka server Isla Link: {e}"),
     }
+
+    app.manage(PowerService::new(Arc::new(SystemPowerControl)));
 
     // Tanpa database, fitur riwayat (kesehatan, review) nonaktif; pulau tetap jalan.
     let mut chat: Arc<dyn ChatStore> = Arc::new(MemoryChatStore::default());

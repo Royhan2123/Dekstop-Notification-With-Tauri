@@ -12,6 +12,8 @@ import { HealthPanel } from "../../health/view/HealthPanel";
 import { NetPanel } from "../../net/view/NetPanel";
 import { FocusPanel } from "../../pomodoro/view/FocusPanel";
 import { TasksPanel } from "../../tasks/view/TasksPanel";
+import { ToolsPanel } from "../../tools/view/ToolsPanel";
+import { useReminders } from "../../health/viewmodel/useReminders";
 import { IslandDock, type Panel } from "./IslandDock";
 import { IslandMenu, menuShape } from "./IslandMenu";
 import { ShelfCard } from "../../shelf/view/ShelfCard";
@@ -26,6 +28,7 @@ const panelShapes = {
   net: { width: EXPANDED_W, height: 218, radius: 26, opacity: 1 },
   focus: { width: EXPANDED_W, height: 228, radius: 26, opacity: 1 },
   tasks: { width: EXPANDED_W, height: 308, radius: 26, opacity: 1 },
+  tools: { width: EXPANDED_W, height: 236, radius: 26, opacity: 1 },
 };
 
 /** Selama animasi ukuran, hitbox dilaporkan paling sering sekali per jeda ini (bukan tiap frame). */
@@ -75,6 +78,7 @@ export function IslandShell() {
     };
   }, [reportHitbox]);
   const viewport = useViewportWidth();
+  useReminders();
 
   const [menu, setMenu] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
@@ -138,6 +142,8 @@ export function IslandShell() {
                 <NetPanel onClose={closePanel} />
               ) : panel === "tasks" ? (
                 <TasksPanel onClose={closePanel} />
+              ) : panel === "tools" ? (
+                <ToolsPanel onClose={closePanel} />
               ) : (
                 <ClipboardPanel onClose={closePanel} />
               )

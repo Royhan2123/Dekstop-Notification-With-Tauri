@@ -17,6 +17,7 @@ import {
   type RadarDto,
   type ReviewDto,
   type Settings,
+  type PowerActionDto,
   type TaskDto,
 } from "../../bindings";
 
@@ -38,6 +39,7 @@ export type {
   PomodoroStatusDto,
   ReviewDto,
   Settings,
+  PowerActionDto,
   TaskDto,
 };
 

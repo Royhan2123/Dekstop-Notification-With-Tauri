@@ -6,7 +6,7 @@ use crate::domain::bridge::BridgeCommand;
 use crate::domain::chat::ChatTurn;
 use crate::domain::error::{
     AiError, BridgeError, CalendarError, ChatError, GitError, GithubError, LyricsError, MediaError,
-    SettingsError, TaskError, ThemeError, UsageError,
+    PowerError, SettingsError, TaskError, ThemeError, UsageError,
 };
 use crate::domain::health::DayUsage;
 use crate::domain::island::state::IslandState;
@@ -14,6 +14,7 @@ use crate::domain::lyrics::Candidate;
 use crate::domain::model::review::{Diff, PushRef, SecretHit};
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, MediaInfo};
+use crate::domain::power::PowerAction;
 use crate::domain::task::Task;
 
 /// Penerima snapshot state pulau (mis. emit event ke frontend).
@@ -125,6 +126,11 @@ pub trait PowerReader: Send + Sync {
     fn status(&self) -> Option<PowerStatus>;
 }
 
+/// Perintah daya OS (matikan, mulai ulang, tidur, kunci).
+pub trait PowerControl: Send + Sync {
+    fn perform(&self, action: PowerAction) -> Result<(), PowerError>;
+}
+
 /// Sumber lirik berwaktu (pencarian teks bebas).
 pub trait LyricsSource: Send + Sync {
     fn search(&self, query: &str) -> Result<Vec<Candidate>, LyricsError>;
@@ -177,7 +183,10 @@ pub trait ChatStore: Send + Sync {
 /// Penyimpanan daftar tugas.
 pub trait TaskStore: Send + Sync {
     fn list(&self) -> Result<Vec<Task>, TaskError>;
-    fn add(&self, title: &str) -> Result<(), TaskError>;
+    fn add(&self, title: &str, note: bool) -> Result<(), TaskError>;
+    /// Ubah tugas menjadi catatan atau sebaliknya; judul dan isi tetap.
+    fn set_note(&self, id: i32, note: bool) -> Result<(), TaskError>;
+    fn update_note(&self, id: i32, title: &str, body: &str) -> Result<(), TaskError>;
     fn set_done(&self, id: i32, done: bool) -> Result<(), TaskError>;
     fn remove(&self, id: i32) -> Result<(), TaskError>;
     fn clear_done(&self) -> Result<(), TaskError>;

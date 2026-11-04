@@ -29,6 +29,12 @@ export const commands = {
     await TAURI_INVOKE("island_set_dnd", { on });
   },
   /**
+   * Pemberitahuan singkat dari frontend (mis. pengingat sehat); otomatis tertutup, diam saat Jangan Ganggu.
+   */
+  async islandNotice(text: string): Promise<void> {
+    await TAURI_INVOKE("island_notice", { text });
+  },
+  /**
    * Simulasi kejadian untuk mencoba pulau sebelum fitur aslinya ada. Hanya aktif di build debug.
    */
   async devSimulate(kind: string): Promise<void> {
@@ -266,9 +272,9 @@ export const commands = {
       else return { status: "error", error: e as any };
     }
   },
-  async tasksAdd(title: string): Promise<Result<null, string>> {
+  async tasksAdd(title: string, note: boolean): Promise<Result<null, string>> {
     try {
-      return { status: "ok", data: await TAURI_INVOKE("tasks_add", { title }) };
+      return { status: "ok", data: await TAURI_INVOKE("tasks_add", { title, note }) };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: "error", error: e as any };
@@ -293,6 +299,33 @@ export const commands = {
   async tasksClearDone(): Promise<Result<null, string>> {
     try {
       return { status: "ok", data: await TAURI_INVOKE("tasks_clear_done") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksSetNote(id: number, note: boolean): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_set_note", { id, note }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksUpdateNote(id: number, title: string, body: string): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_update_note", { id, title, body }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Dipanggil setelah pengguna menyetujui kartu konfirmasi (kecuali kunci layar).
+   */
+  async powerPerform(action: PowerActionDto): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("power_perform", { action }) };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: "error", error: e as any };
@@ -603,6 +636,7 @@ export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listen
 export type NetRateDto = { down_bps: number; up_bps: number };
 export type PomodoroPhaseDto = "idle" | "focus" | "break";
 export type PomodoroStatusDto = { phase: PomodoroPhaseDto; remaining_secs: number };
+export type PowerActionDto = "shutdown" | "restart" | "sleep" | "lock";
 export type PrDto = { repo: string; title: string; url: string; ci: CiDto };
 export type RadarDto = { review_requests: PrDto[]; mine: PrDto[] };
 export type Rect = { x: number; y: number; width: number; height: number };
@@ -690,7 +724,7 @@ export type Severity =
    */
   | "suggestion";
 export type ShelfItemDto = { path: string; name: string };
-export type TaskDto = { id: number; title: string; done: boolean };
+export type TaskDto = { id: number; title: string; done: boolean; note: boolean; body: string };
 
 /** tauri-specta globals **/
 

@@ -85,11 +85,21 @@ pub enum ChatError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum PowerError {
+    #[error("gagal menjalankan perintah daya: {0}")]
+    Failed(String),
+    #[error("perintah daya belum didukung di sistem ini")]
+    Unsupported,
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum TaskError {
     #[error("judul tugas kosong")]
     EmptyTitle,
     #[error("terlalu banyak tugas, hapus yang selesai dulu")]
     TooMany,
+    #[error("butir tidak ditemukan")]
+    NotFound,
     #[error("gagal menyimpan tugas: {0}")]
     Storage(String),
 }

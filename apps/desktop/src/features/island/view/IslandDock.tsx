@@ -7,7 +7,7 @@ import { formatRemaining, usePomodoroVM } from "../../pomodoro/viewmodel/usePomo
 import { useSettingsStore } from "../../settings/store";
 import { useIslandStore } from "../store";
 
-export type Panel = "clipboard" | "health" | "net" | "tasks" | "focus" | null;
+export type Panel = "clipboard" | "health" | "net" | "tasks" | "focus" | "tools" | null;
 
 const ICONS = {
   music: (
@@ -27,6 +27,9 @@ const ICONS = {
   shelf: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />,
   clipboard: (
     <path d="M9 4h6v3H9ZM7 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1" />
+  ),
+  tools: (
+    <path d="M5 4h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm9 0h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM5 13h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Zm9 0h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z" />
   ),
   settings: (
     <>
@@ -162,13 +165,22 @@ export function IslandDock({
       active: panel === "clipboard",
       run: () => onPanel(panel === "clipboard" ? null : "clipboard"),
     },
+    {
+      id: "tools",
+      label: "dock.tools",
+      active: panel === "tools",
+      run: () => onPanel(panel === "tools" ? null : "tools"),
+    },
   ];
+
+  // Satu label saja yang boleh melebar: hitung mundur Fokus menggantikan label tombol aktif supaya dok tidak meluber.
+  const timerOn = items.some((it) => it.text !== undefined);
 
   return (
     <div className={calm ? "island-dock calm" : "island-dock"} onClick={(e) => e.stopPropagation()}>
       <div className="dock-tray">
         {items.map((it, i) => {
-          const showLabel = it.active || it.text !== undefined;
+          const showLabel = (it.active && !timerOn) || it.text !== undefined;
           return (
             <button
               key={it.id}

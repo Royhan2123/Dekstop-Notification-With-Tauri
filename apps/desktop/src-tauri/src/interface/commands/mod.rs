@@ -9,6 +9,7 @@ pub mod lyrics;
 pub mod media;
 pub mod net;
 pub mod pomodoro;
+pub mod power;
 pub mod review;
 pub mod settings;
 pub mod shelf;

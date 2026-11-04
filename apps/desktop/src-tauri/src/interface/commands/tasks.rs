@@ -22,8 +22,27 @@ pub fn tasks_list(app: AppHandle) -> Result<Vec<TaskDto>, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn tasks_add(app: AppHandle, title: String) -> Result<(), String> {
-    service(&app)?.add(&title).map_err(|e| e.to_string())
+pub fn tasks_add(app: AppHandle, title: String, note: bool) -> Result<(), String> {
+    service(&app)?.add(&title, note).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn tasks_set_note(app: AppHandle, id: i32, note: bool) -> Result<(), String> {
+    service(&app)?.set_note(id, note).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn tasks_update_note(
+    app: AppHandle,
+    id: i32,
+    title: String,
+    body: String,
+) -> Result<(), String> {
+    service(&app)?
+        .update_note(id, &title, &body)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

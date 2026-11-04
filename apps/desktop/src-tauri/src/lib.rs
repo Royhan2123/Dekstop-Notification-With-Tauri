@@ -21,13 +21,14 @@ use interface::commands::github::{
 };
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
-    dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_set_dnd,
-    island_show_media, island_snapshot,
+    dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_notice,
+    island_set_dnd, island_show_media, island_snapshot,
 };
 use interface::commands::lyrics::lyrics_fetch;
 use interface::commands::media::{media_control, media_cycle};
 use interface::commands::net::net_rate;
 use interface::commands::pomodoro::{pomodoro_start, pomodoro_status, pomodoro_stop};
+use interface::commands::power::power_perform;
 use interface::commands::review::{
     close_review, open_review, review_decide, review_unwatch, review_watch,
 };
@@ -39,7 +40,8 @@ use interface::commands::shelf::{
     shelf_add, shelf_clear, shelf_copy, shelf_open_file, shelf_remove, shelf_reveal, shelf_show,
 };
 use interface::commands::tasks::{
-    tasks_add, tasks_clear_done, tasks_list, tasks_remove, tasks_set_done,
+    tasks_add, tasks_clear_done, tasks_list, tasks_remove, tasks_set_done, tasks_set_note,
+    tasks_update_note,
 };
 use interface::commands::theme::{theme_fetch, wallpaper_current};
 use interface::dto::{IslandSnapshotEvent, SettingsChangedEvent};
@@ -55,6 +57,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             island_show_media,
             island_hitbox,
             island_set_dnd,
+            island_notice,
             dev_simulate,
             media_control,
             media_cycle,
@@ -87,6 +90,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
             tasks_set_done,
             tasks_remove,
             tasks_clear_done,
+            tasks_set_note,
+            tasks_update_note,
+            power_perform,
             bridge_pair,
             bridge_paired,
             bridge_unpair,

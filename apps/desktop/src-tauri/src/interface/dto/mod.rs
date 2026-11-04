@@ -12,6 +12,7 @@ use crate::domain::mascot::{Mood, mood_for};
 use crate::domain::model::review::Severity;
 use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, ReviewReport};
+use crate::domain::power::PowerAction;
 use crate::domain::task::Task;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
@@ -258,6 +259,8 @@ pub struct TaskDto {
     pub id: i32,
     pub title: String,
     pub done: bool,
+    pub note: bool,
+    pub body: String,
 }
 
 impl From<&Task> for TaskDto {
@@ -266,6 +269,28 @@ impl From<&Task> for TaskDto {
             id: t.id,
             title: t.title.clone(),
             done: t.done,
+            note: t.note,
+            body: t.body.clone(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum PowerActionDto {
+    Shutdown,
+    Restart,
+    Sleep,
+    Lock,
+}
+
+impl From<PowerActionDto> for PowerAction {
+    fn from(a: PowerActionDto) -> Self {
+        match a {
+            PowerActionDto::Shutdown => PowerAction::Shutdown,
+            PowerActionDto::Restart => PowerAction::Restart,
+            PowerActionDto::Sleep => PowerAction::Sleep,
+            PowerActionDto::Lock => PowerAction::Lock,
         }
     }
 }

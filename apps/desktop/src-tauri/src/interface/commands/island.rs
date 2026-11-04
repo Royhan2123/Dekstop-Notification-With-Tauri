@@ -46,6 +46,16 @@ pub fn island_set_dnd(svc: Svc, on: bool) {
     svc.inner().dispatch(IslandAction::DoNotDisturb(on));
 }
 
+/// Pemberitahuan singkat dari frontend (mis. pengingat sehat); otomatis tertutup, diam saat Jangan Ganggu.
+#[tauri::command]
+#[specta::specta]
+pub fn island_notice(svc: Svc, text: String) {
+    let text: String = text.chars().take(120).collect();
+    if !text.trim().is_empty() {
+        svc.inner().dispatch(IslandAction::Notice(text));
+    }
+}
+
 /// Hitbox pulau saat ini (piksel logis relatif ke jendela), dipakai untuk klik tembus.
 #[tauri::command]
 #[specta::specta]

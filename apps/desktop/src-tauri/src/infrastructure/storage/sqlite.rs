@@ -35,6 +35,10 @@ fn migrations() -> Migrations<'static> {
                 model TEXT NOT NULL
             );",
         ),
+        M::up(
+            "ALTER TABLE tasks ADD COLUMN note INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE tasks ADD COLUMN body TEXT NOT NULL DEFAULT '';",
+        ),
     ])
 }
 

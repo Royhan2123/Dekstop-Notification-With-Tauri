@@ -12,5 +12,6 @@ pub mod lyrics;
 pub mod mascot;
 pub mod model;
 pub mod ports;
+pub mod power;
 pub mod task;
 pub mod theme;

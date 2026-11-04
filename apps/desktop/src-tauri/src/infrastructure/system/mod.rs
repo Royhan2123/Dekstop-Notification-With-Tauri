@@ -5,6 +5,7 @@ pub mod fullscreen;
 pub mod idle;
 pub mod network;
 pub mod power;
+pub mod power_control;
 pub mod sound;
 pub mod volume;
 pub mod wallpaper;

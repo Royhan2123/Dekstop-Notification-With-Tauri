@@ -4,8 +4,10 @@ const KEY = "isla.wellness";
 /** Target gelas air per hari dan lama istirahat mata (aturan 20-20-20: 20 detik melihat jauh). */
 export const WATER_GOAL = 8;
 export const EYE_SECS = 20;
-const WATER_MAX = 24;
-const EYES_MAX = 99;
+/** Target harian untuk skor: istirahat mata dan sesi peregangan. */
+export const EYE_GOAL = 6;
+export const STRETCH_GOAL = 3;
+const MAX = { water: 24, eyes: 99, stretch: 99, breath: 99 } as const;
 /** Lama pesan "selesai" tampil setelah istirahat mata. */
 const DONE_MS = 2200;
 
@@ -14,6 +16,8 @@ export interface Wellness {
   date: string;
   water: number;
   eyes: number;
+  stretch: number;
+  breath: number;
 }
 
 const clamp = (n: unknown, max: number) =>
@@ -28,21 +32,30 @@ export function loadWellness(raw: string | null, today: string): Wellness {
     const j: unknown = JSON.parse(raw ?? "null");
     if (j && typeof j === "object" && (j as Wellness).date === today) {
       const w = j as Wellness;
-      return { date: today, water: clamp(w.water, WATER_MAX), eyes: clamp(w.eyes, EYES_MAX) };
+      return {
+        date: today,
+        water: clamp(w.water, MAX.water),
+        eyes: clamp(w.eyes, MAX.eyes),
+        stretch: clamp(w.stretch, MAX.stretch),
+        breath: clamp(w.breath, MAX.breath),
+      };
     }
   } catch {
     // isi rusak: mulai dari nol
   }
-  return { date: today, water: 0, eyes: 0 };
+  return { date: today, water: 0, eyes: 0, stretch: 0, breath: 0 };
 }
 
-function read(): Wellness {
+/** Catatan hari ini dari penyimpanan (dipakai juga oleh pengingat). */
+export function readWellness(): Wellness {
   try {
     return loadWellness(localStorage.getItem(KEY), todayKey());
   } catch {
     return loadWellness(null, todayKey());
   }
 }
+
+const read = readWellness;
 
 function write(w: Wellness) {
   try {
@@ -58,10 +71,9 @@ export function useWellnessVM() {
   const [eyeLeft, setEyeLeft] = useState<number | null>(null);
   const [eyeDone, setEyeDone] = useState(false);
 
-  const bump = (field: "water" | "eyes") => {
+  const bump = (field: keyof typeof MAX) => {
     const cur = read();
-    const max = field === "water" ? WATER_MAX : EYES_MAX;
-    const next = { ...cur, [field]: Math.min(max, cur[field] + 1) };
+    const next = { ...cur, [field]: Math.min(MAX[field], cur[field] + 1) };
     write(next);
     setState(next);
   };
@@ -89,10 +101,14 @@ export function useWellnessVM() {
   return {
     water: state.water,
     eyes: state.eyes,
+    stretch: state.stretch,
+    breath: state.breath,
     /** Detik tersisa; `null` bila tidak sedang istirahat. */
     eyeLeft,
     eyeDone,
     addWater: () => bump("water"),
+    addStretch: () => bump("stretch"),
+    addBreath: () => bump("breath"),
     startEye: () => setEyeLeft(EYE_SECS),
     cancelEye: () => {
       setEyeLeft(null);

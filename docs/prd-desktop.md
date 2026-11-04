@@ -107,7 +107,7 @@ Prioritas: **P0** = MVP, **P1** = v1.1, **P2** = v1.2+.
 - Setelan: posisi & ukuran pulau, monitor, tema, suara, durasi tampil, shortcut, otak AI & API Key, repo yang diawasi, aturan kesehatan, bahasa (ID/EN).
 
 ### 4.8 Fitur v1.1 (P1)
-Quick Ask AI (`Ctrl+Space`), notifikasi terminal selesai, Pomodoro + mode fokus, HUD volume/kecerahan, animasi charger, rak file, riwayat clipboard.
+Quick Ask AI (`Ctrl+Shift+L`), notifikasi terminal selesai, Pomodoro + mode fokus, HUD volume/kecerahan, animasi charger, rak file, riwayat clipboard.
 
 ### 4.9 Fitur v1.2+ (P2)
 Sambungan ke aplikasi Android (notifikasi HP, file, cari HP) lewat WiFi lokal; kalender via tautan iCal; GitHub radar; pesan commit AI; indikator kamera/mikrofon; cuaca mini; skin musiman; paket suara; Mode Bebek Karet.

@@ -215,10 +215,10 @@ pub fn assemble(app: &App) {
     }
 }
 
-/// Ctrl+Space membuka Quick Ask dan memberi fokus keyboard ke jendela pulau.
+/// Ctrl+Shift+L membuka Quick Ask dan memberi fokus keyboard ke jendela pulau.
 fn register_ask_shortcut(app: &App, ask: Arc<QuickAskService>) {
     let handle = app.handle().clone();
-    let shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::Space);
+    let shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyL);
     let result = app
         .global_shortcut()
         .on_shortcut(shortcut, move |_, _, event| {
@@ -241,7 +241,7 @@ fn register_ask_shortcut(app: &App, ask: Arc<QuickAskService>) {
         });
     if let Err(e) = result {
         // Mis. dipakai aplikasi lain; pulau tetap jalan tanpa Quick Ask.
-        tracing::error!("gagal mendaftarkan Ctrl+Space: {e}");
+        tracing::error!("gagal mendaftarkan Ctrl+Shift+L: {e}");
     }
 }
 

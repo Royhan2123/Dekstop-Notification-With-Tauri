@@ -184,7 +184,7 @@
   "ask.clear": "Clear chat",
   "ask.clear_confirm": "Sure? Click again",
   "settings.ask": "Quick Ask",
-  "settings.ask.hint": "Press Ctrl+Space to ask the AI brain you picked; the answer shows in the island. Your question is sent to that AI provider.",
+  "settings.ask.hint": "Press Ctrl+Shift+L to ask the AI brain you picked; the answer shows in the island. Your question is sent to that AI provider.",
   "settings.link": "Isla Link (browser extension)",
   "settings.link.hint": "Change playback speed and search songs from the island. Install the extension from the extension folder, then pair it with a code.",
   "settings.link.paired": "Paired",

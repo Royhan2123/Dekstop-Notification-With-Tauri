@@ -184,7 +184,7 @@
   "ask.clear": "Hapus chat",
   "ask.clear_confirm": "Yakin? Klik lagi",
   "settings.ask": "Quick Ask",
-  "settings.ask.hint": "Tekan Ctrl+Space untuk bertanya ke otak AI yang kamu pilih; jawabannya tampil di pulau. Pertanyaan dikirim ke penyedia AI tersebut.",
+  "settings.ask.hint": "Tekan Ctrl+Shift+L untuk bertanya ke otak AI yang kamu pilih; jawabannya tampil di pulau. Pertanyaan dikirim ke penyedia AI tersebut.",
   "settings.link": "Isla Link (ekstensi browser)",
   "settings.link.hint": "Atur kecepatan putar dan cari lagu dari pulau. Pasang ekstensi dari folder extension, lalu pasangkan dengan kode.",
   "settings.link.paired": "Terpasang",

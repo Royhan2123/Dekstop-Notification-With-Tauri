@@ -76,14 +76,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         IslandAction::BrightnessChanged(b) => {
             show_hud(&mut s, Content::Brightness(b), ctx, &mut fx)
         }
-        IslandAction::AskOpen => {
-            let c = Content::Ask(AskPhase::Input);
-            if matches!(s.view.content(), Some(Content::Ask(_))) {
-                show(&mut s, c, ctx, &mut fx);
-            } else {
-                offer(&mut s, c, ctx, &mut fx);
-            }
-        }
+        IslandAction::AskOpen => open_card(&mut s, Content::Ask(AskPhase::Input), ctx, &mut fx),
         IslandAction::AskUpdate(phase) => {
             if matches!(s.view.content(), Some(Content::Ask(_))) {
                 s.view = View::Expanded(Content::Ask(phase));
@@ -98,7 +91,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
             s.shelf.drain(..extra);
             show_shelf(&mut s, ctx, &mut fx);
         }
-        IslandAction::ShelfShow => show_shelf(&mut s, ctx, &mut fx),
+        IslandAction::ShelfShow => open_card(&mut s, Content::Shelf, ctx, &mut fx),
         IslandAction::ShelfRemove(p) => s.shelf.retain(|x| *x != p),
         IslandAction::ShelfClear => s.shelf.clear(),
         IslandAction::DoNotDisturb(b) => {
@@ -112,6 +105,16 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
     }
     (s, fx)
+}
+
+/// Kartu yang dibuka sengaja lewat dok atau pintasan (Tanya AI, Rak): menggantikan kartu buatan pengguna
+/// yang sedang tampil, jangan diantrekan di belakangnya; selain itu ikut aturan prioritas.
+fn open_card(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
+    if matches!(s.view.content(), Some(Content::Ask(_) | Content::Shelf)) {
+        show(s, c, ctx, fx);
+    } else {
+        offer(s, c, ctx, fx);
+    }
 }
 
 /// Rak yang sudah tampil diperbarui di tempat; selain itu ikut aturan prioritas.
@@ -322,6 +325,17 @@ mod tests {
         assert_eq!(s.view, View::Expanded(Content::Ask(AskPhase::Input)));
         let (s, _) = run(s, IslandAction::MediaShow);
         assert_eq!(s.view, View::Expanded(Content::Media));
+    }
+
+    #[test]
+    fn rak_dan_tanya_ai_dari_dok_saling_menggantikan_bukan_mengantre() {
+        let (s, _) = run(IslandState::default(), IslandAction::AskOpen);
+        let (s, _) = run(s, IslandAction::ShelfShow);
+        assert_eq!(s.view, View::Expanded(Content::Shelf));
+        assert!(s.queue.is_empty());
+        let (s, _) = run(s, IslandAction::AskOpen);
+        assert_eq!(s.view, View::Expanded(Content::Ask(AskPhase::Input)));
+        assert!(s.queue.is_empty());
     }
 
     #[test]

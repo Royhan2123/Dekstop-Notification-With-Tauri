@@ -55,7 +55,7 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
 /** Tombol per halaman carousel dok: tiga berlabel, atau lima hanya ikon saat dok sempit (sama dengan CSS `@container dock`). */
 const PER_PAGE = 3;
 const PER_PAGE_NARROW = 5;
-const NARROW_PX = 400;
+const NARROW_PX = 380;
 /** Jeda tanpa event roda yang menandai usapan touchpad baru (satu usapan = satu halaman, inersianya diabaikan). */
 const WHEEL_GESTURE_GAP_MS = 160;
 /** Gerak pointer sampai sejauh ini masih dianggap klik (jari/kursor bergetar), bukan geseran. */

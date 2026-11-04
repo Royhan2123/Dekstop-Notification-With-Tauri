@@ -889,7 +889,7 @@ html[data-window="island"] #root {
   justify-content: center;
   gap: 5px;
   height: 58px;
-  padding: 4px 12px 10px;
+  padding: 4px 22px 10px;
   box-sizing: border-box;
   container: dock / inline-size;
 }
@@ -1010,8 +1010,21 @@ html[data-window="island"] #root {
   display: none;
 }
 
+/* Dok menengah (kartu 440-520 px): tombol dirapatkan supaya tiga tombol berlabel muat tanpa meluber ke sudut. */
+@container dock (max-width: 520px) {
+  .dock-main,
+  .dock-page {
+    gap: 6px;
+  }
+
+  .dock-btn:not(.dock-settings) {
+    gap: 5px;
+    padding: 0 10px;
+  }
+}
+
 /* Dok sempit: hanya ikon, lebih banyak tombol per halaman (jumlahnya diatur IslandDock). */
-@container dock (max-width: 400px) {
+@container dock (max-width: 379px) {
   .dock-btn:not(.dock-settings) {
     width: 36px;
     padding: 0;
@@ -1097,7 +1110,7 @@ html[data-window="island"] #root {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 12px 20px;
   box-sizing: border-box;
   font-size: 12px;
 }

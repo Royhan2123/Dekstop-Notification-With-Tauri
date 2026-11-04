@@ -7,7 +7,7 @@ import { useLyricsSync, useLyricsVM } from "../../media/viewmodel/useLyricsVM";
 import { useIslandStore } from "../store";
 
 /** Tinggi dok fitur di dasar pulau terbuka. */
-export const DOCK_H = 50;
+export const DOCK_H = 58;
 
 export interface Shape {
   width: number;
@@ -60,11 +60,11 @@ export function shapeFor(
       }
       // Kartu media dengan ekstensi tersambung menambah baris kecepatan dan pencarian.
       if (s.extension_connected && s.content?.kind === "media") {
-        return { width: lyrics ? LYRICS_W : 440, height: 170 + DOCK_H, radius: 28, opacity: 1 };
+        return { width: lyrics ? LYRICS_W : 440, height: 186 + DOCK_H, radius: 28, opacity: 1 };
       }
       return {
         width: lyrics && s.content?.kind === "media" ? LYRICS_W : 440,
-        height: 112 + DOCK_H,
+        height: 128 + DOCK_H,
         radius: 28,
         opacity: 1,
       };

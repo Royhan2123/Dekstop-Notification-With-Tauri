@@ -50,8 +50,8 @@ html[data-window="island"] #root {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  height: 112px;
-  padding: 12px 20px;
+  height: 128px;
+  padding: 14px 20px;
   box-sizing: border-box;
   white-space: normal;
 }
@@ -97,9 +97,9 @@ html[data-window="island"] #root {
 .media-expanded {
   display: flex;
   align-items: center;
-  gap: 14px;
-  height: 112px;
-  padding: 0 16px;
+  gap: 16px;
+  height: 128px;
+  padding: 0 20px;
   box-sizing: border-box;
 }
 
@@ -384,7 +384,7 @@ html[data-window="island"] #root {
 }
 
 .media-expanded.with-extras {
-  height: 170px;
+  height: 186px;
 }
 
 .media-extras {
@@ -441,8 +441,8 @@ html[data-window="island"] #root {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* Bawah menyisakan tinggi dok (50px) supaya jawaban yang panjang digulir di atas dok, bukan di bawahnya. */
-  padding: 16px 20px 50px;
+  /* Bawah menyisakan tinggi dok (58px) supaya jawaban yang panjang digulir di atas dok, bukan di bawahnya. */
+  padding: 16px 20px 58px;
   box-sizing: border-box;
   height: 100%;
   animation: ask-in 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
@@ -888,8 +888,8 @@ html[data-window="island"] #root {
   flex-direction: column;
   justify-content: center;
   gap: 5px;
-  height: 50px;
-  padding: 0 12px 5px;
+  height: 58px;
+  padding: 4px 12px 10px;
   box-sizing: border-box;
   container: dock / inline-size;
 }

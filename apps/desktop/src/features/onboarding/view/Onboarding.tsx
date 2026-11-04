@@ -38,6 +38,11 @@ export function Onboarding() {
       )}
 
       <div className="row actions">
+        {!last && (
+          <button type="button" onClick={() => void vm.finishOnboarding()}>
+            {t("onboarding.skip")}
+          </button>
+        )}
         {index > 0 && (
           <button type="button" onClick={() => setIndex(index - 1)}>
             {t("onboarding.back")}

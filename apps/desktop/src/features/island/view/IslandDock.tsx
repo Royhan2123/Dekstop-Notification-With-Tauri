@@ -56,6 +56,8 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
 const PER_PAGE = 3;
 const PER_PAGE_NARROW = 5;
 const NARROW_PX = 400;
+/** Jeda tanpa event roda yang menandai usapan touchpad baru (satu usapan = satu halaman, inersianya diabaikan). */
+const WHEEL_GESTURE_GAP_MS = 160;
 
 interface Item {
   id: keyof typeof ICONS;
@@ -85,7 +87,7 @@ export function IslandDock({
   const pomodoro = usePomodoroVM();
   const scroller = useRef<HTMLDivElement>(null);
   const drag = useRef({ x: 0, page: 0, moved: false, down: false });
-  const wheelLock = useRef(false);
+  const lastWheel = useRef(0);
   const root = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   const [narrow, setNarrow] = useState(false);
@@ -196,10 +198,13 @@ export function IslandDock({
             setPage(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
           }}
           onWheel={(e) => {
-            if (wheelLock.current) return;
-            wheelLock.current = true;
-            window.setTimeout(() => (wheelLock.current = false), 350);
-            goTo(page + (e.deltaY + e.deltaX > 0 ? 1 : -1));
+            // Touchpad mengirim puluhan event per usapan (plus inersia): hanya event pertama yang menggeser.
+            const now = performance.now();
+            const startsGesture = now - lastWheel.current > WHEEL_GESTURE_GAP_MS;
+            lastWheel.current = now;
+            if (!startsGesture) return;
+            const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+            if (d !== 0) goTo(page + (d > 0 ? 1 : -1));
           }}
           onPointerDown={(e) => {
             drag.current = { x: e.clientX, page, moved: false, down: true };

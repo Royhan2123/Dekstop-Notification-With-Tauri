@@ -21,11 +21,11 @@ import { useDynamicBackground } from "../../theme/viewmodel/useDynamicBackground
 import { useIslandVM } from "../viewmodel/useIslandVM";
 
 const panelShapes = {
-  clipboard: { width: 440, height: 240, radius: 26, opacity: 1 },
-  health: { width: 440, height: 210, radius: 26, opacity: 1 },
-  net: { width: 440, height: 200, radius: 26, opacity: 1 },
-  focus: { width: 440, height: 210, radius: 26, opacity: 1 },
-  tasks: { width: 440, height: 290, radius: 26, opacity: 1 },
+  clipboard: { width: 440, height: 248, radius: 26, opacity: 1 },
+  health: { width: 440, height: 218, radius: 26, opacity: 1 },
+  net: { width: 440, height: 208, radius: 26, opacity: 1 },
+  focus: { width: 440, height: 218, radius: 26, opacity: 1 },
+  tasks: { width: 440, height: 298, radius: 26, opacity: 1 },
 };
 
 /** Selama animasi ukuran, hitbox dilaporkan paling sering sekali per jeda ini (bukan tiap frame). */

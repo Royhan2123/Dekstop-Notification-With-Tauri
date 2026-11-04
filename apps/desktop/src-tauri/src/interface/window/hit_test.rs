@@ -13,6 +13,15 @@ const NEAR_TOP: f64 = 160.0;
 const FAST: Duration = Duration::from_millis(33);
 const SLOW: Duration = Duration::from_millis(150);
 
+/// Pulau terbuka (panel, kartu Tanya AI) bisa jauh lebih tinggi dari `NEAR_TOP`; kursor di dok-nya
+/// harus tetap dianggap dekat, kalau tidak klik di sana tembus ke aplikasi di belakang.
+const BELOW_MARGIN: f64 = 24.0;
+
+/// Jarak (piksel logis dari tepi atas monitor) sampai mana kursor dipantau cepat.
+fn near_limit(hitbox: &Rect) -> f64 {
+    NEAR_TOP.max(hitbox.y + hitbox.height + BELOW_MARGIN)
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, Type)]
 pub struct Rect {
     pub x: f64,
@@ -96,12 +105,13 @@ fn tick(
             ),
         );
     }
-    let near = cursor.y - (top_left.1 as f64) < NEAR_TOP * scale;
+    let rect = hitbox.get();
+    let near = cursor.y - (top_left.1 as f64) < near_limit(&rect) * scale;
     let inside = near
         && window.outer_position().is_ok_and(|pos| {
             let x = (cursor.x - pos.x as f64) / scale;
             let y = (cursor.y - pos.y as f64) / scale;
-            hitbox.get().contains(x, y)
+            rect.contains(x, y)
         });
 
     if inside == *ignoring {
@@ -113,7 +123,26 @@ fn tick(
 
 #[cfg(test)]
 mod tests {
-    use super::Rect;
+    use super::{NEAR_TOP, Rect, near_limit};
+
+    #[test]
+    fn pulau_tinggi_diperhitungkan_kursor_di_dok_bawahnya_tetap_dekat() {
+        let tall = Rect {
+            x: 160.0,
+            y: 0.0,
+            width: 440.0,
+            height: 280.0,
+        };
+        assert!(near_limit(&tall) > 280.0);
+        let pill = Rect {
+            x: 240.0,
+            y: 0.0,
+            width: 276.0,
+            height: 40.0,
+        };
+        assert_eq!(near_limit(&pill), NEAR_TOP);
+        assert_eq!(near_limit(&Rect::default()), NEAR_TOP);
+    }
 
     #[test]
     fn rect_contains_menghitung_tepi_dan_luar() {

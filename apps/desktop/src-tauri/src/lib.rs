@@ -30,8 +30,8 @@ use interface::commands::review::{
     close_review, open_review, review_decide, review_unwatch, review_watch,
 };
 use interface::commands::settings::{
-    api_key_clear, api_key_set, api_key_status, close_settings, open_settings, settings_get,
-    settings_update,
+    ai_ready, api_key_clear, api_key_set, api_key_status, close_settings, open_settings,
+    settings_get, settings_update,
 };
 use interface::commands::shelf::{
     shelf_add, shelf_clear, shelf_copy, shelf_open_file, shelf_remove, shelf_reveal, shelf_show,
@@ -58,6 +58,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             settings_get,
             settings_update,
             api_key_status,
+            ai_ready,
             api_key_set,
             api_key_clear,
             open_settings,

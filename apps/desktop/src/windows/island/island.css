@@ -578,8 +578,8 @@ html[data-window="island"] #root {
 
 .ask-answer {
   margin: 0;
-  /* Ruang jawaban: 260 (tinggi kartu berjawaban di shapeFor) - 16 padding atas - 30 kotak tulis - 2x8 jarak - 14 nama AI - 4 napas. */
-  max-height: 180px;
+  /* Ruang jawaban: 260 (tinggi kartu berjawaban di shapeFor) - 16 padding atas - 30 kotak tulis - 2x8 jarak - 22 pemilih AI. */
+  max-height: 176px;
   overflow-y: auto;
   font-size: 13px;
   line-height: 1.4;
@@ -587,10 +587,26 @@ html[data-window="island"] #root {
 }
 
 .ask-by {
-  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
-  opacity: 0.55;
   animation: ask-by-in 0.6s ease 0.4s both;
+}
+
+.ask-by > span {
+  opacity: 0.55;
+}
+
+.ask-by select {
+  min-width: 0;
+  max-width: 170px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: #222;
+  color: #fff;
+  font-size: 11px;
 }
 
 @keyframes ask-by-in {

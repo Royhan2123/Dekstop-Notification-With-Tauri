@@ -66,6 +66,17 @@ async apiKeyStatus(provider: AiProvider) : Promise<Result<boolean, string>> {
 }
 },
 /**
+ * Penyedia AI yang siap dipilih dari kartu Tanya AI.
+ */
+async aiReady() : Promise<Result<AiProvider[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("ai_ready") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * API Key hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
  */
 async apiKeySet(provider: AiProvider, key: string) : Promise<Result<null, string>> {
@@ -374,9 +385,9 @@ async aiModels() : Promise<Result<string[], string>> {
 }
 },
 /**
- * Nama AI dan model yang sedang dipakai Tanya AI, untuk ditampilkan di kartu jawaban.
+ * Penyedia dan model yang sedang dipakai Tanya AI, untuk pemilih di kartu jawaban.
  */
-async aiActive() : Promise<string> {
+async aiActive() : Promise<AiActiveDto> {
     return await TAURI_INVOKE("ai_active");
 },
 /**
@@ -435,6 +446,11 @@ settingsChangedEvent: "settings-changed-event"
 
 /** user-defined types **/
 
+/**
+ * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
+ * Penyedia dan model yang menjawab Tanya AI; `model` kosong bila penyedia menentukannya sendiri.
+ */
+export type AiActiveDto = { provider: AiProvider; model: string }
 /**
  * "Otak" AI untuk review kode (dipakai mulai Fase 4).
  */
@@ -496,9 +512,6 @@ export type MediaCommandDto = "previous" | "toggle_play" | "next"
  * Data tambahan saat pulau menampilkan media.
  */
 export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
-/**
- * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
- */
 export type MeetingDto = { title: string; time: string; date: string }
 export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy"
 export type NetRateDto = { down_bps: number; up_bps: number }

@@ -67,6 +67,18 @@ impl SettingsService {
         Ok(self.secrets.get(name)?.is_some())
     }
 
+    /// Penyedia yang siap dipakai: yang kuncinya sudah tersimpan, ditambah yang tanpa kunci
+    /// (Ollama, Claude Code); kedua yang terakhir tidak diperiksa apakah sedang berjalan.
+    pub fn ready_providers(&self) -> Result<Vec<AiProvider>, SettingsError> {
+        let mut ready = Vec::new();
+        for p in AiProvider::ALL {
+            if p.key_name().is_none() || self.has_api_key(p)? {
+                ready.push(p);
+            }
+        }
+        Ok(ready)
+    }
+
     pub fn set_api_key(&self, provider: AiProvider, key: &str) -> Result<(), SettingsError> {
         let key = key.trim();
         let name = provider.key_name().ok_or(SettingsError::InvalidKey)?;
@@ -262,6 +274,30 @@ mod tests {
         assert!(!json.contains("sk-ant"));
         f.svc.clear_api_key(CLAUDE).unwrap();
         assert!(!f.svc.has_api_key(CLAUDE).unwrap());
+    }
+
+    #[tokio::test]
+    async fn penyedia_siap_adalah_yang_berkunci_ditambah_yang_tanpa_kunci() {
+        let f = fixture();
+        assert_eq!(
+            f.svc.ready_providers().unwrap(),
+            [AiProvider::Ollama, AiProvider::ClaudeCli]
+        );
+        f.svc
+            .set_api_key(AiProvider::Gemini, "AIza-contoh")
+            .unwrap();
+        f.svc
+            .set_api_key(AiProvider::ClaudeApi, "sk-ant-contoh")
+            .unwrap();
+        assert_eq!(
+            f.svc.ready_providers().unwrap(),
+            [
+                AiProvider::ClaudeApi,
+                AiProvider::Gemini,
+                AiProvider::Ollama,
+                AiProvider::ClaudeCli
+            ]
+        );
     }
 
     #[tokio::test]

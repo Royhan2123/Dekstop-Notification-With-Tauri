@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::application::quick_ask_service::QuickAskService;
+use crate::interface::dto::AiActiveDto;
 
 type Svc<'a> = State<'a, Arc<QuickAskService>>;
 
@@ -18,11 +19,12 @@ pub fn ask_submit(svc: Svc, question: String) {
     svc.inner().submit(&question);
 }
 
-/// Nama AI dan model yang sedang dipakai Tanya AI, untuk ditampilkan di kartu jawaban.
+/// Penyedia dan model yang sedang dipakai Tanya AI, untuk pemilih di kartu jawaban.
 #[tauri::command]
 #[specta::specta]
-pub fn ai_active(svc: Svc) -> String {
-    svc.active_label()
+pub fn ai_active(svc: Svc) -> AiActiveDto {
+    let (provider, model) = svc.active();
+    AiActiveDto { provider, model }
 }
 
 /// Daftar model dari penyedia terpilih, untuk menu pilihan model di Setelan.

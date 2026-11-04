@@ -7,7 +7,7 @@ use crate::application::settings_service::SettingsService;
 use crate::domain::error::AiError;
 use crate::domain::island::action::IslandAction;
 use crate::domain::island::state::AskPhase;
-use crate::domain::model::settings::Language;
+use crate::domain::model::settings::{AiProvider, Language};
 use crate::domain::ports::AiProviderFactory;
 
 const MAX_QUESTION_CHARS: usize = 1000;
@@ -72,10 +72,10 @@ impl QuickAskService {
         Ok(reply.trim().chars().take(60).collect())
     }
 
-    /// Nama AI dan model yang menjawab Tanya AI saat ini, mis. "Claude · claude-sonnet-5-5".
-    pub fn active_label(&self) -> String {
+    /// Penyedia dan model yang menjawab Tanya AI saat ini (model sudah dipastikan, bukan "otomatis").
+    pub fn active(&self) -> (AiProvider, String) {
         let s = self.settings.get();
-        s.ai_provider.describe(&s.ai_model)
+        (s.ai_provider, s.ai_provider.effective_model(&s.ai_model))
     }
 
     /// Model yang ditawarkan penyedia terpilih (butuh kunci yang sudah tersimpan), untuk menu model di Setelan.
@@ -120,7 +120,7 @@ mod tests {
     use super::*;
     use crate::application::test_support::services;
     use crate::domain::island::state::{Content, View};
-    use crate::domain::model::settings::{AiProvider, Settings};
+    use crate::domain::model::settings::Settings;
     use crate::domain::ports::AiClient;
 
     struct Echo(Result<String, String>);
@@ -174,15 +174,19 @@ mod tests {
     }
 
     #[test]
-    fn nama_ai_memakai_model_pilihan_atau_bawaan_penyedia() {
+    fn model_aktif_memakai_pilihan_atau_bawaan_penyedia() {
         let (svc, _island, _rt) = fx(Ok("x".into()));
-        assert_eq!(svc.active_label(), "Claude · claude-sonnet-5-5");
         assert_eq!(
-            AiProvider::Gemini.describe("  gemini-pro  "),
-            "Gemini · gemini-pro"
+            svc.active(),
+            (AiProvider::ClaudeApi, "claude-sonnet-5-5".to_string())
         );
-        assert_eq!(AiProvider::ClaudeCli.describe(""), "Claude CLI");
-        assert_eq!(AiProvider::Ollama.describe("llama3"), "Ollama · llama3");
+        assert_eq!(
+            AiProvider::Gemini.effective_model("  gemini-pro  "),
+            "gemini-pro"
+        );
+        assert_eq!(AiProvider::ClaudeCli.effective_model(""), "");
+        assert_eq!(AiProvider::Ollama.effective_model("llama3"), "llama3");
+        assert!(!AiProvider::Gemini.effective_model("").is_empty());
     }
 
     #[test]

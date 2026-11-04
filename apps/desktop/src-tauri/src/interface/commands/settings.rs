@@ -33,6 +33,13 @@ pub async fn settings_update(svc: Svc<'_>, settings: Settings) -> Result<Setting
     blocking(&svc, move |s| s.update(settings)).await
 }
 
+/// Penyedia AI yang siap dipilih dari kartu Tanya AI.
+#[tauri::command]
+#[specta::specta]
+pub async fn ai_ready(svc: Svc<'_>) -> Result<Vec<AiProvider>, String> {
+    blocking(&svc, |s| s.ready_providers()).await
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn api_key_status(svc: Svc<'_>, provider: AiProvider) -> Result<bool, String> {

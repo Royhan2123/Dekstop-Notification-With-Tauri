@@ -11,6 +11,8 @@ import {
   type MediaDto,
   type Mood,
   type PomodoroStatusDto,
+  type AiActiveDto,
+  type AiProvider,
   type RadarDto,
   type ReviewDto,
   type Settings,
@@ -19,6 +21,8 @@ import {
 
 export { commands };
 export type {
+  AiActiveDto,
+  AiProvider,
   RadarDto,
   ClipEntryDto,
   DayUsageDto,

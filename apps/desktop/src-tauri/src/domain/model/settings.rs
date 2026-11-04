@@ -30,6 +30,18 @@ pub enum AiProvider {
 }
 
 impl AiProvider {
+    pub const ALL: [AiProvider; 9] = [
+        Self::ClaudeApi,
+        Self::Gemini,
+        Self::DeepSeek,
+        Self::Grok,
+        Self::OpenAi,
+        Self::OpenRouter,
+        Self::Groq,
+        Self::Ollama,
+        Self::ClaudeCli,
+    ];
+
     /// Nama penyedia untuk ditampilkan ke pengguna.
     pub fn label(self) -> &'static str {
         match self {
@@ -41,7 +53,7 @@ impl AiProvider {
             Self::OpenRouter => "OpenRouter",
             Self::Groq => "Groq",
             Self::Ollama => "Ollama",
-            Self::ClaudeCli => "Claude CLI",
+            Self::ClaudeCli => "Claude Code",
         }
     }
 
@@ -54,13 +66,12 @@ impl AiProvider {
         }
     }
 
-    /// "Claude · claude-sonnet-5-5": penyedia dan model yang benar-benar dipakai untuk `model` pilihan pengguna.
-    pub fn describe(self, model: &str) -> String {
-        let model = model.trim();
-        match (model.is_empty(), self.default_model()) {
-            (false, _) => format!("{} · {model}", self.label()),
-            (true, Some(default)) => format!("{} · {default}", self.label()),
-            (true, None) => self.label().to_string(),
+    /// Model yang benar-benar dipakai untuk pilihan `model` pengguna: pilihannya, atau bawaan penyedia
+    /// bila kosong (kosong juga bila penyedia menentukannya sendiri, mis. Claude Code).
+    pub fn effective_model(self, model: &str) -> String {
+        match model.trim() {
+            "" => self.default_model().unwrap_or_default().to_string(),
+            chosen => chosen.to_string(),
         }
     }
 

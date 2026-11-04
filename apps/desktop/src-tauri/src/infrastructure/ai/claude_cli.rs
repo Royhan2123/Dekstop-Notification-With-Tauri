@@ -36,6 +36,11 @@ impl ClaudeCli {
 }
 
 impl AiClient for ClaudeCli {
+    /// Alias model yang diterima `claude --model`.
+    fn models(&self) -> Result<Vec<String>, AiError> {
+        Ok(["sonnet", "opus", "haiku"].map(String::from).to_vec())
+    }
+
     fn complete(&self, system: &str, user: &str) -> Result<String, AiError> {
         let mut child = self
             .command()

@@ -10,7 +10,7 @@ use crate::domain::health::DayUsage;
 use crate::domain::island::state::{AskPhase, Content, IslandState, View};
 use crate::domain::mascot::{Mood, mood_for};
 use crate::domain::model::review::Severity;
-use crate::domain::model::settings::Settings;
+use crate::domain::model::settings::{AiProvider, Settings};
 use crate::domain::model::{MediaCommand, ReviewReport};
 use crate::domain::task::Task;
 
@@ -59,6 +59,13 @@ impl From<&crate::domain::github::Radar> for RadarDto {
 }
 
 /// Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
+/// Penyedia dan model yang menjawab Tanya AI; `model` kosong bila penyedia menentukannya sendiri.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
+pub struct AiActiveDto {
+    pub provider: AiProvider,
+    pub model: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
 pub struct MeetingDto {
     pub title: String,

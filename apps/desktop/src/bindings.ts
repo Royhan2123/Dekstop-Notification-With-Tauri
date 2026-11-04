@@ -3,681 +3,736 @@
 
 /** user-defined commands **/
 
-
 export const commands = {
-async islandSnapshot() : Promise<IslandSnapshot> {
+  async islandSnapshot(): Promise<IslandSnapshot> {
     return await TAURI_INVOKE("island_snapshot");
-},
-async islandHover(hovered: boolean) : Promise<void> {
+  },
+  async islandHover(hovered: boolean): Promise<void> {
     await TAURI_INVOKE("island_hover", { hovered });
-},
-async islandClick() : Promise<void> {
+  },
+  async islandClick(): Promise<void> {
     await TAURI_INVOKE("island_click");
-},
-async islandDismiss() : Promise<void> {
+  },
+  async islandDismiss(): Promise<void> {
     await TAURI_INVOKE("island_dismiss");
-},
-async islandShowMedia() : Promise<void> {
+  },
+  async islandShowMedia(): Promise<void> {
     await TAURI_INVOKE("island_show_media");
-},
-/**
- * Hitbox pulau saat ini (piksel logis relatif ke jendela), dipakai untuk klik tembus.
- */
-async islandHitbox(rect: Rect) : Promise<void> {
+  },
+  /**
+   * Hitbox pulau saat ini (piksel logis relatif ke jendela), dipakai untuk klik tembus.
+   */
+  async islandHitbox(rect: Rect): Promise<void> {
     await TAURI_INVOKE("island_hitbox", { rect });
-},
-async islandSetDnd(on: boolean) : Promise<void> {
+  },
+  async islandSetDnd(on: boolean): Promise<void> {
     await TAURI_INVOKE("island_set_dnd", { on });
-},
-/**
- * Simulasi kejadian untuk mencoba pulau sebelum fitur aslinya ada. Hanya aktif di build debug.
- */
-async devSimulate(kind: string) : Promise<void> {
+  },
+  /**
+   * Simulasi kejadian untuk mencoba pulau sebelum fitur aslinya ada. Hanya aktif di build debug.
+   */
+  async devSimulate(kind: string): Promise<void> {
     await TAURI_INVOKE("dev_simulate", { kind });
-},
-async mediaControl(cmd: MediaCommandDto) : Promise<Result<null, string>> {
+  },
+  async mediaControl(cmd: MediaCommandDto): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("media_control", { cmd }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Pindah sesi media (`delta` > 0 berikutnya, < 0 sebelumnya).
- */
-async mediaCycle(delta: number) : Promise<void> {
+      return { status: "ok", data: await TAURI_INVOKE("media_control", { cmd }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Pindah sesi media (`delta` > 0 berikutnya, < 0 sebelumnya).
+   */
+  async mediaCycle(delta: number): Promise<void> {
     await TAURI_INVOKE("media_cycle", { delta });
-},
-async settingsGet() : Promise<Settings> {
+  },
+  async settingsGet(): Promise<Settings> {
     return await TAURI_INVOKE("settings_get");
-},
-async settingsUpdate(settings: Settings) : Promise<Result<Settings, string>> {
+  },
+  async settingsUpdate(settings: Settings): Promise<Result<Settings, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("settings_update", { settings }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async apiKeyStatus(provider: AiProvider) : Promise<Result<boolean, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("settings_update", { settings }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async apiKeyStatus(provider: AiProvider): Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("api_key_status", { provider }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Penyedia AI yang siap dipilih dari kartu Tanya AI.
- */
-async aiReady() : Promise<Result<AiProvider[], string>> {
+      return { status: "ok", data: await TAURI_INVOKE("api_key_status", { provider }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Penyedia AI yang siap dipilih dari kartu Tanya AI.
+   */
+  async aiReady(): Promise<Result<AiProvider[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("ai_ready") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * API Key hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
- */
-async apiKeySet(provider: AiProvider, key: string) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("ai_ready") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * API Key hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
+   */
+  async apiKeySet(provider: AiProvider, key: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("api_key_set", { provider, key }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async apiKeyClear(provider: AiProvider) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("api_key_set", { provider, key }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async apiKeyClear(provider: AiProvider): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("api_key_clear", { provider }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async openSettings() : Promise<void> {
+      return { status: "ok", data: await TAURI_INVOKE("api_key_clear", { provider }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async openSettings(): Promise<void> {
     await TAURI_INVOKE("open_settings");
-},
-async closeSettings() : Promise<void> {
+  },
+  async closeSettings(): Promise<void> {
     await TAURI_INVOKE("close_settings");
-},
-/**
- * Jawaban pengguna pada kartu review (Perbaiki, Lanjut, Batal, setujui/tolak patch).
- */
-async reviewDecide(decision: Decision) : Promise<void> {
+  },
+  /**
+   * Jawaban pengguna pada kartu review (Perbaiki, Lanjut, Batal, setujui/tolak patch).
+   */
+  async reviewDecide(decision: Decision): Promise<void> {
     await TAURI_INVOKE("review_decide", { decision });
-},
-/**
- * Awasi repo: pasang hook `pre-push`. Memanggil git, jadi dijalankan di luar thread UI.
- */
-async reviewWatch(path: string) : Promise<Result<null, string>> {
+  },
+  /**
+   * Awasi repo: pasang hook `pre-push`. Memanggil git, jadi dijalankan di luar thread UI.
+   */
+  async reviewWatch(path: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("review_watch", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async reviewUnwatch(path: string) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("review_watch", { path }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async reviewUnwatch(path: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("review_unwatch", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async openReview() : Promise<void> {
+      return { status: "ok", data: await TAURI_INVOKE("review_unwatch", { path }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async openReview(): Promise<void> {
     await TAURI_INVOKE("open_review");
-},
-async closeReview() : Promise<void> {
+  },
+  async closeReview(): Promise<void> {
     await TAURI_INVOKE("close_review");
-},
-/**
- * Ringkasan hari ini dan tujuh hari terakhir untuk grafik di Setelan.
- */
-async healthSummary() : Promise<Result<HealthSummaryDto, string>> {
+  },
+  /**
+   * Ringkasan hari ini dan tujuh hari terakhir untuk grafik di Setelan.
+   */
+  async healthSummary(): Promise<Result<HealthSummaryDto, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("health_summary") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Klik pulau saat idle: tampilkan ringkasan hari ini.
- */
-async healthPeek() : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("health_summary") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Klik pulau saat idle: tampilkan ringkasan hari ini.
+   */
+  async healthPeek(): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("health_peek") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Kecepatan jaringan saat ini (dipanggil panel tiap detik selama terbuka).
- */
-async netRate() : Promise<Result<NetRateDto, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("health_peek") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Kecepatan jaringan saat ini (dipanggil panel tiap detik selama terbuka).
+   */
+  async netRate(): Promise<Result<NetRateDto, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("net_rate") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Lirik berwaktu untuk lagu yang sedang diputar; kosong bila tidak ada. Galat (server sibuk, tanpa
- * internet) dikembalikan sebagai teks supaya tampilan bisa mencoba lagi nanti.
- */
-async lyricsFetch(artist: string, title: string, durationMs: number) : Promise<Result<LyricLineDto[], string>> {
+      return { status: "ok", data: await TAURI_INVOKE("net_rate") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Lirik berwaktu untuk lagu yang sedang diputar; kosong bila tidak ada. Galat (server sibuk, tanpa
+   * internet) dikembalikan sebagai teks supaya tampilan bisa mencoba lagi nanti.
+   */
+  async lyricsFetch(
+    artist: string,
+    title: string,
+    durationMs: number,
+  ): Promise<Result<LyricLineDto[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("lyrics_fetch", { artist, title, durationMs }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Rapat berikutnya dari kalender di setelan; kosong bila tautan belum diisi atau tidak ada rapat.
- * Galat (tautan salah, tanpa internet) dikembalikan sebagai teks untuk ditampilkan di Setelan.
- */
-async calendarNext() : Promise<Result<MeetingDto | null, string>> {
+      return {
+        status: "ok",
+        data: await TAURI_INVOKE("lyrics_fetch", { artist, title, durationMs }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Rapat berikutnya dari kalender di setelan; kosong bila tautan belum diisi atau tidak ada rapat.
+   * Galat (tautan salah, tanpa internet) dikembalikan sebagai teks untuk ditampilkan di Setelan.
+   */
+  async calendarNext(): Promise<Result<MeetingDto | null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("calendar_next") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async githubTokenStatus() : Promise<Result<boolean, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("calendar_next") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async githubTokenStatus(): Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("github_token_status") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Token hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
- */
-async githubTokenSet(token: string) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("github_token_status") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Token hanya masuk ke brankas OS; tidak ada command untuk membacanya kembali.
+   */
+  async githubTokenSet(token: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("github_token_set", { token }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async githubTokenClear() : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("github_token_set", { token }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async githubTokenClear(): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("github_token_clear") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Keadaan GitHub terbaru (dipakai ulang bila belum semenit); galat dikembalikan sebagai teks.
- */
-async githubRadar() : Promise<Result<RadarDto, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("github_token_clear") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Keadaan GitHub terbaru (dipakai ulang bila belum semenit); galat dikembalikan sebagai teks.
+   */
+  async githubRadar(): Promise<Result<RadarDto, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("github_radar") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Isi berkas tema dari sebuah tautan https; penerapannya lewat jalur impor berkas di Setelan.
- */
-async themeFetch(url: string) : Promise<Result<string, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("github_radar") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Isi berkas tema dari sebuah tautan https; penerapannya lewat jalur impor berkas di Setelan.
+   */
+  async themeFetch(url: string): Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("theme_fetch", { url }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Wallpaper Windows saat ini (data URL JPEG kecil); galat bila tidak terbaca.
- */
-async wallpaperCurrent() : Promise<Result<string, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("theme_fetch", { url }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Wallpaper Windows saat ini (data URL JPEG kecil); galat bila tidak terbaca.
+   */
+  async wallpaperCurrent(): Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("wallpaper_current") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async tasksList() : Promise<Result<TaskDto[], string>> {
+      return { status: "ok", data: await TAURI_INVOKE("wallpaper_current") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksList(): Promise<Result<TaskDto[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("tasks_list") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async tasksAdd(title: string) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_list") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksAdd(title: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("tasks_add", { title }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async tasksSetDone(id: number, done: boolean) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_add", { title }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksSetDone(id: number, done: boolean): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("tasks_set_done", { id, done }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async tasksRemove(id: number) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_set_done", { id, done }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksRemove(id: number): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("tasks_remove", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async tasksClearDone() : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_remove", { id }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async tasksClearDone(): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("tasks_clear_done") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Buat kode pairing baru; kodenya juga tampil di pulau.
- */
-async bridgePair() : Promise<string> {
+      return { status: "ok", data: await TAURI_INVOKE("tasks_clear_done") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Buat kode pairing baru; kodenya juga tampil di pulau.
+   */
+  async bridgePair(): Promise<string> {
     return await TAURI_INVOKE("bridge_pair");
-},
-async bridgePaired() : Promise<Result<boolean, string>> {
+  },
+  async bridgePaired(): Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("bridge_paired") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async bridgeUnpair() : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("bridge_paired") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async bridgeUnpair(): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("bridge_unpair") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Kecepatan putar 0,25x-2x untuk video/musik di browser.
- */
-async bridgeSetRate(rate: number) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("bridge_unpair") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Kecepatan putar 0,25x-2x untuk video/musik di browser.
+   */
+  async bridgeSetRate(rate: number): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("bridge_set_rate", { rate }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async bridgeSearch(query: string) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("bridge_set_rate", { rate }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async bridgeSearch(query: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("bridge_search", { query }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async pomodoroStatus() : Promise<PomodoroStatusDto> {
+      return { status: "ok", data: await TAURI_INVOKE("bridge_search", { query }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async pomodoroStatus(): Promise<PomodoroStatusDto> {
     return await TAURI_INVOKE("pomodoro_status");
-},
-/**
- * `seconds` = 0 memakai lama fokus dari setelan; selain itu durasi sendiri (dijepit 1 detik - 24 jam).
- */
-async pomodoroStart(seconds: number) : Promise<void> {
+  },
+  /**
+   * `seconds` = 0 memakai lama fokus dari setelan; selain itu durasi sendiri (dijepit 1 detik - 24 jam).
+   */
+  async pomodoroStart(seconds: number): Promise<void> {
     await TAURI_INVOKE("pomodoro_start", { seconds });
-},
-async pomodoroStop() : Promise<void> {
+  },
+  async pomodoroStop(): Promise<void> {
     await TAURI_INVOKE("pomodoro_stop");
-},
-async clipboardList(query: string) : Promise<ClipEntryDto[]> {
+  },
+  async clipboardList(query: string): Promise<ClipEntryDto[]> {
     return await TAURI_INVOKE("clipboard_list", { query });
-},
-async clipboardCopy(id: number) : Promise<Result<null, string>> {
+  },
+  async clipboardCopy(id: number): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("clipboard_copy", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async clipboardClear() : Promise<void> {
+      return { status: "ok", data: await TAURI_INVOKE("clipboard_copy", { id }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async clipboardClear(): Promise<void> {
     await TAURI_INVOKE("clipboard_clear");
-},
-async askOpen() : Promise<void> {
+  },
+  async askOpen(): Promise<void> {
     await TAURI_INVOKE("ask_open");
-},
-async askSubmit(question: string) : Promise<void> {
+  },
+  async askSubmit(question: string): Promise<void> {
     await TAURI_INVOKE("ask_submit", { question });
-},
-/**
- * Uji koneksi ke otak AI yang sedang dipilih; membalas teks singkat dari model bila berhasil.
- */
-async aiTest() : Promise<Result<string, string>> {
+  },
+  /**
+   * Uji koneksi ke otak AI yang sedang dipilih; membalas teks singkat dari model bila berhasil.
+   */
+  async aiTest(): Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("ai_test") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Daftar model dari penyedia terpilih, untuk menu pilihan model di Setelan.
- */
-async aiModels() : Promise<Result<string[], string>> {
+      return { status: "ok", data: await TAURI_INVOKE("ai_test") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Daftar model dari penyedia terpilih, untuk menu pilihan model di Setelan.
+   */
+  async aiModels(): Promise<Result<string[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("ai_models") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Penyedia dan model yang sedang dipakai Tanya AI, untuk pemilih di kartu jawaban.
- */
-async aiActive() : Promise<AiActiveDto> {
+      return { status: "ok", data: await TAURI_INVOKE("ai_models") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Penyedia dan model yang sedang dipakai Tanya AI, untuk pemilih di kartu jawaban.
+   */
+  async aiActive(): Promise<AiActiveDto> {
     return await TAURI_INVOKE("ai_active");
-},
-/**
- * Riwayat Tanya AI, dari yang terlama ke terbaru.
- */
-async askHistory() : Promise<Result<ChatTurnDto[], string>> {
+  },
+  /**
+   * Riwayat Tanya AI, dari yang terlama ke terbaru.
+   */
+  async askHistory(): Promise<Result<ChatTurnDto[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("ask_history") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Hapus seluruh riwayat Tanya AI.
- */
-async askClear() : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("ask_history") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Hapus seluruh riwayat Tanya AI.
+   */
+  async askClear(): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("ask_clear") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
- */
-async shelfAdd(paths: string[]) : Promise<void> {
+      return { status: "ok", data: await TAURI_INVOKE("ask_clear") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Berkas dari jendela diterima apa adanya; yang sudah tidak ada dibuang di sini (batas kepercayaan).
+   */
+  async shelfAdd(paths: string[]): Promise<void> {
     await TAURI_INVOKE("shelf_add", { paths });
-},
-async shelfShow() : Promise<void> {
+  },
+  async shelfShow(): Promise<void> {
     await TAURI_INVOKE("shelf_show");
-},
-async shelfRemove(path: string) : Promise<void> {
+  },
+  async shelfRemove(path: string): Promise<void> {
     await TAURI_INVOKE("shelf_remove", { path });
-},
-async shelfClear() : Promise<void> {
+  },
+  async shelfClear(): Promise<void> {
     await TAURI_INVOKE("shelf_clear");
-},
-async shelfOpenFile(path: string) : Promise<Result<null, string>> {
+  },
+  async shelfOpenFile(path: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("shelf_open_file", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async shelfReveal(path: string) : Promise<Result<null, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("shelf_open_file", { path }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async shelfReveal(path: string): Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("shelf_reveal", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Salin berkas ke clipboard supaya bisa ditempel (Ctrl+V) di folder atau aplikasi mana pun.
- */
-async shelfCopy(path: string) : Promise<boolean> {
+      return { status: "ok", data: await TAURI_INVOKE("shelf_reveal", { path }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Salin berkas ke clipboard supaya bisa ditempel (Ctrl+V) di folder atau aplikasi mana pun.
+   */
+  async shelfCopy(path: string): Promise<boolean> {
     return await TAURI_INVOKE("shelf_copy", { path });
-}
-}
+  },
+};
 
 /** user-defined events **/
 
-
 export const events = __makeEvents__<{
-islandSnapshotEvent: IslandSnapshotEvent,
-settingsChangedEvent: SettingsChangedEvent
+  islandSnapshotEvent: IslandSnapshotEvent;
+  settingsChangedEvent: SettingsChangedEvent;
 }>({
-islandSnapshotEvent: "island-snapshot-event",
-settingsChangedEvent: "settings-changed-event"
-})
+  islandSnapshotEvent: "island-snapshot-event",
+  settingsChangedEvent: "settings-changed-event",
+});
 
 /** user-defined constants **/
-
-
 
 /** user-defined types **/
 
 /**
  * Penyedia dan model yang menjawab Tanya AI; `model` kosong bila penyedia menentukannya sendiri.
  */
-export type AiActiveDto = { provider: AiProvider; model: string }
+export type AiActiveDto = { provider: AiProvider; model: string };
 /**
  * "Otak" AI untuk review kode (dipakai mulai Fase 4).
  */
-export type AiProvider = "claude_api" | "gemini" | "deep_seek" | "grok" | "open_ai" | "open_router" | "groq" | "ollama" | "claude_cli"
+export type AiProvider =
+  | "claude_api"
+  | "gemini"
+  | "deep_seek"
+  | "grok"
+  | "open_ai"
+  | "open_router"
+  | "groq"
+  | "ollama"
+  | "claude_cli";
 /**
  * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
  * Satu pertanyaan dan jawabannya di riwayat Tanya AI; `by` adalah AI yang menjawab.
  */
-export type ChatTurnDto = { question: string; answer: string; by: string }
-export type CiDto = "passing" | "failing" | "pending" | "unknown"
-export type ClipEntryDto = { id: number; text: string }
-export type ContentKind = "media" | "review_running" | "review_result" | "health_alert" | "notice" | "ask" | "volume" | "brightness" | "shelf"
-export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null }
-export type Decision = 
-/**
- * Minta AI membuat patch perbaikan.
- */
-"fix" | 
-/**
- * Lanjutkan push apa adanya.
- */
-"continue" | "cancel" | 
-/**
- * Setujui patch lalu commit.
- */
-"apply_patch" | "reject_patch"
-export type FindingDto = { file: string; line: number | null; severity: Severity; title: string; detail: string; suggestion: string | null }
+export type ChatTurnDto = { question: string; answer: string; by: string };
+export type CiDto = "passing" | "failing" | "pending" | "unknown";
+export type ClipEntryDto = { id: number; text: string };
+export type ContentKind =
+  | "media"
+  | "review_running"
+  | "review_result"
+  | "health_alert"
+  | "notice"
+  | "ask"
+  | "volume"
+  | "brightness"
+  | "shelf";
+export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null };
+export type Decision =
+  /**
+   * Minta AI membuat patch perbaikan.
+   */
+  | "fix"
+  /**
+   * Lanjutkan push apa adanya.
+   */
+  | "continue"
+  | "cancel"
+  /**
+   * Setujui patch lalu commit.
+   */
+  | "apply_patch"
+  | "reject_patch";
+export type FindingDto = {
+  file: string;
+  line: number | null;
+  severity: Severity;
+  title: string;
+  detail: string;
+  suggestion: string | null;
+};
 /**
  * Aturan pengingat kesehatan yang aktif.
  */
-export type HealthRules = { continuous: boolean; twenty_twenty_twenty: boolean; bright_night: boolean; late_night: boolean }
-export type HealthSummaryDto = { today_active_min: number; brightness: number | null; 
-/**
- * Tujuh hari terakhir, terlama dulu.
- */
-days: DayUsageDto[] }
-export type IslandContent = { kind: ContentKind; text: string; detail: string | null }
-export type IslandMode = "hidden" | "idle" | "compact" | "expanded"
-export type IslandSnapshot = { mode: IslandMode; content: IslandContent | null; media: MediaDto | null; 
-/**
- * Laporan lengkap bila pulau menampilkan hasil review.
- */
-review: ReviewDto | null; 
-/**
- * Ekspresi Lumi untuk keadaan pulau saat ini.
- */
-mood: Mood; extension_connected: boolean; hovered: boolean; 
-/**
- * Isi rak; hanya terisi saat pulau menampilkan rak.
- */
-shelf: ShelfItemDto[]; 
-/**
- * Jangan Ganggu aktif (menu klik kanan menampilkan centangnya).
- */
-dnd: boolean }
+export type HealthRules = {
+  continuous: boolean;
+  twenty_twenty_twenty: boolean;
+  bright_night: boolean;
+  late_night: boolean;
+};
+export type HealthSummaryDto = {
+  today_active_min: number;
+  brightness: number | null;
+  /**
+   * Tujuh hari terakhir, terlama dulu.
+   */
+  days: DayUsageDto[];
+};
+export type IslandContent = { kind: ContentKind; text: string; detail: string | null };
+export type IslandMode = "hidden" | "idle" | "compact" | "expanded";
+export type IslandSnapshot = {
+  mode: IslandMode;
+  content: IslandContent | null;
+  media: MediaDto | null;
+  /**
+   * Laporan lengkap bila pulau menampilkan hasil review.
+   */
+  review: ReviewDto | null;
+  /**
+   * Ekspresi Lumi untuk keadaan pulau saat ini.
+   */
+  mood: Mood;
+  extension_connected: boolean;
+  hovered: boolean;
+  /**
+   * Isi rak; hanya terisi saat pulau menampilkan rak.
+   */
+  shelf: ShelfItemDto[];
+  /**
+   * Jangan Ganggu aktif (menu klik kanan menampilkan centangnya).
+   */
+  dnd: boolean;
+};
 /**
  * Dikirim setiap state pulau berubah.
  */
-export type IslandSnapshotEvent = IslandSnapshot
-export type Language = "id" | "en"
-export type LyricLineDto = { ms: number; text: string }
-export type MediaCommandDto = "previous" | "toggle_play" | "next"
+export type IslandSnapshotEvent = IslandSnapshot;
+export type Language = "id" | "en";
+export type LyricLineDto = { ms: number; text: string };
+export type MediaCommandDto = "previous" | "toggle_play" | "next";
 /**
  * Data tambahan saat pulau menampilkan media.
  */
-export type MediaDto = { playing: boolean; position_ms: number; duration_ms: number; rate: number; thumbnail: string | null; color: string | null; session_index: number; session_count: number }
-export type MeetingDto = { title: string; time: string; date: string }
-export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy"
-export type NetRateDto = { down_bps: number; up_bps: number }
-export type PomodoroPhaseDto = "idle" | "focus" | "break"
-export type PomodoroStatusDto = { phase: PomodoroPhaseDto; remaining_secs: number }
-export type PrDto = { repo: string; title: string; url: string; ci: CiDto }
-export type RadarDto = { review_requests: PrDto[]; mine: PrDto[] }
-export type Rect = { x: number; y: number; width: number; height: number }
+export type MediaDto = {
+  playing: boolean;
+  position_ms: number;
+  duration_ms: number;
+  rate: number;
+  thumbnail: string | null;
+  color: string | null;
+  session_index: number;
+  session_count: number;
+};
+export type MeetingDto = { title: string; time: string; date: string };
+export type Mood = "idle" | "thinking" | "happy" | "worried" | "panic" | "listening" | "sleepy";
+export type NetRateDto = { down_bps: number; up_bps: number };
+export type PomodoroPhaseDto = "idle" | "focus" | "break";
+export type PomodoroStatusDto = { phase: PomodoroPhaseDto; remaining_secs: number };
+export type PrDto = { repo: string; title: string; url: string; ci: CiDto };
+export type RadarDto = { review_requests: PrDto[]; mine: PrDto[] };
+export type Rect = { x: number; y: number; width: number; height: number };
 /**
  * Laporan review untuk kartu di pulau dan jendela rincian.
  */
-export type ReviewDto = { summary: string; findings: FindingDto[]; patch_ready: boolean }
+export type ReviewDto = { summary: string; findings: FindingDto[]; patch_ready: boolean };
 /**
  * Yang dilakukan bila pengguna tidak merespons review dalam batas waktu.
  */
-export type ReviewTimeoutAction = "continue" | "cancel"
-export type Settings = { language: Language; reduce_motion: boolean; 
-/**
- * Lama notifikasi (kesehatan/info) tampil sebelum menutup sendiri.
- */
-display_seconds: number; autostart: boolean; ai_provider: AiProvider; ai_model: string; onboarded: boolean; 
-/**
- * Akar repo yang diawasi (hook `pre-push` terpasang).
- */
-watched_repos: string[]; review_timeout_action: ReviewTimeoutAction; health_enabled: boolean; health_rules: HealthRules; 
-/**
- * Riwayat clipboard (di memori saja); mati secara bawaan karena clipboard bisa memuat rahasia.
- */
-clipboard_enabled: boolean; 
-/**
- * Id tema bawaan (palet warna pulau dan Mino).
- */
-theme: string; 
-/**
- * Warna aksen buatan sendiri (`#rrggbb`); bila terisi menggantikan `theme`.
- */
-custom_accent: string; 
-/**
- * Id maskot (`mino`, `kiko`, `puff`).
- */
-mascot: string; 
-/**
- * Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
- */
-background: string; 
-/**
- * Sumber latar pulau: `static` (foto di atas atau hitam), `album`, `time`, atau `wallpaper`.
- */
-background_mode: string; 
-/**
- * Lama fokus dan istirahat Pomodoro (menit).
- */
-focus_minutes: number; break_minutes: number; 
-/**
- * Sembunyikan pulau saat ada aplikasi layar penuh (game, video, presentasi).
- */
-hide_on_fullscreen: boolean; 
-/**
- * Bunyikan nada saat fase Pomodoro selesai.
- */
-sound_enabled: boolean; 
-/**
- * Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
- */
-lyrics_enabled: boolean; 
-/**
- * Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
- */
-calendar_url: string }
+export type ReviewTimeoutAction = "continue" | "cancel";
+export type Settings = {
+  language: Language;
+  reduce_motion: boolean;
+  /**
+   * Lama notifikasi (kesehatan/info) tampil sebelum menutup sendiri.
+   */
+  display_seconds: number;
+  autostart: boolean;
+  ai_provider: AiProvider;
+  ai_model: string;
+  onboarded: boolean;
+  /**
+   * Akar repo yang diawasi (hook `pre-push` terpasang).
+   */
+  watched_repos: string[];
+  review_timeout_action: ReviewTimeoutAction;
+  health_enabled: boolean;
+  health_rules: HealthRules;
+  /**
+   * Riwayat clipboard (di memori saja); mati secara bawaan karena clipboard bisa memuat rahasia.
+   */
+  clipboard_enabled: boolean;
+  /**
+   * Id tema bawaan (palet warna pulau dan Mino).
+   */
+  theme: string;
+  /**
+   * Warna aksen buatan sendiri (`#rrggbb`); bila terisi menggantikan `theme`.
+   */
+  custom_accent: string;
+  /**
+   * Id maskot (`mino`, `kiko`, `puff`).
+   */
+  mascot: string;
+  /**
+   * Foto latar pulau sebagai data URL gambar yang sudah dikecilkan; kosong = hitam polos.
+   */
+  background: string;
+  /**
+   * Sumber latar pulau: `static` (foto di atas atau hitam), `album`, `time`, atau `wallpaper`.
+   */
+  background_mode: string;
+  /**
+   * Lama fokus dan istirahat Pomodoro (menit).
+   */
+  focus_minutes: number;
+  break_minutes: number;
+  /**
+   * Sembunyikan pulau saat ada aplikasi layar penuh (game, video, presentasi).
+   */
+  hide_on_fullscreen: boolean;
+  /**
+   * Bunyikan nada saat fase Pomodoro selesai.
+   */
+  sound_enabled: boolean;
+  /**
+   * Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
+   */
+  lyrics_enabled: boolean;
+  /**
+   * Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
+   */
+  calendar_url: string;
+};
 /**
  * Dikirim ke semua jendela setiap setelan berubah.
  */
-export type SettingsChangedEvent = Settings
-export type Severity = "critical" | "important" | 
-/**
- * Nilai tak dikenal dari AI jatuh ke sini.
- */
-"suggestion"
-export type ShelfItemDto = { path: string; name: string }
-export type TaskDto = { id: number; title: string; done: boolean }
+export type SettingsChangedEvent = Settings;
+export type Severity =
+  | "critical"
+  | "important"
+  /**
+   * Nilai tak dikenal dari AI jatuh ke sini.
+   */
+  | "suggestion";
+export type ShelfItemDto = { path: string; name: string };
+export type TaskDto = { id: number; title: string; done: boolean };
 
 /** tauri-specta globals **/
 
-import {
-	invoke as TAURI_INVOKE,
-	Channel as TAURI_CHANNEL,
-} from "@tauri-apps/api/core";
+import { invoke as TAURI_INVOKE, Channel as TAURI_CHANNEL } from "@tauri-apps/api/core";
 import * as TAURI_API_EVENT from "@tauri-apps/api/event";
 import { type WebviewWindow as __WebviewWindow__ } from "@tauri-apps/api/webviewWindow";
 
 type __EventObj__<T> = {
-	listen: (
-		cb: TAURI_API_EVENT.EventCallback<T>,
-	) => ReturnType<typeof TAURI_API_EVENT.listen<T>>;
-	once: (
-		cb: TAURI_API_EVENT.EventCallback<T>,
-	) => ReturnType<typeof TAURI_API_EVENT.once<T>>;
-	emit: null extends T
-		? (payload?: T) => ReturnType<typeof TAURI_API_EVENT.emit>
-		: (payload: T) => ReturnType<typeof TAURI_API_EVENT.emit>;
+  listen: (cb: TAURI_API_EVENT.EventCallback<T>) => ReturnType<typeof TAURI_API_EVENT.listen<T>>;
+  once: (cb: TAURI_API_EVENT.EventCallback<T>) => ReturnType<typeof TAURI_API_EVENT.once<T>>;
+  emit: null extends T
+    ? (payload?: T) => ReturnType<typeof TAURI_API_EVENT.emit>
+    : (payload: T) => ReturnType<typeof TAURI_API_EVENT.emit>;
 };
 
-export type Result<T, E> =
-	| { status: "ok"; data: T }
-	| { status: "error"; error: E };
+export type Result<T, E> = { status: "ok"; data: T } | { status: "error"; error: E };
 
-function __makeEvents__<T extends Record<string, any>>(
-	mappings: Record<keyof T, string>,
-) {
-	return new Proxy(
-		{} as unknown as {
-			[K in keyof T]: __EventObj__<T[K]> & {
-				(handle: __WebviewWindow__): __EventObj__<T[K]>;
-			};
-		},
-		{
-			get: (_, event) => {
-				const name = mappings[event as keyof T];
+function __makeEvents__<T extends Record<string, any>>(mappings: Record<keyof T, string>) {
+  return new Proxy(
+    {} as unknown as {
+      [K in keyof T]: __EventObj__<T[K]> & {
+        (handle: __WebviewWindow__): __EventObj__<T[K]>;
+      };
+    },
+    {
+      get: (_, event) => {
+        const name = mappings[event as keyof T];
 
-				return new Proxy((() => {}) as any, {
-					apply: (_, __, [window]: [__WebviewWindow__]) => ({
-						listen: (arg: any) => window.listen(name, arg),
-						once: (arg: any) => window.once(name, arg),
-						emit: (arg: any) => window.emit(name, arg),
-					}),
-					get: (_, command: keyof __EventObj__<any>) => {
-						switch (command) {
-							case "listen":
-								return (arg: any) => TAURI_API_EVENT.listen(name, arg);
-							case "once":
-								return (arg: any) => TAURI_API_EVENT.once(name, arg);
-							case "emit":
-								return (arg: any) => TAURI_API_EVENT.emit(name, arg);
-						}
-					},
-				});
-			},
-		},
-	);
+        return new Proxy((() => {}) as any, {
+          apply: (_, __, [window]: [__WebviewWindow__]) => ({
+            listen: (arg: any) => window.listen(name, arg),
+            once: (arg: any) => window.once(name, arg),
+            emit: (arg: any) => window.emit(name, arg),
+          }),
+          get: (_, command: keyof __EventObj__<any>) => {
+            switch (command) {
+              case "listen":
+                return (arg: any) => TAURI_API_EVENT.listen(name, arg);
+              case "once":
+                return (arg: any) => TAURI_API_EVENT.once(name, arg);
+              case "emit":
+                return (arg: any) => TAURI_API_EVENT.emit(name, arg);
+            }
+          },
+        });
+      },
+    },
+  );
 }

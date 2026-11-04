@@ -36,13 +36,13 @@ impl PowerControl for SystemPowerControl {
                 PowerAction::Sleep => {
                     // Tidur = layar mati, menyala lagi oleh klik atau tombol apa saja. Bukan sleep S0/hibernasi:
                     // di laptop Modern Standby, SetSuspendState bangun hanya lewat tombol power.
-                    // Jeda singkat supaya gerak mouse dari klik konfirmasi tidak langsung menyalakannya lagi.
+                    // Jeda 0,7 dtk supaya gerak mouse dari klik konfirmasi tidak langsung menyalakannya lagi.
                     std::thread::spawn(|| {
                         use windows::Win32::Foundation::{LPARAM, WPARAM};
                         use windows::Win32::UI::WindowsAndMessaging::{
                             HWND_BROADCAST, PostMessageW, SC_MONITORPOWER, WM_SYSCOMMAND,
                         };
-                        std::thread::sleep(std::time::Duration::from_millis(1500));
+                        std::thread::sleep(std::time::Duration::from_millis(700));
                         // SAFETY: tanpa pointer; lparam 2 = matikan monitor.
                         let sent = unsafe {
                             PostMessageW(

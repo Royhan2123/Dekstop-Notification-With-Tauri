@@ -15,14 +15,14 @@ export type PowerEvent =
   | { type: "tick" }
   | { type: "cancel" };
 
-/** Mesin keadaan murni: pilih → konfirmasi → hitung mundur → (jalankan saat left = 0). Kunci layar tidak lewat sini. */
+/** Mesin keadaan murni (layar mati tidak merusak apa pun, jadi tanpa hitung mundur): pilih → konfirmasi → hitung mundur → (jalankan saat left = 0). Kunci layar tidak lewat sini. */
 export function powerReducer(s: PowerStep, e: PowerEvent): PowerStep {
   switch (e.type) {
     case "pick":
       return e.action === "lock" ? s : { phase: "confirm", action: e.action };
     case "confirm":
       return s.phase === "confirm"
-        ? { phase: "counting", action: s.action, left: COUNTDOWN_SECS }
+        ? { phase: "counting", action: s.action, left: s.action === "sleep" ? 0 : COUNTDOWN_SECS }
         : s;
     case "tick":
       return s.phase === "counting" && s.left > 0 ? { ...s, left: s.left - 1 } : s;

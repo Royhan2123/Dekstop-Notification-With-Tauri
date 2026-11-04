@@ -30,3 +30,12 @@ it("hitung mundur berhenti di nol dan batal kapan saja kembali ke idle", () => {
 it("kunci layar tidak masuk mesin konfirmasi", () => {
   expect(powerReducer(idle, { type: "pick", action: "lock" })).toEqual(idle);
 });
+
+it("tidur (layar mati) langsung jalan setelah konfirmasi, tanpa hitung mundur", () => {
+  const confirm = powerReducer({ phase: "idle" }, { type: "pick", action: "sleep" });
+  expect(powerReducer(confirm, { type: "confirm" })).toEqual({
+    phase: "counting",
+    action: "sleep",
+    left: 0,
+  });
+});

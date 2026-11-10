@@ -29,6 +29,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
         IslandAction::HealthAlert(a) => offer(&mut s, Content::HealthAlert(a), ctx, &mut fx),
         IslandAction::Notice(text) => offer(&mut s, Content::Notice(text), ctx, &mut fx),
+        IslandAction::UserNotice(text) => {
+            offer_as(&mut s, Content::Notice(text), ctx, &mut fx, false)
+        }
         IslandAction::Hover(h) => {
             s.hovered = h;
             if s.view == View::Expanded(Content::Media) {
@@ -97,10 +100,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
             if b {
+                // Hanya antrean yang dibuang. Kartu yang sedang dilihat (tempat pengguna baru saja
+                // menekan tombol bulan) dibiarkan habis sendiri; menutupnya seketika terasa seperti hang.
                 s.queue.retain(|c| !is_soft(c));
-                if s.view.content().is_some_and(is_soft) {
-                    settle(&mut s, ctx, &mut fx);
-                }
             }
         }
     }
@@ -152,7 +154,12 @@ fn is_soft(c: &Content) -> bool {
 
 /// Tampilkan `c` bila lebih penting dari yang sedang tampil; kalau tidak, antrikan.
 fn offer(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
-    if s.dnd && is_soft(&c) {
+    offer_as(s, c, ctx, fx, true);
+}
+
+/// `respect_dnd = false` untuk konten yang diminta pengguna sendiri.
+fn offer_as(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>, respect_dnd: bool) {
+    if respect_dnd && s.dnd && is_soft(&c) {
         return;
     }
     match s.view.content().cloned() {
@@ -304,6 +311,28 @@ mod tests {
         assert_eq!(s.view, View::Idle);
         let (s, _) = run(s, IslandAction::ReviewStarted(ReviewId(1)));
         assert_eq!(s.view, View::Compact(Content::ReviewRunning(ReviewId(1))));
+    }
+
+    #[test]
+    fn dnd_menahan_notice_otomatis_tapi_tidak_klik_pengguna() {
+        let (s, _) = run(IslandState::default(), IslandAction::DoNotDisturb(true));
+        let (s, _) = run(s, IslandAction::Notice("otomatis".into()));
+        assert_eq!(s.view, View::Idle, "pemberitahuan otomatis ditahan");
+        let (s, _) = run(s, IslandAction::UserNotice("klik saya".into()));
+        assert_eq!(
+            s.view,
+            View::Expanded(Content::Notice("klik saya".into())),
+            "klik pengguna harus tetap membuka pulau, kalau tidak Jangan Ganggu tak bisa dimatikan"
+        );
+    }
+
+    #[test]
+    fn menyalakan_dnd_tidak_menutup_kartu_yang_sedang_tampil() {
+        let (s, _) = run(IslandState::default(), IslandAction::Notice("halo".into()));
+        let before = s.view.clone();
+        let (s, _) = run(s, IslandAction::DoNotDisturb(true));
+        assert_eq!(s.view, before);
+        assert!(s.dnd);
     }
 
     #[test]

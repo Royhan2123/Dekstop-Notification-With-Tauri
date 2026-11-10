@@ -156,7 +156,13 @@ pub fn run() {
         )
         .expect("gagal membuat bindings.ts");
 
-    tauri::Builder::default()
+    #[allow(unused_mut)]
+    let mut app_builder = tauri::Builder::default();
+    #[cfg(target_os = "macos")]
+    {
+        app_builder = app_builder.plugin(tauri_nspanel::init());
+    }
+    app_builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         // Argumen ini membedakan start otomatis Windows dari peluncuran biasa (menjalankan daftar startup).

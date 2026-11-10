@@ -19,28 +19,34 @@ pub fn center_top(window: &WebviewWindow, monitor: &Monitor) -> tauri::Result<()
     window.set_position(PhysicalPosition::new(x, monitor.position().y))
 }
 
-/// macOS: pulau tampil di semua Space dan di atas aplikasi layar penuh.
-/// `set_visible_on_all_workspaces` saja tidak cukup untuk Space layar penuh; jendela perlu perilaku
-/// `fullScreenAuxiliary` dan level di atas menu bar.
+/// macOS: ubah jendela pulau jadi NSPanel agar tampil di semua Space dan di atas aplikasi layar
+/// penuh. `set_visible_on_all_workspaces` dan level jendela saja tidak cukup untuk Space layar penuh;
+/// macOS hanya mengizinkan NSPanel non-aktivasi dengan perilaku `fullScreenAuxiliary` di sana.
+/// Hanya boleh dipanggil sekali per jendela.
+// API `cocoa` milik tauri-nspanel ditandai usang, tapi itu satu-satunya jalur yang didokumentasikannya.
 #[cfg(target_os = "macos")]
+#[allow(deprecated)]
 pub fn float_over_fullscreen(window: &WebviewWindow) {
-    use objc2::msg_send;
-    use objc2::runtime::AnyObject;
+    use tauri_nspanel::WebviewWindowExt;
+    use tauri_nspanel::cocoa::appkit::NSWindowCollectionBehavior as Behavior;
 
-    // NSWindowCollectionBehavior: canJoinAllSpaces (1<<0) | stationary (1<<4) | fullScreenAuxiliary (1<<8)
-    const BEHAVIOR: usize = 1 | (1 << 4) | (1 << 8);
     // NSStatusWindowLevel (25): di atas menu bar (24) dan jendela layar penuh.
-    const LEVEL: isize = 25;
+    const LEVEL: i32 = 25;
+    // NSWindowStyleMaskNonactivatingPanel: mengklik pulau tidak merebut fokus dari aplikasi lain.
+    const NON_ACTIVATING: i32 = 1 << 7;
 
-    let Ok(ptr) = window.ns_window() else {
-        tracing::warn!("NSWindow pulau tidak tersedia");
-        return;
+    let panel = match window.to_panel() {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!("gagal mengubah pulau jadi NSPanel: {e}");
+            return;
+        }
     };
-    let ns_window = ptr.cast::<AnyObject>();
-    // SAFETY: `ptr` adalah NSWindow hidup milik jendela Tauri; kedua selector ada di NSWindow dan
-    // dipanggil dari thread utama (setup).
-    unsafe {
-        let _: () = msg_send![ns_window, setCollectionBehavior: BEHAVIOR];
-        let _: () = msg_send![ns_window, setLevel: LEVEL];
-    }
+    panel.set_level(LEVEL);
+    panel.set_style_mask(NON_ACTIVATING);
+    panel.set_collection_behaviour(
+        Behavior::NSWindowCollectionBehaviorFullScreenAuxiliary
+            | Behavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+            | Behavior::NSWindowCollectionBehaviorStationary,
+    );
 }

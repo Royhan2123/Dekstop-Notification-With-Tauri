@@ -27,8 +27,6 @@ use crate::application::settings_service::SettingsService;
 use crate::application::startup_service::StartupService;
 use crate::application::task_service::TaskService;
 use crate::application::theme_service::ThemeService;
-#[cfg(target_os = "macos")]
-use crate::application::volume_keys_service::VolumeKeysService;
 use crate::application::volume_service::VolumeService;
 use crate::domain::bridge::clean_query;
 use crate::domain::island::action::IslandAction;
@@ -62,9 +60,9 @@ use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
 use crate::infrastructure::system::power_control::SystemPowerControl;
 use crate::infrastructure::system::sound::SystemSound;
-use crate::infrastructure::system::volume::SystemVolume;
 #[cfg(target_os = "macos")]
-use crate::infrastructure::system::volume_keys;
+use crate::infrastructure::system::system_hud::SystemHudSuppressor;
+use crate::infrastructure::system::volume::SystemVolume;
 use crate::infrastructure::system::wallpaper::SystemWallpaper;
 use crate::infrastructure::theme::HttpThemeFetcher;
 use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
@@ -220,18 +218,9 @@ pub fn assemble(app: &App) {
         island.clone(),
     ));
 
-    let volume_hud = VolumeService::new(Arc::new(SystemVolume), island.clone());
-    spawn_volume_watch(volume_hud.clone());
+    spawn_volume_watch(VolumeService::new(Arc::new(SystemVolume), island.clone()));
     #[cfg(target_os = "macos")]
-    spawn_volume_keys(
-        VolumeKeysService::new(
-            Arc::new(SystemVolume),
-            Arc::new(SystemVolume),
-            settings.clone(),
-            volume_hud,
-        ),
-        settings.clone(),
-    );
+    spawn_system_hud_suppressor(settings.clone());
 
     let clipboard = ClipboardService::new(Arc::new(SystemClipboard), settings.clone());
     app.manage(clipboard.clone());
@@ -351,30 +340,15 @@ fn spawn_fullscreen_watch(fullscreen: Arc<FullscreenService>) {
 
 /// Periksa volume 4 kali per detik di thread sendiri (COM diinisialisasi per thread);
 /// satu panggilan Core Audio murah, jadi tidak perlu notifikasi event OS.
-/// macOS: tangkap tombol volume hanya setelah setelan "gantikan HUD sistem" menyala, supaya izin
-/// Accessibility tidak diminta sebelum pengguna memilihnya. Satu percobaan per kali setelan dinyalakan
-/// (tanpa izin, macOS menampilkan dialog tiap percobaan); setelan dimatikan lalu dinyalakan lagi
-/// mencoba ulang. Setelah terpasang, tangkapan tetap hidup dan callback mengecek setelan tiap tombol.
+/// macOS: tahan HUD volume/kecerahan bawaan sistem selama setelan "gantikan HUD sistem" menyala
+/// (lihat `system_hud`). Mengikuti setelan secara langsung: dinyalakan atau dimatikan tanpa restart.
 #[cfg(target_os = "macos")]
-fn spawn_volume_keys(keys: Arc<VolumeKeysService>, settings: Arc<SettingsService>) {
+fn spawn_system_hud_suppressor(settings: Arc<SettingsService>) {
     std::thread::spawn(move || {
-        let (mut started, mut attempted) = (false, false);
+        let mut hud = SystemHudSuppressor::default();
         loop {
-            let enabled = settings.get().take_over_volume_keys;
-            if !enabled {
-                attempted = false;
-            } else if !started && !attempted {
-                attempted = true;
-                let handler = keys.clone();
-                match volume_keys::start(Arc::new(move |key| handler.handle(key))) {
-                    Ok(()) => {
-                        started = true;
-                        tracing::info!("Isla menangkap tombol volume (HUD sistem diganti pulau)");
-                    }
-                    Err(e) => tracing::warn!("tombol volume tidak bisa ditangkap: {e}"),
-                }
-            }
-            std::thread::sleep(Duration::from_secs(2));
+            hud.tick(settings.get().take_over_volume_keys);
+            std::thread::sleep(Duration::from_millis(500));
         }
     });
 }

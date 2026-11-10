@@ -817,9 +817,9 @@ export type Settings = {
    */
   lyrics_enabled: boolean;
   /**
-   * Isla menangkap tombol volume dan menggantikan HUD sistem dengan pulau (hanya satu HUD yang
-   * tampil). macOS saja untuk saat ini; butuh izin Accessibility. Mati bawaan: mengubah cara tombol
-   * volume bekerja.
+   * Isla menahan HUD volume/kecerahan bawaan sistem supaya hanya HUD pulau yang tampil. macOS saja
+   * untuk saat ini: Isla membekukan proses HUD sistem selama berjalan dan memulihkannya saat berhenti.
+   * Mati bawaan: mengubah perilaku sistem.
    */
   take_over_volume_keys: boolean;
   /**

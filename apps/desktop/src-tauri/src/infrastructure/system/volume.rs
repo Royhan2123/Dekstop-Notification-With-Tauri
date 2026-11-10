@@ -1,5 +1,5 @@
 use crate::domain::island::state::VolumeInfo;
-use crate::domain::ports::{VolumeControl, VolumeReader};
+use crate::domain::ports::VolumeReader;
 
 /// Volume utama perangkat keluaran bawaan. Platform tanpa dukungan melapor `None`.
 pub struct SystemVolume;
@@ -19,14 +19,6 @@ mod coreaudio {
 
     #[link(name = "CoreAudio", kind = "framework")]
     unsafe extern "C" {
-        fn AudioObjectSetPropertyData(
-            object: u32,
-            address: *const Address,
-            qualifier_size: u32,
-            qualifier: *const c_void,
-            data_size: u32,
-            data: *const c_void,
-        ) -> i32;
         fn AudioObjectGetPropertyData(
             object: u32,
             address: *const Address,
@@ -63,41 +55,6 @@ mod coreaudio {
             )
         };
         (status == 0).then_some(value)
-    }
-
-    /// Tulis satu properti bertipe `T`; `false` bila perangkat tak mendukung atau menolak.
-    fn set<T: Copy>(object: u32, selector: u32, scope: u32, value: T) -> bool {
-        let address = Address {
-            selector,
-            scope,
-            element: 0,
-        };
-        // SAFETY: `address` dan `value` hidup selama pemanggilan; ukuran data = sizeof T.
-        let status = unsafe {
-            AudioObjectSetPropertyData(
-                object,
-                &address,
-                0,
-                std::ptr::null(),
-                std::mem::size_of::<T>() as u32,
-                (&value as *const T).cast(),
-            )
-        };
-        status == 0
-    }
-
-    fn default_device() -> Option<u32> {
-        let device: u32 = get(1, four(b"dOut"), four(b"glob"))?;
-        (device != 0).then_some(device)
-    }
-
-    pub fn set_level(level: f32) -> bool {
-        default_device()
-            .is_some_and(|d| set(d, four(b"vmvc"), four(b"outp"), level.clamp(0.0, 1.0)))
-    }
-
-    pub fn set_muted(muted: bool) -> bool {
-        default_device().is_some_and(|d| set(d, four(b"mute"), four(b"outp"), u32::from(muted)))
     }
 
     /// (volume 0.0-1.0, bisu) perangkat keluaran bawaan; `None` bila tak ada atau tak punya volume
@@ -150,32 +107,6 @@ impl VolumeReader for SystemVolume {
         }
         #[cfg(not(any(windows, target_os = "macos")))]
         None
-    }
-}
-
-impl VolumeControl for SystemVolume {
-    fn set_level(&self, level: u8) -> bool {
-        #[cfg(target_os = "macos")]
-        {
-            coreaudio::set_level(f32::from(level.min(100)) / 100.0)
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            let _ = level;
-            false // shortcut: Windows dan Linux menyusul bersama penangkap tombolnya
-        }
-    }
-
-    fn set_muted(&self, muted: bool) -> bool {
-        #[cfg(target_os = "macos")]
-        {
-            coreaudio::set_muted(muted)
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            let _ = muted;
-            false
-        }
     }
 }
 

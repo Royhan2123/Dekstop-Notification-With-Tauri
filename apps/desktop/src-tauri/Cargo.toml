@@ -58,10 +58,7 @@ tokio = { version = "1.54.1", features = ["test-util", "macros", "rt"] }
 
 # macOS: ubah jendela pulau jadi NSPanel agar tampil di atas aplikasi layar penuh.
 [target."cfg(target_os = \"macos\")".dependencies]
-objc2 = "0.6"
-objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSEvent", "objc2-core-graphics"] }
-objc2-core-graphics = { version = "0.3", default-features = false, features = ["std", "CGEvent", "CGEventTypes"] }
-objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFRunLoop", "CFMachPort"] }
+libc = "0.2"
 core-graphics = "0.24"
 core-foundation = "0.10"
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", rev = "18ffb9a201fbf6fedfaa382fd4b92315ea30ab1a" }

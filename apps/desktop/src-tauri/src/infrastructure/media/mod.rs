@@ -1,4 +1,6 @@
 pub mod artwork;
+#[cfg(target_os = "macos")]
+pub mod macos_music;
 #[cfg(windows)]
 pub mod windows_smtc;
 
@@ -12,12 +14,15 @@ use crate::domain::ports::MediaSource;
 pub fn default_source() -> Arc<dyn MediaSource> {
     #[cfg(windows)]
     return Arc::new(windows_smtc::WindowsSmtc::default());
-    // shortcut: Linux (MPRIS) dan macOS belum ada adapter, pulau tidak menampilkan media di sana.
-    #[cfg(not(windows))]
+    // macOS: Music.app dan Spotify lewat AppleScript (MediaRemote dibatasi Apple sejak 15.4).
+    #[cfg(target_os = "macos")]
+    return Arc::new(macos_music::MacMedia);
+    // shortcut: Linux (MPRIS) belum ada adapter, pulau tidak menampilkan media di sana.
+    #[cfg(not(any(windows, target_os = "macos")))]
     return Arc::new(UnsupportedMediaSource);
 }
 
-#[cfg_attr(windows, allow(dead_code))]
+#[cfg_attr(any(windows, target_os = "macos"), allow(dead_code))]
 pub struct UnsupportedMediaSource;
 
 impl MediaSource for UnsupportedMediaSource {

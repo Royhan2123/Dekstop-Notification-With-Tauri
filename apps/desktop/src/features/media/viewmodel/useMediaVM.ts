@@ -38,7 +38,6 @@ export function useMediaVM(ticking: boolean, tickMs = TICK_MS) {
     media,
     extensionConnected,
     onRate: (rate: number) => void commands.bridgeSetRate(rate),
-    onSearch: (query: string) => void commands.bridgeSearch(query),
     positionMs: media ? progressAt(media, receivedAt, running ? now : receivedAt) : 0,
     onPrevious: () => void commands.mediaControl("previous"),
     onToggle: () => void commands.mediaControl("toggle_play"),

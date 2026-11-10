@@ -14,7 +14,6 @@ use crate::domain::model::MediaCommand;
 #[derive(Clone, Debug, PartialEq)]
 pub enum BridgeCommand {
     SetRate(f64),
-    Search(String),
     /// Kontrol pemutar di tab browser tertentu.
     MediaControl {
         tab_id: u64,

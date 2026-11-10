@@ -7,7 +7,6 @@ import {
   pickArtwork,
   pickTab,
   sanitizeState,
-  searchUrl,
   tabOfSession,
 } from "./protocol.js";
 
@@ -21,23 +20,15 @@ describe("protocol", () => {
 
   it("mem-parse perintah sah dan menolak sisanya", () => {
     expect(parseCommand('{"type":"set_rate","rate":5}')).toEqual({ type: "set_rate", rate: 2 });
-    expect(parseCommand('{"type":"search","query":"  lofi "}')).toEqual({
-      type: "search",
-      query: "lofi",
-    });
     for (const bad of [
       "x",
       "null",
-      '{"type":"search","query":" "}',
+      '{"type":"search","query":"lofi"}', // fitur pencarian sudah dihapus
       '{"type":"set_rate","rate":"1"}',
       '{"type":"hapus"}',
     ]) {
       expect(parseCommand(bad)).toBeNull();
     }
-  });
-
-  it("membuat URL pencarian ter-encode", () => {
-    expect(searchUrl("a&b c")).toBe("https://www.youtube.com/results?search_query=a%26b%20c");
   });
 
   it("memilih tab yang bersuara", () => {

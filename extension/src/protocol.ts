@@ -5,7 +5,6 @@ export type MediaAction = "toggle" | "next" | "previous";
 
 export type Command =
   | { type: "set_rate"; rate: number }
-  | { type: "search"; query: string }
   | { type: "media_control"; tabId: number; action: MediaAction };
 
 /** Lagu/video yang sedang diputar di satu tab, dilaporkan content script. */
@@ -90,10 +89,6 @@ export function clampRate(rate: number): number | null {
   return Math.round(Math.min(2, Math.max(0.25, rate)) * 20) / 20;
 }
 
-export function searchUrl(query: string): string {
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-}
-
 /** Pesan dari aplikasi; apa pun yang tidak dikenal atau tidak sah diabaikan. */
 export function parseCommand(raw: string): Command | null {
   let msg: unknown;
@@ -107,9 +102,6 @@ export function parseCommand(raw: string): Command | null {
   if (m.type === "set_rate" && typeof m.rate === "number") {
     const rate = clampRate(m.rate);
     return rate === null ? null : { type: "set_rate", rate };
-  }
-  if (m.type === "search" && typeof m.query === "string" && m.query.trim()) {
-    return { type: "search", query: m.query.trim().slice(0, 200) };
   }
   if (m.type === "media_control" && typeof m.id === "string") {
     const tabId = tabOfSession(m.id);

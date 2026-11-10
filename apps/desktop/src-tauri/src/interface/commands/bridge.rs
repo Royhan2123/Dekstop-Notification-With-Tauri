@@ -31,9 +31,3 @@ pub fn bridge_unpair(svc: Svc) -> Result<(), String> {
 pub fn bridge_set_rate(svc: Svc, rate: f64) -> Result<(), String> {
     svc.set_rate(rate).map_err(|e| e.to_string())
 }
-
-#[tauri::command]
-#[specta::specta]
-pub fn bridge_search(svc: Svc, query: String) -> Result<(), String> {
-    svc.search(&query).map_err(|e| e.to_string())
-}

@@ -54,7 +54,6 @@ fn is_idle(e: &tungstenite::Error) -> bool {
 fn command_json(cmd: &BridgeCommand) -> String {
     match cmd {
         BridgeCommand::SetRate(rate) => json!({ "type": "set_rate", "rate": rate }),
-        BridgeCommand::Search(query) => json!({ "type": "search", "query": query }),
         BridgeCommand::MediaControl { tab_id, action } => json!({
             "type": "media_control",
             "id": crate::domain::bridge::session_id(*tab_id),
@@ -376,8 +375,8 @@ mod tests {
         let mut b = connect(port, Some(ORIGIN)).unwrap();
         say(&mut b, json!({"type": "hello", "token": "tok"}));
         assert_eq!(hear(&mut b), json!({"type": "ready"}));
-        bridge.send(&BridgeCommand::Search("lofi".into())).unwrap();
-        assert_eq!(hear(&mut b), json!({"type": "search", "query": "lofi"}));
+        bridge.send(&BridgeCommand::SetRate(1.5)).unwrap();
+        assert_eq!(hear(&mut b), json!({"type": "set_rate", "rate": 1.5}));
         thread::sleep(Duration::from_millis(300));
         assert_eq!(*handler.events.lock().unwrap(), vec![true, true]);
 

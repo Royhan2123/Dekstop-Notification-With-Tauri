@@ -14,7 +14,6 @@ export function MediaExpanded() {
   const content = useIslandStore((s) => s.snapshot.content);
   const { media } = vm;
   const [rate, setRate] = useState(1);
-  const [query, setQuery] = useState("");
   if (!media || !content) return null;
   const ratio = media.duration_ms > 0 ? vm.positionMs / media.duration_ms : 0;
   return (
@@ -78,22 +77,6 @@ export function MediaExpanded() {
                 onKeyUp={() => vm.onRate(rate)}
               />
             </label>
-            <form
-              className="media-search"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!query.trim()) return;
-                vm.onSearch(query);
-                setQuery("");
-              }}
-            >
-              <input
-                value={query}
-                placeholder={t("media.search_placeholder")}
-                onChange={(e) => setQuery(e.currentTarget.value)}
-              />
-              <button type="submit">{t("media.search")}</button>
-            </form>
           </div>
         )}
       </div>

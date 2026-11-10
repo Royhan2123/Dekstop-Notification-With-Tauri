@@ -457,14 +457,6 @@ export const commands = {
       else return { status: "error", error: e as any };
     }
   },
-  async bridgeSearch(query: string): Promise<Result<null, string>> {
-    try {
-      return { status: "ok", data: await TAURI_INVOKE("bridge_search", { query }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: "error", error: e as any };
-    }
-  },
   async pomodoroStatus(): Promise<PomodoroStatusDto> {
     return await TAURI_INVOKE("pomodoro_status");
   },

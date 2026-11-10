@@ -5,7 +5,6 @@ import {
   parseCommand,
   pickTab,
   sanitizeState,
-  searchUrl,
 } from "./protocol.js";
 
 const TOKEN_KEY = "token";
@@ -84,10 +83,6 @@ function attach(ws: WebSocket) {
 async function handle(raw: string) {
   const cmd = parseCommand(raw);
   if (!cmd) return;
-  if (cmd.type === "search") {
-    await chrome.tabs.create({ url: searchUrl(cmd.query) });
-    return;
-  }
   if (cmd.type === "media_control") {
     await sendToTab(cmd.tabId, { type: "media_control", action: cmd.action });
     return;

@@ -4,9 +4,7 @@ use std::time::{Duration, Instant};
 use crate::application::island_service::IslandService;
 use crate::application::media_service::MediaService;
 use crate::application::settings_service::SettingsService;
-use crate::domain::bridge::{
-    BridgeCommand, BrowserMedia, clamp_rate, clean_query, is_extension_origin,
-};
+use crate::domain::bridge::{BridgeCommand, BrowserMedia, clamp_rate, is_extension_origin};
 use crate::domain::error::{BridgeError, SettingsError};
 use crate::domain::island::action::IslandAction;
 use crate::domain::island::state::{Content, View};
@@ -118,11 +116,6 @@ impl BridgeService {
     pub fn set_rate(&self, rate: f64) -> Result<(), BridgeError> {
         let rate = clamp_rate(rate).ok_or(BridgeError::Invalid)?;
         self.bridge.send(&BridgeCommand::SetRate(rate))
-    }
-
-    pub fn search(&self, query: &str) -> Result<(), BridgeError> {
-        let q = clean_query(query).ok_or(BridgeError::Invalid)?;
-        self.bridge.send(&BridgeCommand::Search(q))
     }
 
     fn pair_at(&self, origin: &str, code: &str, now: Instant) -> Option<String> {
@@ -307,18 +300,13 @@ mod tests {
         ));
         *f.bridge.connected.lock().unwrap() = true;
         f.svc.set_rate(9.0).unwrap();
-        f.svc.search("  lofi  ").unwrap();
         assert!(matches!(
             f.svc.set_rate(f64::NAN),
             Err(BridgeError::Invalid)
         ));
-        assert!(matches!(f.svc.search("  "), Err(BridgeError::Invalid)));
         assert_eq!(
             *f.bridge.sent.lock().unwrap(),
-            vec![
-                BridgeCommand::SetRate(2.0),
-                BridgeCommand::Search("lofi".into())
-            ]
+            vec![BridgeCommand::SetRate(2.0)]
         );
     }
 

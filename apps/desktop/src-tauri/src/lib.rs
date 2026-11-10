@@ -13,9 +13,7 @@ use tauri_specta::{Builder, collect_commands, collect_events};
 use interface::commands::ask::{
     ai_active, ai_models, ai_test, ask_clear, ask_history, ask_open, ask_submit,
 };
-use interface::commands::bridge::{
-    bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
-};
+use interface::commands::bridge::{bridge_pair, bridge_paired, bridge_set_rate, bridge_unpair};
 use interface::commands::calendar::calendar_next;
 use interface::commands::clipboard::{clipboard_clear, clipboard_copy, clipboard_list};
 use interface::commands::disk::{disk_drives, disk_reveal, disk_scan, disk_status};
@@ -118,7 +116,6 @@ fn specta_builder() -> Builder<tauri::Wry> {
             bridge_paired,
             bridge_unpair,
             bridge_set_rate,
-            bridge_search,
             pomodoro_status,
             pomodoro_start,
             pomodoro_stop,

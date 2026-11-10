@@ -4,6 +4,9 @@
 //! terikat proses Isla, jadi tidak ada perubahan permanen pada sistem bila Isla crash.
 //!
 //! Butuh izin Accessibility; tanpanya `CGEventTapCreate` gagal dan tombol dibiarkan ke sistem.
+//!
+//! Batas: hanya tombol media fisik (keyboard biasa/eksternal, tombol headset). Strip kontrol Touch Bar
+//! mengubah volume langsung ke sistem audio tanpa event tombol, jadi tidak bisa ditangkap di sini.
 use std::ffi::c_void;
 use std::ptr::NonNull;
 use std::sync::Arc;

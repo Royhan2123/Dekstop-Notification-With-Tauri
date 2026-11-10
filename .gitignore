@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Hasil build ekstensi Safari (dibuat safari/build.sh)
+extension/safari-build

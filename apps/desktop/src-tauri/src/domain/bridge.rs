@@ -106,8 +106,16 @@ pub fn clean_query(query: &str) -> Option<String> {
 }
 
 /// Hanya ekstensi browser yang boleh tersambung; halaman web biasa (http/https) tidak.
+/// Chromium (Chrome, Brave, Edge, Arc, ...) memakai chrome-extension, Firefox moz-extension, Safari
+/// safari-web-extension.
 pub fn is_extension_origin(origin: &str) -> bool {
-    ["chrome-extension://", "moz-extension://"].iter().any(|p| {
+    [
+        "chrome-extension://",
+        "moz-extension://",
+        "safari-web-extension://",
+    ]
+    .iter()
+    .any(|p| {
         origin
             .strip_prefix(p)
             .is_some_and(|id| !id.is_empty() && !id.contains('/'))
@@ -174,11 +182,16 @@ mod tests {
     fn hanya_asal_ekstensi_yang_dipercaya() {
         assert!(is_extension_origin("chrome-extension://abcdefgh"));
         assert!(is_extension_origin("moz-extension://1234-5678"));
+        assert!(is_extension_origin(
+            "safari-web-extension://8B2E2F5A-1234-4C6D-9ABC-0123456789AB"
+        ));
         for bad in [
             "https://evil.example",
             "http://localhost:1420",
             "chrome-extension://",
             "chrome-extension://a/b",
+            "safari-web-extension://",
+            "safari-web-extension://x/y",
             "",
         ] {
             assert!(!is_extension_origin(bad), "{bad}");

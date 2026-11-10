@@ -7,8 +7,7 @@
   "host_permissions": ["ws://127.0.0.1/*"],
   "background": {
     "service_worker": "dist/background.js",
-    "scripts": ["dist/background.js"],
-    "type": "module"
+    "scripts": ["dist/background.js"]
   },
   "content_scripts": [
     {
@@ -27,6 +26,12 @@
       "js": ["dist/content-media.js"]
     }
   ],
-  "action": { "default_popup": "popup.html" },
-  "browser_specific_settings": { "gecko": { "id": "isla-link@isla-desk.app" } }
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "isla-link@isla-desk.app"
+    }
+  }
 }

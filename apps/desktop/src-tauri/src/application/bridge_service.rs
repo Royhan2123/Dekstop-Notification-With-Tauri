@@ -2,8 +2,11 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::application::island_service::IslandService;
+use crate::application::media_service::MediaService;
 use crate::application::settings_service::SettingsService;
-use crate::domain::bridge::{BridgeCommand, clamp_rate, clean_query, is_extension_origin};
+use crate::domain::bridge::{
+    BridgeCommand, BrowserMedia, clamp_rate, clean_query, is_extension_origin,
+};
 use crate::domain::error::{BridgeError, SettingsError};
 use crate::domain::island::action::IslandAction;
 use crate::domain::island::state::{Content, View};
@@ -29,6 +32,8 @@ pub struct BridgeService {
     island: Arc<IslandService>,
     settings: Arc<SettingsService>,
     pending: Mutex<Option<Pending>>,
+    /// Penerima daftar media dari tab browser; diisi bootstrap setelah MediaService ada.
+    media: Mutex<Option<Arc<MediaService>>>,
 }
 
 fn random_hex() -> String {
@@ -57,7 +62,12 @@ impl BridgeService {
             island,
             settings,
             pending: Mutex::new(None),
+            media: Mutex::new(None),
         })
+    }
+
+    pub fn attach_media(&self, media: Arc<MediaService>) {
+        *self.media.lock().unwrap_or_else(|e| e.into_inner()) = Some(media);
     }
 
     pub fn is_paired(&self) -> Result<bool, SettingsError> {
@@ -160,6 +170,13 @@ impl BridgeHandler for BridgeService {
     fn connection_changed(&self, connected: bool) {
         self.island
             .dispatch(IslandAction::ExtensionConnected(connected));
+    }
+
+    fn media(&self, sessions: Vec<BrowserMedia>) {
+        let media = self.media.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        if let Some(media) = media {
+            media.set_browser(sessions);
+        }
     }
 }
 

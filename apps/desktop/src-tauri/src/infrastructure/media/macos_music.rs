@@ -21,7 +21,6 @@ const POLL_ACTIVE: Duration = Duration::from_millis(1000);
 const POLL_IDLE: Duration = Duration::from_millis(3000);
 /// Selisih posisi (ms) yang dianggap "loncat" (seek) dan perlu dilaporkan ulang.
 const SEEK_TOLERANCE_MS: i64 = 1500;
-const ART_TIMEOUT: Duration = Duration::from_secs(3);
 const APPS: [&str; 2] = ["Music", "Spotify"];
 
 /// Satu skrip per pemutar, dijalankan HANYA bila pemutarnya berjalan: menyebut aplikasi yang tidak
@@ -148,21 +147,10 @@ fn is_running(app: &str) -> bool {
 
 /// Sampul lagu yang sedang diputar: Music lewat berkas sementara, Spotify lewat URL gambarnya.
 fn fetch_artwork(raw: &Raw) -> Option<artwork::Artwork> {
-    let bytes = if raw.app == "Spotify" {
-        if raw.art_url.is_empty() {
-            return None;
-        }
-        reqwest::blocking::Client::builder()
-            .timeout(ART_TIMEOUT)
-            .build()
-            .ok()?
-            .get(&raw.art_url)
-            .send()
-            .ok()?
-            .bytes()
-            .ok()?
-            .to_vec()
-    } else {
+    if raw.app == "Spotify" {
+        return artwork::fetch(&raw.art_url);
+    }
+    let bytes = {
         let path = std::env::temp_dir().join("isla-desk-artwork.bin");
         let script = format!(
             "tell application \"Music\"\nset d to raw data of artwork 1 of current track\nend tell\n\

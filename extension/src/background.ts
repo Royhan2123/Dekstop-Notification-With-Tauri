@@ -1,4 +1,12 @@
-import { PORTS, parseCommand, pickTab, searchUrl } from "./protocol.js";
+import {
+  type MediaState,
+  PORTS,
+  mediaMessage,
+  parseCommand,
+  pickTab,
+  sanitizeState,
+  searchUrl,
+} from "./protocol.js";
 
 const TOKEN_KEY = "token";
 const MEDIA_TABS = ["*://www.youtube.com/*", "*://music.youtube.com/*"];
@@ -6,6 +14,20 @@ const ATTEMPT_TIMEOUT_MS = 3000;
 
 let socket: WebSocket | null = null;
 let busy = false;
+
+/** Media yang sedang diputar per tab; dilaporkan content script, dikirim ke aplikasi. */
+const mediaStates = new Map<number, MediaState>();
+let mediaTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Kirim daftar media ke aplikasi; digabung 300 ms supaya banyak perubahan jadi satu pesan. */
+function scheduleMediaSend() {
+  if (mediaTimer !== undefined) return;
+  mediaTimer = setTimeout(() => {
+    mediaTimer = undefined;
+    if (socket?.readyState === WebSocket.OPEN)
+      socket.send(JSON.stringify(mediaMessage(mediaStates)));
+  }, 300);
+}
 
 type Reply = { type?: string; token?: string };
 
@@ -49,6 +71,7 @@ async function connectWith(first: object): Promise<Reply | null> {
 function attach(ws: WebSocket) {
   socket?.close();
   socket = ws;
+  scheduleMediaSend(); // aplikasi baru tersambung: kirim keadaan terkini
   // Ping berkala menjaga service worker MV3 tetap hidup dan memberi tahu kalau koneksi putus.
   const ping = setInterval(() => ws.send(JSON.stringify({ type: "ping" })), 20_000);
   ws.onmessage = (e) => void handle(String(e.data));
@@ -63,6 +86,10 @@ async function handle(raw: string) {
   if (!cmd) return;
   if (cmd.type === "search") {
     await chrome.tabs.create({ url: searchUrl(cmd.query) });
+    return;
+  }
+  if (cmd.type === "media_control") {
+    await sendToTab(cmd.tabId, { type: "media_control", action: cmd.action });
     return;
   }
   const tab = pickTab(await chrome.tabs.query({ url: MEDIA_TABS }));
@@ -102,6 +129,18 @@ chrome.runtime.onMessage.addListener((msg: { type?: string; code?: string }, _se
     reply({ ok: Boolean(res?.token) });
   })();
   return true; // balasan asinkron
+});
+
+// Laporan dari content script situs media; state null = tab tidak lagi punya media.
+chrome.runtime.onMessage.addListener((msg: { type?: string; state?: unknown }, sender) => {
+  if (msg.type !== "media_state" || sender.tab?.id === undefined) return;
+  const state = sanitizeState(msg.state);
+  if (state) mediaStates.set(sender.tab.id, state);
+  else mediaStates.delete(sender.tab.id);
+  scheduleMediaSend();
+});
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (mediaStates.delete(tabId)) scheduleMediaSend();
 });
 
 chrome.alarms.create("reconnect", { periodInMinutes: 0.5 });

@@ -39,7 +39,7 @@ use crate::infrastructure::git::cli_git::CliGit;
 use crate::infrastructure::git::hook::GitHookInstaller;
 use crate::infrastructure::github::GithubGraphql;
 use crate::infrastructure::lyrics::Lrclib;
-use crate::infrastructure::media::default_source;
+use crate::infrastructure::media::{artwork, default_source};
 use crate::infrastructure::security::regex_scanner::RegexScanner;
 use crate::infrastructure::storage::chat_store::{MemoryChatStore, SqliteChatStore};
 use crate::infrastructure::storage::keyring_store::KeyringStore;
@@ -104,7 +104,7 @@ pub fn assemble(app: &App) {
         settings.clone(),
     );
     app.manage(bridge.clone());
-    match ws.start(bridge) {
+    match ws.start(bridge.clone()) {
         Ok(port) => tracing::info!("Isla Link mendengarkan di 127.0.0.1:{port}"),
         Err(e) => tracing::error!("gagal membuka server Isla Link: {e}"),
     }
@@ -223,6 +223,11 @@ pub fn assemble(app: &App) {
     spawn_clipboard_watch(clipboard);
 
     let media = MediaService::new(default_source(), island);
+    media.attach_browser(
+        ws.clone(),
+        Arc::new(|url| artwork::fetch(url).map(|a| (a.data_url, a.color))),
+    );
+    bridge.attach_media(media.clone());
     app.manage(media.clone());
     media.start();
 

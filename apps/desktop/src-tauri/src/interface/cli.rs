@@ -138,14 +138,22 @@ fn describe_run(command: &[String], code: Option<i32>, elapsed: std::time::Durat
     }
 }
 
-/// Berkas IPC bawaan aplikasi.
-/// shortcut: hanya dikenal di Windows (%APPDATA%); platform lain pakai --ipc.
+/// Folder data aplikasi menurut aturan Tauri: %APPDATA% (Windows), ~/Library/Application Support
+/// (macOS), $XDG_DATA_HOME atau ~/.local/share (Linux).
+fn data_base() -> Option<PathBuf> {
+    #[cfg(windows)]
+    return std::env::var_os("APPDATA").map(PathBuf::from);
+    #[cfg(target_os = "macos")]
+    return std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support"));
+    #[cfg(all(unix, not(target_os = "macos")))]
+    return std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")));
+}
+
+/// Berkas IPC bawaan aplikasi (sama dengan `data_dir/ipc.json` yang ditulis aplikasi).
 fn default_ipc_file() -> Option<PathBuf> {
-    std::env::var_os("APPDATA").map(|d| {
-        PathBuf::from(d)
-            .join("com.royhan.isladesk")
-            .join("ipc.json")
-    })
+    data_base().map(|d| d.join("com.royhan.isladesk").join("ipc.json"))
 }
 
 /// Build rilis berjenis aplikasi GUI; tanpa ini `eprintln!` tidak terlihat di terminal pemanggil.
@@ -160,8 +168,18 @@ fn attach_parent_console() {
 
 #[cfg(test)]
 mod tests {
-    use super::describe_run;
+    use super::{default_ipc_file, describe_run};
     use std::time::Duration;
+
+    #[test]
+    fn berkas_ipc_bawaan_memakai_folder_data_aplikasi() {
+        let path = default_ipc_file().expect("HOME/APPDATA harus ada saat tes");
+        assert!(path.ends_with("com.royhan.isladesk/ipc.json") || path.ends_with("ipc.json"));
+        assert_eq!(
+            path.parent().and_then(|p| p.file_name()).unwrap(),
+            "com.royhan.isladesk"
+        );
+    }
 
     fn cmd(parts: &[&str]) -> Vec<String> {
         parts.iter().map(|s| s.to_string()).collect()

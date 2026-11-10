@@ -2038,6 +2038,7 @@ dependencies = [
  "chrono",
  "image",
  "keyring",
+ "objc2",
  "regex",
  "reqwest",
  "rusqlite",

@@ -1,3 +1,5 @@
+// Hanya Windows yang punya registri aplikasi; di OS lain pembantunya tidak terpakai.
+#![cfg_attr(not(windows), allow(dead_code))]
 use crate::domain::ports::InstalledApps;
 use crate::domain::startup::InstalledApp;
 

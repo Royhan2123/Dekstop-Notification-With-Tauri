@@ -4,6 +4,8 @@ pub mod domain;
 pub mod infrastructure;
 pub mod interface;
 
+#[cfg(target_os = "macos")]
+use tauri::Manager;
 use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{Builder, collect_commands, collect_events};
@@ -177,7 +179,16 @@ pub fn run() {
         })
         .setup(move |app| {
             builder.mount_events(app);
+            // macOS: tanpa ikon Dock dan terlihat di semua Space (termasuk di atas app layar penuh),
+            // kalau tidak pulau hanya muncul di Desktop biasa.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             bootstrap::assemble(app);
+            #[cfg(target_os = "macos")]
+            if let Some(island) = app.get_webview_window("island") {
+                let _ = island.set_visible_on_all_workspaces(true);
+                interface::window::island_window::float_over_fullscreen(&island);
+            }
             Ok(())
         })
         .run(tauri::generate_context!())

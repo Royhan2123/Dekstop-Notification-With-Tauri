@@ -13,6 +13,7 @@
     "windows": [
       {
         "label": "island",
+        "acceptFirstMouse": true,
         "title": "isla-desk",
         "width": 760,
         "height": 420,

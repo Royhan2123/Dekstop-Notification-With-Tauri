@@ -56,6 +56,10 @@ strip = true
 tempfile = "3.27.0"
 tokio = { version = "1.54.1", features = ["test-util", "macros", "rt"] }
 
+# macOS: atur perilaku NSWindow agar pulau tampil di atas aplikasi layar penuh.
+[target."cfg(target_os = \"macos\")".dependencies]
+objc2 = "0.6"
+
 [target."cfg(windows)".dependencies]
 windows = { version = "0.62.2", features = ["Media_Control", "Storage_Streams", "Foundation", "Foundation_Collections", "Win32_System_WinRT", "Win32_System_Console", "Win32_System_Power", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_UI_Shell_PropertiesSystem", "Win32_System_SystemInformation", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_System_Wmi", "Win32_System_Variant", "Win32_System_Rpc", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_UI_WindowsAndMessaging"] }
 winreg = "0.55"

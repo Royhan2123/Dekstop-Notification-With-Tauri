@@ -11,4 +11,6 @@ pub mod power;
 pub mod power_control;
 pub mod sound;
 pub mod volume;
+#[cfg(target_os = "macos")]
+pub mod volume_keys;
 pub mod wallpaper;

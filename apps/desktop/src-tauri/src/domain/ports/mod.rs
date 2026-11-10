@@ -109,6 +109,13 @@ pub trait VolumeReader: Send + Sync {
     fn read(&self) -> Option<crate::domain::island::state::VolumeInfo>;
 }
 
+/// Mengubah volume utama dan bisu. Dipakai saat Isla mengambil alih tombol volume.
+pub trait VolumeControl: Send + Sync {
+    /// Atur volume 0-100; `false` bila perangkat tidak mendukung.
+    fn set_level(&self, level: u8) -> bool;
+    fn set_muted(&self, muted: bool) -> bool;
+}
+
 /// Baca/tulis teks clipboard sistem.
 pub trait ClipboardAccess: Send + Sync {
     fn read_text(&self) -> Option<String>;

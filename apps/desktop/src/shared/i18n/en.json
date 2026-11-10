@@ -39,6 +39,7 @@
   "settings.theme.url_import": "Import from link",
   "settings.theme.file_error": "Invalid theme file.",
   "settings.lyrics": "Show song lyrics (title and artist are sent to lrclib.net)",
+  "settings.take_over_volume_keys": "Replace the system volume HUD with the island (macOS; needs Accessibility permission)",
   "settings.calendar": "Meeting calendar (iCal link)",
   "settings.calendar.hint": "Paste an https iCal address; the island reminds you five minutes before a meeting. The secret calendar address stays on this computer.",
   "settings.calendar.next": "Next meeting:",

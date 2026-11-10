@@ -24,6 +24,15 @@ pub struct MediaInfo {
     pub session_count: u32,
 }
 
+/// Tombol volume di keyboard / tombol media. Baru ditangkap di macOS; OS lain menyusul.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub enum VolumeKey {
+    Up,
+    Down,
+    Mute,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MediaCommand {
     Previous,

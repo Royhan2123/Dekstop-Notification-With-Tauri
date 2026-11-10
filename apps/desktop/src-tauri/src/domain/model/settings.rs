@@ -186,6 +186,10 @@ pub struct Settings {
     pub sound_enabled: bool,
     /// Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
     pub lyrics_enabled: bool,
+    /// Isla menangkap tombol volume dan menggantikan HUD sistem dengan pulau (hanya satu HUD yang
+    /// tampil). macOS saja untuk saat ini; butuh izin Accessibility. Mati bawaan: mengubah cara tombol
+    /// volume bekerja.
+    pub take_over_volume_keys: bool,
     /// Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
     pub calendar_url: String,
 }
@@ -215,6 +219,7 @@ impl Default for Settings {
             hide_on_fullscreen: true,
             sound_enabled: true,
             lyrics_enabled: true,
+            take_over_volume_keys: false,
             calendar_url: String::new(),
         }
     }

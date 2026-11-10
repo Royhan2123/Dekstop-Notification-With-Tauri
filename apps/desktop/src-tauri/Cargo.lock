@@ -2084,6 +2084,8 @@ dependencies = [
  "arboard",
  "base64 0.23.1",
  "chrono",
+ "core-foundation 0.10.1",
+ "core-graphics 0.24.0",
  "image",
  "keyring",
  "regex",

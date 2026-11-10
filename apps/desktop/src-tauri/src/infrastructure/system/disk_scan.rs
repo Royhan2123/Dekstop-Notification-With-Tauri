@@ -1,5 +1,5 @@
 use std::fs;
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "macos", test))]
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -81,7 +81,23 @@ impl DiskScanner for FsDiskScanner {
                 .filter(|d| Path::new(d).exists())
                 .collect()
         }
-        #[cfg(not(windows))]
+        #[cfg(target_os = "macos")]
+        {
+            // Volume sistem + yang terpasang di /Volumes (disk eksternal, image). "Macintosh HD" di
+            // /Volumes hanyalah tautan ke "/", jadi dilewati.
+            let mut drives = vec!["/".to_string()];
+            if let Ok(rd) = fs::read_dir("/Volumes") {
+                for entry in rd.flatten() {
+                    let path = entry.path();
+                    let is_root_alias = fs::canonicalize(&path).is_ok_and(|p| p == Path::new("/"));
+                    if path.is_dir() && !is_root_alias {
+                        drives.push(path.to_string_lossy().into_owned());
+                    }
+                }
+            }
+            drives
+        }
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             vec!["/".to_string()]
         }

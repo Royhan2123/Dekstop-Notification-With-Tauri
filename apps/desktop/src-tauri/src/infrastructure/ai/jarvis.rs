@@ -94,4 +94,18 @@ mod tests {
         let err = JarvisClient.complete("", "halo").unwrap_err().to_string();
         assert!(err.contains("ui.api.enabled"), "{err}");
     }
+
+    /// Butuh Jarvis sungguhan berjalan dengan `ui.api.enabled: true`:
+    /// `cargo test jarvis_asli -- --ignored`.
+    #[test]
+    #[ignore = "butuh Jarvis dan Ollama berjalan"]
+    fn jarvis_asli_menjawab_dan_menolak_izin_tak_dikenal() {
+        let reply = JarvisClient.complete("", "Apa ibu kota Jepang?").unwrap();
+        assert!(
+            reply.to_lowercase().contains("tokyo") || reply.contains("Tokio"),
+            "{reply}"
+        );
+        let err = decide_approval("tidak-ada", true).unwrap_err().to_string();
+        assert!(err.contains("404"), "{err}");
+    }
 }

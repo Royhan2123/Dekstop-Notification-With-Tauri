@@ -2,6 +2,8 @@ import { useT } from "../../../shared/i18n";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "../../../shared/ui/icons";
 import { useState } from "react";
 import { useIslandStore } from "../../island/store";
+import { useSettingsStore } from "../../settings/store";
+import { commands } from "../../../shared/ipc";
 import { useLyricsVM } from "../viewmodel/useLyricsVM";
 import { LYRIC_TICK_MS, formatTime, useMediaVM } from "../viewmodel/useMediaVM";
 import { LyricPanel } from "./LyricPanel";
@@ -14,6 +16,12 @@ export function MediaExpanded() {
   const content = useIslandStore((s) => s.snapshot.content);
   const { media } = vm;
   const [rate, setRate] = useState(1);
+  const settings = useSettingsStore((s) => s.settings);
+  const offsetMs = settings?.lyrics_offset_ms ?? 0;
+  /** Geser lirik; backend merapikan batasnya (±5 dtk) dan menyiarkan setelan baru ke semua jendela. */
+  const shiftLyrics = (delta: number) => {
+    if (settings) void commands.settingsUpdate({ ...settings, lyrics_offset_ms: offsetMs + delta });
+  };
   if (!media || !content) return null;
   const ratio = media.duration_ms > 0 ? vm.positionMs / media.duration_ms : 0;
   return (
@@ -80,7 +88,14 @@ export function MediaExpanded() {
           </div>
         )}
       </div>
-      {lyrics.length > 0 && <LyricPanel lines={lyrics} positionMs={vm.positionMs} />}
+      {lyrics.length > 0 && (
+        <LyricPanel
+          lines={lyrics}
+          positionMs={vm.positionMs}
+          offsetMs={offsetMs}
+          onShift={shiftLyrics}
+        />
+      )}
     </div>
   );
 }

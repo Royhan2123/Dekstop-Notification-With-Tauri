@@ -817,6 +817,11 @@ export type Settings = {
    */
   lyrics_enabled: boolean;
   /**
+   * Geser lirik (ms). Positif = lirik tampil lebih awal (untuk lirik yang terlambat), negatif =
+   * lebih lambat. Berlaku untuk semua lagu; selisih tetap muncul karena versi lagu di lrclib beda.
+   */
+  lyrics_offset_ms: number;
+  /**
    * Isla menahan HUD volume/kecerahan bawaan sistem supaya hanya HUD pulau yang tampil. macOS saja
    * untuk saat ini: Isla membekukan proses HUD sistem selama berjalan dan memulihkannya saat berhenti.
    * Mati bawaan: mengubah perilaku sistem.

@@ -186,6 +186,9 @@ pub struct Settings {
     pub sound_enabled: bool,
     /// Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
     pub lyrics_enabled: bool,
+    /// Geser lirik (ms). Positif = lirik tampil lebih awal (untuk lirik yang terlambat), negatif =
+    /// lebih lambat. Berlaku untuk semua lagu; selisih tetap muncul karena versi lagu di lrclib beda.
+    pub lyrics_offset_ms: i32,
     /// Isla menahan HUD volume/kecerahan bawaan sistem supaya hanya HUD pulau yang tampil. macOS saja
     /// untuk saat ini: Isla membekukan proses HUD sistem selama berjalan dan memulihkannya saat berhenti.
     /// Mati bawaan: mengubah perilaku sistem.
@@ -219,12 +222,15 @@ impl Default for Settings {
             hide_on_fullscreen: true,
             sound_enabled: true,
             lyrics_enabled: true,
+            lyrics_offset_ms: 0,
             take_over_volume_keys: false,
             calendar_url: String::new(),
         }
     }
 }
 
+/// Batas geser lirik (ms) ke kedua arah.
+pub const MAX_LYRICS_OFFSET_MS: i32 = 5000;
 pub const MAX_BACKGROUND_BYTES: usize = 400_000;
 const BACKGROUND_MODES: [&str; 4] = ["static", "album", "time", "wallpaper"];
 
@@ -251,6 +257,9 @@ impl Settings {
         self.display_seconds = self
             .display_seconds
             .clamp(MIN_DISPLAY_SECONDS, MAX_DISPLAY_SECONDS);
+        self.lyrics_offset_ms = self
+            .lyrics_offset_ms
+            .clamp(-MAX_LYRICS_OFFSET_MS, MAX_LYRICS_OFFSET_MS);
         self.ai_model = self.ai_model.trim().chars().take(100).collect();
         self.focus_minutes = self.focus_minutes.clamp(1, MAX_FOCUS_MINUTES);
         self.break_minutes = self.break_minutes.clamp(1, MAX_BREAK_MINUTES);
@@ -288,6 +297,18 @@ mod tests {
         }
         .sanitized();
         assert_eq!(s.display_seconds, MIN_DISPLAY_SECONDS);
+        let far = Settings {
+            lyrics_offset_ms: 99_999,
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(far.lyrics_offset_ms, MAX_LYRICS_OFFSET_MS);
+        let early = Settings {
+            lyrics_offset_ms: -99_999,
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(early.lyrics_offset_ms, -MAX_LYRICS_OFFSET_MS);
         assert_eq!(s.ai_model.len(), 100);
         let s = Settings {
             display_seconds: 9999,

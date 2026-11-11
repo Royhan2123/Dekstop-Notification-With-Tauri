@@ -10,8 +10,10 @@ use crate::domain::model::settings::AiProvider;
 use crate::domain::ports::{AiClient, AiProviderFactory, SecretStore};
 
 mod claude_cli;
+pub mod jarvis;
 
 pub use claude_cli::ClaudeCli;
+pub use jarvis::JarvisClient;
 
 const OLLAMA_URL: &str = "http://127.0.0.1:11434/api/chat";
 const OLLAMA_TAGS_URL: &str = "http://127.0.0.1:11434/api/tags";
@@ -252,6 +254,7 @@ impl AiProviderFactory for DefaultAiFactory {
                 model: model.into(),
             })),
             AiProvider::ClaudeCli => Ok(Arc::new(ClaudeCli::new(model))),
+            AiProvider::Jarvis => Ok(Arc::new(JarvisClient)),
             other => {
                 let (url, default_model) = other.openai_compatible().ok_or(AiError::BadResponse)?;
                 Ok(Arc::new(OpenAiClient {
@@ -311,6 +314,7 @@ mod tests {
         ));
         assert!(tanpa_kunci.build(AiProvider::Ollama, "llama3").is_ok());
         assert!(tanpa_kunci.build(AiProvider::ClaudeCli, "").is_ok());
+        assert!(tanpa_kunci.build(AiProvider::Jarvis, "").is_ok());
         let dengan_kunci = DefaultAiFactory::new(Arc::new(Secrets(Some("k".into()))));
         assert!(dengan_kunci.build(AiProvider::ClaudeApi, "").is_ok());
     }

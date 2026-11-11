@@ -2807,3 +2807,20 @@ html[data-window="island"] #root {
     transform: scaleY(0.6);
   }
 }
+
+/* Kartu izin Jarvis: dua tombol, Setuju memakai warna aksen. */
+.approval-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.approval-allow {
+  background: var(--accent, #2fcf9c);
+  color: #04231b;
+}
+
+.approval-error {
+  color: #ff6b6b;
+  font-size: 12px;
+}

@@ -18,6 +18,15 @@ pub enum Content {
     Shelf,
     /// Jarvis sedang mendengarkan, berpikir, atau berbicara; tampil selama fase itu berlangsung.
     Voice(VoicePhase),
+    /// Izin dari Jarvis (agen ingin menjalankan sesuatu): kartu dengan tombol Setuju/Tolak.
+    Approval(Approval),
+}
+
+/// Permintaan izin dari Jarvis; `id` dipakai untuk menjawab lewat API lokal Jarvis.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Approval {
+    pub id: String,
+    pub text: String,
 }
 
 /// Fase asisten suara Jarvis (dikirim lewat IPC); "diam" berarti tidak ada fase.
@@ -107,6 +116,8 @@ pub struct Ctx {
     pub auto_dismiss_ms: u64,
     pub collapse_ms: u64,
     pub hud_ms: u64,
+    /// Kartu izin tanpa jawaban ditutup setelah ini (Jarvis juga menolak sendiri).
+    pub approval_ms: u64,
 }
 
 impl Default for Ctx {
@@ -116,6 +127,7 @@ impl Default for Ctx {
             auto_dismiss_ms: 8_000,
             collapse_ms: 5_000,
             hud_ms: 1_500,
+            approval_ms: 30_000,
         }
     }
 }

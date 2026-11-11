@@ -14,9 +14,10 @@ const PROVIDERS: AiProvider[] = [
   "groq",
   "ollama",
   "claude_cli",
+  "jarvis",
 ];
 /** Penyedia yang tidak memakai API Key. */
-const NO_KEY: AiProvider[] = ["ollama", "claude_cli"];
+const NO_KEY: AiProvider[] = ["ollama", "claude_cli", "jarvis"];
 
 type Check = { state: "idle" | "testing" | "ok" | "error"; text: string };
 

@@ -22,6 +22,7 @@ pub fn mood_for(s: &IslandState) -> Mood {
     let music = s.media.as_ref().is_some_and(|m| m.playing);
     match s.view.content() {
         Some(Content::ReviewRunning(_)) => Mood::Thinking,
+        Some(Content::Approval(_)) => Mood::Worried,
         Some(Content::Voice(VoicePhase::Thinking)) => Mood::Thinking,
         Some(Content::Voice(_)) => Mood::Listening,
         Some(Content::ReviewResult(r)) if r.findings.is_empty() => Mood::Happy,

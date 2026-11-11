@@ -36,6 +36,15 @@ struct Request {
     /// Fase asisten suara: "listening", "thinking", "speaking", atau "idle".
     #[serde(default)]
     voice: Option<String>,
+    /// Permintaan izin dari Jarvis (kartu Setuju/Tolak).
+    #[serde(default)]
+    approval: Option<ApprovalRequest>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ApprovalRequest {
+    id: String,
+    text: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -48,6 +57,8 @@ pub type Handler = Arc<dyn Fn(&str, &[PushRef]) -> Verdict + Send + Sync>;
 pub type Notifier = Arc<dyn Fn(&str) + Send + Sync>;
 /// Fase asisten suara (Jarvis) yang baru.
 pub type VoiceSink = Arc<dyn Fn(&str) + Send + Sync>;
+/// Permintaan izin Jarvis: (id, teks).
+pub type ApprovalSink = Arc<dyn Fn(&str, &str) + Send + Sync>;
 /// Saran pesan commit untuk sebuah repo, atau teks galat untuk pengguna.
 pub type Suggester = Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
 
@@ -59,6 +70,7 @@ pub fn serve(
     notifier: Notifier,
     suggester: Suggester,
     voice: VoiceSink,
+    approval: ApprovalSink,
 ) -> std::io::Result<()> {
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let endpoint = Endpoint {
@@ -72,15 +84,18 @@ pub fn serve(
     let token = endpoint.token;
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
-            let (handler, notifier, suggester, voice, token) = (
+            let (handler, notifier, suggester, voice, approval, token) = (
                 handler.clone(),
                 notifier.clone(),
                 suggester.clone(),
                 voice.clone(),
+                approval.clone(),
                 token.clone(),
             );
             thread::spawn(move || {
-                let _ = serve_one(stream, &token, &handler, &notifier, &suggester, &voice);
+                let _ = serve_one(
+                    stream, &token, &handler, &notifier, &suggester, &voice, &approval,
+                );
             });
         }
     });
@@ -94,6 +109,7 @@ fn serve_one(
     notifier: &Notifier,
     suggester: &Suggester,
     voice: &VoiceSink,
+    approval: &ApprovalSink,
 ) -> std::io::Result<()> {
     let mut line = String::new();
     BufReader::new((&stream).take(MAX_REQUEST_BYTES)).read_line(&mut line)?;
@@ -103,6 +119,10 @@ fn serve_one(
     };
     if req.token != token {
         return Ok(());
+    }
+    if let Some(a) = &req.approval {
+        approval(&a.id, &a.text);
+        return (&stream).write_all(b"{\"allow\":true,\"message\":\"\"}\n");
     }
     if let Some(phase) = &req.voice {
         voice(phase);
@@ -155,6 +175,7 @@ pub fn ask(ipc_file: &Path, repo: &str, refs: Vec<String>) -> Option<Response> {
         notify: None,
         commit_message: false,
         voice: None,
+        approval: None,
     })
 }
 
@@ -167,6 +188,7 @@ pub fn commit_message(ipc_file: &Path, repo: &str) -> Option<Response> {
         notify: None,
         commit_message: true,
         voice: None,
+        approval: None,
     })
 }
 
@@ -179,6 +201,7 @@ pub fn notify(ipc_file: &Path, text: &str) -> bool {
         notify: Some(text.into()),
         commit_message: false,
         voice: None,
+        approval: None,
     })
     .is_some()
 }
@@ -224,6 +247,7 @@ mod tests {
             Arc::new(|_| {}),
             no_suggest(),
             Arc::new(|_| {}),
+            Arc::new(|_, _| {}),
         )
         .unwrap();
         let line = "refs/heads/m aaa refs/heads/m bbb".to_string();
@@ -253,7 +277,15 @@ mod tests {
         let sink = got.clone();
         let handler: Handler = Arc::new(|_, _| Verdict::Block("bukan review".into()));
         let notifier: Notifier = Arc::new(move |t| sink.lock().unwrap().push(t.to_string()));
-        serve(&file, handler, notifier, no_suggest(), Arc::new(|_| {})).unwrap();
+        serve(
+            &file,
+            handler,
+            notifier,
+            no_suggest(),
+            Arc::new(|_| {}),
+            Arc::new(|_, _| {}),
+        )
+        .unwrap();
         assert!(notify(&file, "build selesai"));
         assert_eq!(*got.lock().unwrap(), vec!["build selesai".to_string()]);
         assert!(!notify(&temp_file(), "x"), "aplikasi mati");
@@ -277,6 +309,7 @@ mod tests {
             Arc::new(|_| {}),
             suggester,
             Arc::new(|_| {}),
+            Arc::new(|_, _| {}),
         )
         .unwrap();
         let ok = commit_message(&file, "/ada").unwrap();
@@ -307,6 +340,7 @@ mod tests {
             Arc::new(|_| {}),
             no_suggest(),
             Arc::new(|_| {}),
+            Arc::new(|_, _| {}),
         )
         .unwrap();
         let mut e: Endpoint = serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
@@ -328,7 +362,15 @@ mod tests {
         let sink = seen.clone();
         let voice: VoiceSink = Arc::new(move |p| sink.lock().unwrap().push(p.into()));
         let handler: Handler = Arc::new(|_, _| Verdict::Allow);
-        serve(&file, handler, Arc::new(|_| {}), no_suggest(), voice).unwrap();
+        serve(
+            &file,
+            handler,
+            Arc::new(|_| {}),
+            no_suggest(),
+            voice,
+            Arc::new(|_, _| {}),
+        )
+        .unwrap();
         let ok = exchange(&file, |token| Request {
             token,
             repo: String::new(),
@@ -336,9 +378,47 @@ mod tests {
             notify: None,
             commit_message: false,
             voice: Some("listening".into()),
+            approval: None,
         });
         assert!(ok.is_some_and(|r| r.allow));
         assert_eq!(*seen.lock().unwrap(), vec!["listening".to_string()]);
+        let _ = std::fs::remove_file(file);
+    }
+
+    #[test]
+    fn permintaan_izin_sampai_ke_penerima() {
+        let file = temp_file();
+        let seen = Arc::new(std::sync::Mutex::new(Vec::<(String, String)>::new()));
+        let sink = seen.clone();
+        let approval: ApprovalSink =
+            Arc::new(move |id, text| sink.lock().unwrap().push((id.into(), text.into())));
+        let handler: Handler = Arc::new(|_, _| Verdict::Allow);
+        serve(
+            &file,
+            handler,
+            Arc::new(|_| {}),
+            no_suggest(),
+            Arc::new(|_| {}),
+            approval,
+        )
+        .unwrap();
+        let ok = exchange(&file, |token| Request {
+            token,
+            repo: String::new(),
+            refs: Vec::new(),
+            notify: None,
+            commit_message: false,
+            voice: None,
+            approval: Some(ApprovalRequest {
+                id: "a1".into(),
+                text: "Jarvis ingin menjalankan: ls".into(),
+            }),
+        });
+        assert!(ok.is_some_and(|r| r.allow));
+        assert_eq!(
+            *seen.lock().unwrap(),
+            vec![("a1".to_string(), "Jarvis ingin menjalankan: ls".to_string())]
+        );
         let _ = std::fs::remove_file(file);
     }
 }

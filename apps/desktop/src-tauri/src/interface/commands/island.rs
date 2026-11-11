@@ -40,6 +40,20 @@ pub fn island_dismiss(svc: Svc) {
     svc.inner().dispatch(IslandAction::Dismissed);
 }
 
+/// Jawaban pengguna untuk kartu izin Jarvis: diteruskan ke API lokal Jarvis, lalu kartu ditutup.
+#[tauri::command]
+#[specta::specta]
+pub async fn approval_decide(svc: Svc<'_>, id: String, allow: bool) -> Result<(), String> {
+    let svc = svc.inner().clone();
+    let sent = tauri::async_runtime::spawn_blocking(move || {
+        crate::infrastructure::ai::jarvis::decide_approval(&id, allow)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    svc.dispatch(IslandAction::Dismissed);
+    sent.map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn island_set_dnd(svc: Svc, on: bool) {

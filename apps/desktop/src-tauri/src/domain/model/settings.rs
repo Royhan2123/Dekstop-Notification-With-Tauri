@@ -27,10 +27,11 @@ pub enum AiProvider {
     Groq,
     Ollama,
     ClaudeCli,
+    Jarvis,
 }
 
 impl AiProvider {
-    pub const ALL: [AiProvider; 9] = [
+    pub const ALL: [AiProvider; 10] = [
         Self::ClaudeApi,
         Self::Gemini,
         Self::DeepSeek,
@@ -40,6 +41,7 @@ impl AiProvider {
         Self::Groq,
         Self::Ollama,
         Self::ClaudeCli,
+        Self::Jarvis,
     ];
 
     /// Nama penyedia untuk ditampilkan ke pengguna.
@@ -54,6 +56,7 @@ impl AiProvider {
             Self::Groq => "Groq",
             Self::Ollama => "Ollama",
             Self::ClaudeCli => "Claude Code",
+            Self::Jarvis => "Jarvis",
         }
     }
 
@@ -61,7 +64,7 @@ impl AiProvider {
     pub fn default_model(self) -> Option<&'static str> {
         match self {
             Self::ClaudeApi => Some("claude-sonnet-5-5"),
-            Self::Ollama | Self::ClaudeCli => None,
+            Self::Ollama | Self::ClaudeCli | Self::Jarvis => None,
             other => other.openai_compatible().map(|(_, model)| model),
         }
     }
@@ -86,7 +89,7 @@ impl AiProvider {
             Self::OpenAi => "openai_api_key",
             Self::OpenRouter => "openrouter_api_key",
             Self::Groq => "groq_api_key",
-            Self::Ollama | Self::ClaudeCli => return None,
+            Self::Ollama | Self::ClaudeCli | Self::Jarvis => return None,
         })
     }
 
@@ -109,7 +112,7 @@ impl AiProvider {
                 "https://api.groq.com/openai/v1/chat/completions",
                 "llama-3.3-70b-versatile",
             ),
-            Self::ClaudeApi | Self::Ollama | Self::ClaudeCli => return None,
+            Self::ClaudeApi | Self::Ollama | Self::ClaudeCli | Self::Jarvis => return None,
         })
     }
 }

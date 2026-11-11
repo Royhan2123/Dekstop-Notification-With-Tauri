@@ -68,7 +68,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
                     View::Compact(Content::Volume(_) | Content::Brightness(_)) => {
                         settle(&mut s, ctx, &mut fx)
                     }
-                    View::Expanded(ref c) if is_soft(c) => settle(&mut s, ctx, &mut fx),
+                    View::Expanded(ref c) if is_soft(c) || matches!(c, Content::Approval(_)) => {
+                        settle(&mut s, ctx, &mut fx)
+                    }
                     _ => {}
                 }
             }
@@ -97,6 +99,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         IslandAction::ShelfShow => open_card(&mut s, Content::Shelf, ctx, &mut fx),
         IslandAction::ShelfRemove(p) => s.shelf.retain(|x| *x != p),
         IslandAction::ShelfClear => s.shelf.clear(),
+        IslandAction::ApprovalRequested(a) => offer(&mut s, Content::Approval(a), ctx, &mut fx),
         IslandAction::VoiceChanged(phase) => voice_changed(&mut s, phase, ctx, &mut fx),
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
@@ -199,9 +202,11 @@ fn enqueue(s: &mut IslandState, c: Content, ctx: &Ctx) {
 
 fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
     s.token += 1;
-    if is_soft(&c) {
+    if is_soft(&c) || matches!(c, Content::Approval(_)) {
         let ms = if matches!(c, Content::Volume(_) | Content::Brightness(_)) {
             ctx.hud_ms
+        } else if matches!(c, Content::Approval(_)) {
+            ctx.approval_ms
         } else {
             ctx.auto_dismiss_ms
         };
@@ -558,5 +563,34 @@ mod tests {
         // Setelah kartu selesai, indikator muncul bila Jarvis masih aktif.
         let (s, _) = run(s, IslandAction::Dismissed);
         assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Speaking)));
+    }
+
+    fn approval() -> IslandAction {
+        IslandAction::ApprovalRequested(crate::domain::island::state::Approval {
+            id: "a1".into(),
+            text: "Jarvis ingin menjalankan perintah: ls".into(),
+        })
+    }
+
+    #[test]
+    fn kartu_izin_menimpa_yang_lain_dan_tidak_ditahan_jangan_ganggu() {
+        let (s, _) = run(IslandState::default(), IslandAction::DoNotDisturb(true));
+        let (s, fx) = run(s, approval());
+        assert!(matches!(s.view, View::Expanded(Content::Approval(_))));
+        assert_eq!(fx.len(), 1, "kartu izin punya timer sendiri");
+        // Notifikasi biasa tidak menimpa; antre di belakang kartu izin.
+        let (s, _) = run(s, IslandAction::Notice("x".into()));
+        assert!(matches!(s.view, View::Expanded(Content::Approval(_))));
+    }
+
+    #[test]
+    fn kartu_izin_tanpa_jawaban_tertutup_oleh_timer_dan_dismiss_menutup() {
+        let (s, fx) = run(IslandState::default(), approval());
+        let Effect::StartTimer { token, ms } = fx[0];
+        assert_eq!(ms, Ctx::default().approval_ms);
+        let (after, _) = run(s.clone(), IslandAction::Timeout(token));
+        assert_eq!(after.view, View::Idle);
+        let (after, _) = run(s, IslandAction::Dismissed);
+        assert_eq!(after.view, View::Idle);
     }
 }

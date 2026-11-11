@@ -1,4 +1,4 @@
-use super::state::{AskPhase, VoicePhase, VolumeInfo};
+use super::state::{Approval, AskPhase, VoicePhase, VolumeInfo};
 use crate::domain::model::{HealthAlert, MediaInfo, ReviewId, ReviewReport};
 
 pub enum IslandAction {
@@ -36,6 +36,8 @@ pub enum IslandAction {
     ShelfClear,
     /// Jarvis berganti fase (`None` = selesai/diam).
     VoiceChanged(Option<VoicePhase>),
+    /// Jarvis minta izin; tampil sebagai kartu Setuju/Tolak (tidak ditahan Jangan Ganggu).
+    ApprovalRequested(Approval),
 }
 
 #[derive(Debug, PartialEq)]

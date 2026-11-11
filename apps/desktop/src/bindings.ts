@@ -16,6 +16,17 @@ export const commands = {
   async islandDismiss(): Promise<void> {
     await TAURI_INVOKE("island_dismiss");
   },
+  /**
+   * Jawaban pengguna untuk kartu izin Jarvis: diteruskan ke API lokal Jarvis, lalu kartu ditutup.
+   */
+  async approvalDecide(id: string, allow: boolean): Promise<Result<null, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("approval_decide", { id, allow }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
   async islandShowMedia(): Promise<void> {
     await TAURI_INVOKE("island_show_media");
   },
@@ -608,7 +619,8 @@ export type AiProvider =
   | "open_router"
   | "groq"
   | "ollama"
-  | "claude_cli";
+  | "claude_cli"
+  | "jarvis";
 /**
  * Rapat berikutnya untuk Setelan: judul, jam (HH:MM), dan tanggal (YYYY-MM-DD) menurut jam komputer.
  * Satu pertanyaan dan jawabannya di riwayat Tanya AI; `by` adalah AI yang menjawab.
@@ -626,7 +638,8 @@ export type ContentKind =
   | "volume"
   | "brightness"
   | "shelf"
-  | "voice";
+  | "voice"
+  | "approval";
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null };
 export type Decision =
   /**

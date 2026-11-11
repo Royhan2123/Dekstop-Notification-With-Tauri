@@ -42,7 +42,6 @@
   "settings.theme.url_import": "Impor dari tautan",
   "settings.theme.file_error": "Berkas tema tidak valid.",
   "settings.lyrics": "Tampilkan lirik lagu (judul dan artis dikirim ke lrclib.net)",
-  "settings.take_over_volume_keys": "Gantikan HUD volume sistem dengan pulau (macOS; menghentikan sementara HUD bawaan selama Isla berjalan)",
   "settings.calendar": "Kalender rapat (tautan iCal)",
   "settings.calendar.hint": "Tempel alamat iCal https; pulau mengingatkan lima menit sebelum rapat. Alamat rahasia kalender disimpan di komputer ini saja.",
   "settings.calendar.next": "Rapat berikutnya:",

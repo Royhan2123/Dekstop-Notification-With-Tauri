@@ -68,15 +68,6 @@ export function SettingsForm() {
           {t("settings.lyrics")}
         </label>
 
-        <label className="row">
-          <input
-            type="checkbox"
-            checked={settings.take_over_volume_keys}
-            onChange={(e) => void vm.update({ take_over_volume_keys: e.currentTarget.checked })}
-          />
-          {t("settings.take_over_volume_keys")}
-        </label>
-
         <label className="column">
           {t("settings.display_seconds")}: {settings.display_seconds}
           <input

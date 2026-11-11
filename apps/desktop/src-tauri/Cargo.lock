@@ -2088,7 +2088,6 @@ dependencies = [
  "core-graphics 0.24.0",
  "image",
  "keyring",
- "libc",
  "regex",
  "reqwest",
  "rusqlite",

@@ -10,7 +10,5 @@ pub mod network;
 pub mod power;
 pub mod power_control;
 pub mod sound;
-#[cfg(target_os = "macos")]
-pub mod system_hud;
 pub mod volume;
 pub mod wallpaper;

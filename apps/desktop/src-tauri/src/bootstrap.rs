@@ -60,8 +60,6 @@ use crate::infrastructure::system::network::SystemNet;
 use crate::infrastructure::system::power::SystemPower;
 use crate::infrastructure::system::power_control::SystemPowerControl;
 use crate::infrastructure::system::sound::SystemSound;
-#[cfg(target_os = "macos")]
-use crate::infrastructure::system::system_hud::SystemHudSuppressor;
 use crate::infrastructure::system::volume::SystemVolume;
 use crate::infrastructure::system::wallpaper::SystemWallpaper;
 use crate::infrastructure::theme::HttpThemeFetcher;
@@ -219,8 +217,6 @@ pub fn assemble(app: &App) {
     ));
 
     spawn_volume_watch(VolumeService::new(Arc::new(SystemVolume), island.clone()));
-    #[cfg(target_os = "macos")]
-    spawn_system_hud_suppressor(settings.clone());
 
     let clipboard = ClipboardService::new(Arc::new(SystemClipboard), settings.clone());
     app.manage(clipboard.clone());
@@ -340,19 +336,6 @@ fn spawn_fullscreen_watch(fullscreen: Arc<FullscreenService>) {
 
 /// Periksa volume 4 kali per detik di thread sendiri (COM diinisialisasi per thread);
 /// satu panggilan Core Audio murah, jadi tidak perlu notifikasi event OS.
-/// macOS: tahan HUD volume/kecerahan bawaan sistem selama setelan "gantikan HUD sistem" menyala
-/// (lihat `system_hud`). Mengikuti setelan secara langsung: dinyalakan atau dimatikan tanpa restart.
-#[cfg(target_os = "macos")]
-fn spawn_system_hud_suppressor(settings: Arc<SettingsService>) {
-    std::thread::spawn(move || {
-        let mut hud = SystemHudSuppressor::default();
-        loop {
-            hud.tick(settings.get().take_over_volume_keys);
-            std::thread::sleep(Duration::from_millis(500));
-        }
-    });
-}
-
 fn spawn_volume_watch(volume: Arc<VolumeService>) {
     std::thread::spawn(move || {
         loop {

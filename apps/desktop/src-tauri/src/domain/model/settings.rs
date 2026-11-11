@@ -189,10 +189,6 @@ pub struct Settings {
     /// Geser lirik (ms). Positif = lirik tampil lebih awal (untuk lirik yang terlambat), negatif =
     /// lebih lambat. Berlaku untuk semua lagu; selisih tetap muncul karena versi lagu di lrclib beda.
     pub lyrics_offset_ms: i32,
-    /// Isla menahan HUD volume/kecerahan bawaan sistem supaya hanya HUD pulau yang tampil. macOS saja
-    /// untuk saat ini: Isla membekukan proses HUD sistem selama berjalan dan memulihkannya saat berhenti.
-    /// Mati bawaan: mengubah perilaku sistem.
-    pub take_over_volume_keys: bool,
     /// Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
     pub calendar_url: String,
 }
@@ -223,7 +219,6 @@ impl Default for Settings {
             sound_enabled: true,
             lyrics_enabled: true,
             lyrics_offset_ms: 0,
-            take_over_volume_keys: false,
             calendar_url: String::new(),
         }
     }
@@ -287,6 +282,14 @@ impl Settings {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn berkas_setelan_lama_dengan_kunci_yang_sudah_dihapus_tetap_terbaca() {
+        // Fitur "ambil alih HUD sistem" sudah dihapus; berkas yang masih memuat kuncinya tak boleh rusak.
+        let old = r#"{"language":"id","take_over_volume_keys":false,"lyrics_enabled":false}"#;
+        let s: Settings = serde_json::from_str(old).unwrap();
+        assert!(!s.lyrics_enabled);
+    }
 
     #[test]
     fn sanitized_membatasi_durasi_dan_merapikan_model() {

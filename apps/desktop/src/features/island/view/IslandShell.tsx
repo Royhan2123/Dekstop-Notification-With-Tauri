@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useT } from "../../../shared/i18n";
 import { instant, springs } from "../../../shared/motion/springs";
 import { VolumeHud } from "../../hud/view/VolumeHud";
+import { VoiceBars } from "../../voice/view/VoiceBars";
 import { AskCard } from "../../ask/view/AskCard";
 import { LumiCanvas } from "../../mascot/view/LumiCanvas";
 import { MediaCompact } from "../../media/view/MediaCompact";
@@ -149,6 +150,8 @@ export function IslandShell() {
               )
             ) : !content ? null : content.kind === "brightness" ? (
               <VolumeHud level={Number(content.text) || 0} muted={false} kind="brightness" />
+            ) : content.kind === "voice" ? (
+              <VoiceBars phase={content.text} />
             ) : content.kind === "volume" ? (
               <VolumeHud level={Number(content.text) || 0} muted={content.detail === "muted"} />
             ) : content.kind === "shelf" && mode === "expanded" ? (

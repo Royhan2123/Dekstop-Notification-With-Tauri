@@ -33,6 +33,9 @@ struct Request {
     /// Bila benar, minta saran pesan commit untuk diff staged di `repo`.
     #[serde(default)]
     commit_message: bool,
+    /// Fase asisten suara: "listening", "thinking", "speaking", atau "idle".
+    #[serde(default)]
+    voice: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -43,6 +46,8 @@ pub struct Response {
 
 pub type Handler = Arc<dyn Fn(&str, &[PushRef]) -> Verdict + Send + Sync>;
 pub type Notifier = Arc<dyn Fn(&str) + Send + Sync>;
+/// Fase asisten suara (Jarvis) yang baru.
+pub type VoiceSink = Arc<dyn Fn(&str) + Send + Sync>;
 /// Saran pesan commit untuk sebuah repo, atau teks galat untuk pengguna.
 pub type Suggester = Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
 
@@ -53,6 +58,7 @@ pub fn serve(
     handler: Handler,
     notifier: Notifier,
     suggester: Suggester,
+    voice: VoiceSink,
 ) -> std::io::Result<()> {
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let endpoint = Endpoint {
@@ -66,14 +72,15 @@ pub fn serve(
     let token = endpoint.token;
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
-            let (handler, notifier, suggester, token) = (
+            let (handler, notifier, suggester, voice, token) = (
                 handler.clone(),
                 notifier.clone(),
                 suggester.clone(),
+                voice.clone(),
                 token.clone(),
             );
             thread::spawn(move || {
-                let _ = serve_one(stream, &token, &handler, &notifier, &suggester);
+                let _ = serve_one(stream, &token, &handler, &notifier, &suggester, &voice);
             });
         }
     });
@@ -86,6 +93,7 @@ fn serve_one(
     handler: &Handler,
     notifier: &Notifier,
     suggester: &Suggester,
+    voice: &VoiceSink,
 ) -> std::io::Result<()> {
     let mut line = String::new();
     BufReader::new((&stream).take(MAX_REQUEST_BYTES)).read_line(&mut line)?;
@@ -95,6 +103,10 @@ fn serve_one(
     };
     if req.token != token {
         return Ok(());
+    }
+    if let Some(phase) = &req.voice {
+        voice(phase);
+        return (&stream).write_all(b"{\"allow\":true,\"message\":\"\"}\n");
     }
     if let Some(text) = &req.notify {
         notifier(text);
@@ -142,6 +154,7 @@ pub fn ask(ipc_file: &Path, repo: &str, refs: Vec<String>) -> Option<Response> {
         refs,
         notify: None,
         commit_message: false,
+        voice: None,
     })
 }
 
@@ -153,6 +166,7 @@ pub fn commit_message(ipc_file: &Path, repo: &str) -> Option<Response> {
         refs: Vec::new(),
         notify: None,
         commit_message: true,
+        voice: None,
     })
 }
 
@@ -164,6 +178,7 @@ pub fn notify(ipc_file: &Path, text: &str) -> bool {
         refs: Vec::new(),
         notify: Some(text.into()),
         commit_message: false,
+        voice: None,
     })
     .is_some()
 }
@@ -203,7 +218,14 @@ mod tests {
                 Verdict::Allow
             }
         });
-        serve(&file, handler, Arc::new(|_| {}), no_suggest()).unwrap();
+        serve(
+            &file,
+            handler,
+            Arc::new(|_| {}),
+            no_suggest(),
+            Arc::new(|_| {}),
+        )
+        .unwrap();
         let line = "refs/heads/m aaa refs/heads/m bbb".to_string();
         let ok = ask(&file, "/ok", vec![line.clone()]).unwrap();
         assert_eq!(
@@ -231,7 +253,7 @@ mod tests {
         let sink = got.clone();
         let handler: Handler = Arc::new(|_, _| Verdict::Block("bukan review".into()));
         let notifier: Notifier = Arc::new(move |t| sink.lock().unwrap().push(t.to_string()));
-        serve(&file, handler, notifier, no_suggest()).unwrap();
+        serve(&file, handler, notifier, no_suggest(), Arc::new(|_| {})).unwrap();
         assert!(notify(&file, "build selesai"));
         assert_eq!(*got.lock().unwrap(), vec!["build selesai".to_string()]);
         assert!(!notify(&temp_file(), "x"), "aplikasi mati");
@@ -249,7 +271,14 @@ mod tests {
                 Err("tidak ada perubahan staged".into())
             }
         });
-        serve(&file, handler, Arc::new(|_| {}), suggester).unwrap();
+        serve(
+            &file,
+            handler,
+            Arc::new(|_| {}),
+            suggester,
+            Arc::new(|_| {}),
+        )
+        .unwrap();
         let ok = commit_message(&file, "/ada").unwrap();
         assert_eq!(
             ok,
@@ -272,7 +301,14 @@ mod tests {
     fn token_salah_dan_aplikasi_mati_tidak_menghasilkan_jawaban() {
         let file = temp_file();
         let handler: Handler = Arc::new(|_, _| Verdict::Block("harusnya tak dipanggil".into()));
-        serve(&file, handler, Arc::new(|_| {}), no_suggest()).unwrap();
+        serve(
+            &file,
+            handler,
+            Arc::new(|_| {}),
+            no_suggest(),
+            Arc::new(|_| {}),
+        )
+        .unwrap();
         let mut e: Endpoint = serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
         e.token = "salah".into();
         std::fs::write(&file, serde_json::to_vec(&e).unwrap()).unwrap();
@@ -283,5 +319,26 @@ mod tests {
             "tanpa berkas endpoint"
         );
         let _ = std::fs::remove_file(&file);
+    }
+
+    #[test]
+    fn fase_suara_sampai_ke_penerima() {
+        let file = temp_file();
+        let seen = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+        let sink = seen.clone();
+        let voice: VoiceSink = Arc::new(move |p| sink.lock().unwrap().push(p.into()));
+        let handler: Handler = Arc::new(|_, _| Verdict::Allow);
+        serve(&file, handler, Arc::new(|_| {}), no_suggest(), voice).unwrap();
+        let ok = exchange(&file, |token| Request {
+            token,
+            repo: String::new(),
+            refs: Vec::new(),
+            notify: None,
+            commit_message: false,
+            voice: Some("listening".into()),
+        });
+        assert!(ok.is_some_and(|r| r.allow));
+        assert_eq!(*seen.lock().unwrap(), vec!["listening".to_string()]);
+        let _ = std::fs::remove_file(file);
     }
 }

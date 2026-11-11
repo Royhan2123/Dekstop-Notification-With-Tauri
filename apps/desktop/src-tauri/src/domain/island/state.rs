@@ -16,6 +16,35 @@ pub enum Content {
     Brightness(u8),
     /// Rak file: daftar berkas di `IslandState::shelf`.
     Shelf,
+    /// Jarvis sedang mendengarkan, berpikir, atau berbicara; tampil selama fase itu berlangsung.
+    Voice(VoicePhase),
+}
+
+/// Fase asisten suara Jarvis (dikirim lewat IPC); "diam" berarti tidak ada fase.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VoicePhase {
+    Listening,
+    Thinking,
+    Speaking,
+}
+
+impl VoicePhase {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "listening" => Some(Self::Listening),
+            "thinking" => Some(Self::Thinking),
+            "speaking" => Some(Self::Speaking),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Listening => "listening",
+            Self::Thinking => "thinking",
+            Self::Speaking => "speaking",
+        }
+    }
 }
 
 /// Batas isi rak; yang paling lama dibuang saat penuh.
@@ -67,6 +96,8 @@ pub struct IslandState {
     pub extension: bool,
     /// Path berkas di rak (terlama dulu); tetap ada walau pulau menampilkan hal lain.
     pub shelf: Vec<String>,
+    /// Fase Jarvis sekarang; ditampilkan hanya bila pulau sedang kosong atau menampilkan media/HUD.
+    pub voice: Option<VoicePhase>,
     pub token: u64,
 }
 

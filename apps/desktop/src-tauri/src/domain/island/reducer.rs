@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
 
 use super::action::{Effect, IslandAction};
-use super::state::{AskPhase, Content, Ctx, IslandState, SHELF_MAX, View};
+use super::state::{AskPhase, Content, Ctx, IslandState, SHELF_MAX, View, VoicePhase};
 
 pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandState, Vec<Effect>) {
     let mut s = state.clone();
@@ -97,6 +97,7 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         IslandAction::ShelfShow => open_card(&mut s, Content::Shelf, ctx, &mut fx),
         IslandAction::ShelfRemove(p) => s.shelf.retain(|x| *x != p),
         IslandAction::ShelfClear => s.shelf.clear(),
+        IslandAction::VoiceChanged(phase) => voice_changed(&mut s, phase, ctx, &mut fx),
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
             if b {
@@ -107,6 +108,24 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
     }
     (s, fx)
+}
+
+/// Jarvis berganti fase. Indikator hanya menumpang di pulau kosong atau media/HUD ringkas (seperti
+/// HUD), tetapi fasenya disimpan supaya muncul begitu kartu yang lebih penting selesai.
+fn voice_changed(s: &mut IslandState, phase: Option<VoicePhase>, ctx: &Ctx, fx: &mut Vec<Effect>) {
+    s.voice = phase;
+    let free = matches!(
+        s.view,
+        View::Idle
+            | View::Compact(
+                Content::Media | Content::Volume(_) | Content::Brightness(_) | Content::Voice(_)
+            )
+    );
+    match phase {
+        Some(p) if free => show(s, Content::Voice(p), ctx, fx),
+        None if matches!(s.view, View::Compact(Content::Voice(_))) => settle(s, ctx, fx),
+        _ => {}
+    }
 }
 
 /// Kartu yang dibuka sengaja lewat dok atau pintasan (Tanya AI, Rak): menggantikan kartu buatan pengguna
@@ -192,7 +211,8 @@ fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
         Content::Media
         | Content::ReviewRunning(_)
         | Content::Volume(_)
-        | Content::Brightness(_) => View::Compact(c),
+        | Content::Brightness(_)
+        | Content::Voice(_) => View::Compact(c),
         _ => View::Expanded(c),
     };
 }
@@ -201,7 +221,9 @@ fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
 fn settle(s: &mut IslandState, ctx: &Ctx, fx: &mut Vec<Effect>) {
     if s.queue.is_empty() {
         s.token += 1;
-        s.view = if s.media.is_some() {
+        s.view = if let Some(p) = s.voice {
+            View::Compact(Content::Voice(p))
+        } else if s.media.is_some() {
             View::Compact(Content::Media)
         } else {
             View::Idle
@@ -505,5 +527,36 @@ mod tests {
         );
         assert!(s.fullscreen);
         assert_eq!(s.view, View::Idle);
+    }
+
+    #[test]
+    fn suara_menumpang_di_pulau_kosong_dan_hilang_saat_selesai() {
+        let (s, _) = run(
+            IslandState::default(),
+            IslandAction::VoiceChanged(Some(VoicePhase::Listening)),
+        );
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Listening)));
+        let (s, fx) = run(s, IslandAction::VoiceChanged(Some(VoicePhase::Speaking)));
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Speaking)));
+        assert!(fx.is_empty(), "fase suara tidak punya timer");
+        let (s, _) = run(s, IslandAction::VoiceChanged(None));
+        assert_eq!(s.view, View::Idle);
+    }
+
+    #[test]
+    fn suara_kembali_ke_media_dan_tidak_menimpa_kartu_penting() {
+        let (s, _) = run(IslandState::default(), IslandAction::MediaChanged(media()));
+        let (s, _) = run(s, IslandAction::VoiceChanged(Some(VoicePhase::Thinking)));
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Thinking)));
+        let (s, _) = run(s, IslandAction::VoiceChanged(None));
+        assert_eq!(s.view, View::Compact(Content::Media));
+
+        // Kartu penting sedang tampil: fase disimpan, tampilan tidak berubah.
+        let (s, _) = run(s, health());
+        let (s, _) = run(s, IslandAction::VoiceChanged(Some(VoicePhase::Speaking)));
+        assert!(matches!(s.view, View::Expanded(Content::HealthAlert(_))));
+        // Setelah kartu selesai, indikator muncul bila Jarvis masih aktif.
+        let (s, _) = run(s, IslandAction::Dismissed);
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Speaking)));
     }
 }

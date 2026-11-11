@@ -30,6 +30,7 @@ use crate::application::theme_service::ThemeService;
 use crate::application::volume_service::VolumeService;
 use crate::domain::bridge::clean_query;
 use crate::domain::island::action::IslandAction;
+use crate::domain::island::state::VoicePhase;
 use crate::domain::model::review::PushRef;
 use crate::domain::ports::{ChatStore, SecretStore};
 use crate::infrastructure::ai::DefaultAiFactory;
@@ -182,7 +183,11 @@ pub fn assemble(app: &App) {
             notice_island.dispatch(IslandAction::Notice(text));
         }
     });
-    if let Err(e) = ipc::serve(&ipc_file, on_push, on_notify, on_suggest) {
+    let voice_island = island.clone();
+    let on_voice: ipc::VoiceSink = Arc::new(move |phase| {
+        voice_island.dispatch(IslandAction::VoiceChanged(VoicePhase::parse(phase)));
+    });
+    if let Err(e) = ipc::serve(&ipc_file, on_push, on_notify, on_suggest, on_voice) {
         tracing::error!("gagal membuka jalur IPC hook: {e}");
     }
 

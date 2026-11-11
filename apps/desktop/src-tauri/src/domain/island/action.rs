@@ -1,4 +1,4 @@
-use super::state::{AskPhase, VolumeInfo};
+use super::state::{AskPhase, VoicePhase, VolumeInfo};
 use crate::domain::model::{HealthAlert, MediaInfo, ReviewId, ReviewReport};
 
 pub enum IslandAction {
@@ -34,6 +34,8 @@ pub enum IslandAction {
     ShelfShow,
     ShelfRemove(String),
     ShelfClear,
+    /// Jarvis berganti fase (`None` = selesai/diam).
+    VoiceChanged(Option<VoicePhase>),
 }
 
 #[derive(Debug, PartialEq)]

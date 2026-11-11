@@ -625,7 +625,8 @@ export type ContentKind =
   | "ask"
   | "volume"
   | "brightness"
-  | "shelf";
+  | "shelf"
+  | "voice";
 export type DayUsageDto = { date: string; active_min: number; avg_brightness: number | null };
 export type Decision =
   /**

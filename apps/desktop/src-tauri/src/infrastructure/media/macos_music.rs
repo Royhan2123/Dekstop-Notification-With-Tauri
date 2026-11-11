@@ -19,8 +19,9 @@ use super::{artwork, position_now};
 const SEP: char = '\u{1f}';
 const POLL_ACTIVE: Duration = Duration::from_millis(1000);
 const POLL_IDLE: Duration = Duration::from_millis(3000);
-/// Selisih posisi (ms) yang dianggap "loncat" (seek) dan perlu dilaporkan ulang.
-const SEEK_TOLERANCE_MS: i64 = 1500;
+/// Selisih posisi (ms) yang dianggap "loncat" (seek) dan perlu dilaporkan ulang. Kecil sengaja:
+/// lirik berganti tiap beberapa detik, jadi selisih di atas ±0,4 dtk sudah terasa.
+const SEEK_TOLERANCE_MS: i64 = 400;
 const APPS: [&str; 2] = ["Music", "Spotify"];
 
 /// Satu skrip per pemutar, dijalankan HANYA bila pemutarnya berjalan: menyebut aplikasi yang tidak
@@ -98,6 +99,17 @@ pub(crate) fn parse(output: &str) -> Vec<Raw> {
         })
         .filter(|r| !r.title.is_empty())
         .collect()
+}
+
+/// Posisi disusulkan ke saat laporan sampai (`age_ms` sejak dibaca), supaya lirik tidak tertinggal.
+pub(crate) fn aged(raw: &Raw, age_ms: i64) -> u32 {
+    position_now(
+        raw.position_ms as i64,
+        age_ms,
+        1.0,
+        raw.playing,
+        raw.duration_ms as i64,
+    )
 }
 
 /// Ada perubahan yang perlu dilaporkan? `elapsed_ms` = waktu sejak laporan terakhir.
@@ -204,6 +216,7 @@ fn poll_loop(on_change: Box<dyn Fn(Vec<MediaInfo>) + Send + Sync>) {
     loop {
         let running: Vec<&str> = APPS.iter().copied().filter(|a| is_running(a)).collect();
         let mut outputs = String::new();
+        let queried_at = Instant::now();
         for app in &running {
             match osascript(query(app)) {
                 Ok(out) => outputs.push_str(&out),
@@ -216,9 +229,12 @@ fn poll_loop(on_change: Box<dyn Fn(Vec<MediaInfo>) + Send + Sync>) {
                 Err(_) => {}
             }
         }
+        // Posisi dibaca di tengah-tengah panggilan osascript (±100-500 ms): umurnya separuh lamanya.
+        let age_ms = (queried_at.elapsed().as_millis() / 2) as i64;
         let sessions: Vec<MediaInfo> = parse(&outputs)
             .into_iter()
             .map(|raw| {
+                let position_ms = aged(&raw, age_ms);
                 let key = format!("{}|{}|{}", raw.app, raw.title, raw.artist);
                 let cover = art.entry(key).or_insert_with(|| fetch_artwork(&raw));
                 MediaInfo {
@@ -226,7 +242,7 @@ fn poll_loop(on_change: Box<dyn Fn(Vec<MediaInfo>) + Send + Sync>) {
                     title: raw.title,
                     artist: raw.artist,
                     playing: raw.playing,
-                    position_ms: raw.position_ms,
+                    position_ms,
                     duration_ms: raw.duration_ms,
                     rate: 1.0,
                     thumbnail: cover.as_ref().map(|c| c.data_url.clone()),
@@ -331,6 +347,31 @@ mod tests {
         // jumlah sesi berbeda
         assert!(changed(&[], &base, 0));
         assert!(!changed(&[], &[], 0));
+    }
+
+    #[test]
+    fn posisi_disusulkan_hanya_saat_diputar_dan_tidak_melewati_durasi() {
+        let raw = |playing, pos, dur| Raw {
+            app: "Music".into(),
+            playing,
+            title: "t".into(),
+            artist: "a".into(),
+            duration_ms: dur,
+            position_ms: pos,
+            art_url: String::new(),
+        };
+        assert_eq!(aged(&raw(true, 10_000, 200_000), 250), 10_250);
+        assert_eq!(aged(&raw(false, 10_000, 200_000), 250), 10_000);
+        assert_eq!(aged(&raw(true, 199_900, 200_000), 250), 200_000);
+    }
+
+    #[test]
+    fn selisih_posisi_di_atas_ambang_kecil_dilaporkan_ulang() {
+        let base = vec![info("T", true, 10_000)];
+        // 3 dtk berlalu, posisi nyata 13,6 dtk (buffering/loncat kecil): lirik bisa tertinggal 0,6 dtk
+        assert!(changed(&base, &[info("T", true, 13_600)], 3_000));
+        // selisih 0,2 dtk masih dianggap lancar
+        assert!(!changed(&base, &[info("T", true, 13_200)], 3_000));
     }
 
     #[test]

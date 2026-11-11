@@ -16,6 +16,8 @@ export interface MediaState {
   durationMs: number;
   rate: number;
   artwork: string;
+  /** Kapan posisi diukur (ms epoch). Dipakai menyusulkan posisi ke saat pesan dikirim. */
+  capturedAt: number;
 }
 
 const MAX_SESSIONS = 8;
@@ -42,7 +44,12 @@ const num = (v: unknown, max: number): number =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(v, 0), max) : 0;
 
 /** Pesan dari content script dianggap tidak dipercaya: teks dirapikan, angka dibatasi, judul wajib. */
-export function sanitizeState(raw: unknown): MediaState | null {
+/** Waktu ukur yang masuk akal (maks 30 dtk lalu, tidak di masa depan); selain itu dianggap sekarang. */
+function capturedAt(v: unknown, now: number): number {
+  return typeof v === "number" && Number.isFinite(v) && v <= now && now - v <= 30_000 ? v : now;
+}
+
+export function sanitizeState(raw: unknown, now: number = Date.now()): MediaState | null {
   if (typeof raw !== "object" || raw === null) return null;
   const s = raw as Record<string, unknown>;
   const title = text(s.title);
@@ -56,17 +63,29 @@ export function sanitizeState(raw: unknown): MediaState | null {
     durationMs: num(s.durationMs, 86_400_000),
     rate: rate ?? 1,
     artwork: typeof s.artwork === "string" ? s.artwork.trim().slice(0, 500) : "",
+    capturedAt: capturedAt(s.capturedAt, now),
   };
 }
 
+/**
+ * Posisi saat pesan dikirim: posisi yang diukur ditambah waktu yang sudah berjalan sejak itu. Tanpa
+ * ini, tiap jeda perjalanan pesan (debounce, WebSocket) membuat lirik tertinggal.
+ */
+export function positionNow(s: MediaState, now: number): number {
+  const since = Number.isFinite(s.capturedAt) ? Math.max(0, now - s.capturedAt) : 0;
+  const elapsed = s.playing ? since * s.rate : 0;
+  const pos = s.positionMs + elapsed;
+  return Math.round(s.durationMs > 0 ? Math.min(pos, s.durationMs) : pos);
+}
+
 /** Pesan `media` ke aplikasi: semua tab yang sedang punya media (maks 8). */
-export function mediaMessage(states: ReadonlyMap<number, MediaState>) {
+export function mediaMessage(states: ReadonlyMap<number, MediaState>, now: number = Date.now()) {
   const sessions = [...states].slice(0, MAX_SESSIONS).map(([tabId, s]) => ({
     id: sessionId(tabId),
     title: s.title,
     artist: s.artist,
     playing: s.playing,
-    position_ms: s.positionMs,
+    position_ms: positionNow(s, now),
     duration_ms: s.durationMs,
     rate: s.rate,
     artwork: s.artwork,

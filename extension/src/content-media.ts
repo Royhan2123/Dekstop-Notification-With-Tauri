@@ -10,6 +10,7 @@ interface State {
   durationMs: number;
   rate: number;
   artwork: string;
+  capturedAt: number;
 }
 
 /** Tombol "berikutnya/sebelumnya" milik masing-masing situs; tanpa ini kontrol itu diabaikan. */
@@ -28,8 +29,9 @@ const BUTTONS: Record<string, { next: string; previous: string }> = {
 };
 
 const TICK_MS = 1000;
-const KEEPALIVE_MS = 10_000;
-const SEEK_TOLERANCE_MS = 1500;
+// Lirik berganti tiap beberapa detik; selisih posisi di atas ±0,4 dtk sudah terasa, jadi dilaporkan ulang.
+const KEEPALIVE_MS = 5000;
+const SEEK_TOLERANCE_MS = 400;
 
 function mediaElement(): HTMLMediaElement | null {
   const all = Array.from(document.querySelectorAll<HTMLMediaElement>("video, audio")).filter(
@@ -60,6 +62,7 @@ function read(): State | null {
     durationMs: Math.round(el.duration * 1000),
     rate: el.playbackRate,
     artwork: biggest(meta?.artwork ?? []),
+    capturedAt: Date.now(),
   };
 }
 

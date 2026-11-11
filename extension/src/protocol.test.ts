@@ -6,6 +6,7 @@ import {
   parseCommand,
   pickArtwork,
   pickTab,
+  positionNow,
   sanitizeState,
   tabOfSession,
 } from "./protocol.js";
@@ -82,9 +83,10 @@ describe("media dari browser", () => {
         durationMs: 9,
         rate: 1,
         artwork: "",
+        capturedAt: 1000,
       });
     }
-    const msg = mediaMessage(states);
+    const msg = mediaMessage(states, 1000);
     expect(msg.type).toBe("media");
     expect(msg.sessions).toHaveLength(8);
     expect(msg.sessions[0]).toMatchObject({
@@ -94,6 +96,38 @@ describe("media dari browser", () => {
       position_ms: 5,
     });
     expect(tabOfSession(msg.sessions[0].id)).toBe(1);
+  });
+
+  it("posisi disusulkan ke saat pesan dikirim agar lirik tidak tertinggal", () => {
+    const base = {
+      title: "t",
+      artist: "a",
+      positionMs: 10_000,
+      durationMs: 200_000,
+      rate: 1,
+      artwork: "",
+      capturedAt: 5000,
+    };
+    // diputar: 400 ms berlalu sejak diukur -> posisi maju 400 ms
+    expect(positionNow({ ...base, playing: true }, 5400)).toBe(10_400);
+    // kecepatan 1,5x
+    expect(positionNow({ ...base, playing: true, rate: 1.5 }, 5400)).toBe(10_600);
+    // dijeda: posisi tetap
+    expect(positionNow({ ...base, playing: false }, 9000)).toBe(10_000);
+    // tidak melewati durasi, dan jam mundur tidak memundurkan posisi
+    expect(positionNow({ ...base, playing: true, positionMs: 199_900 }, 9000)).toBe(200_000);
+    expect(positionNow({ ...base, playing: true }, 1000)).toBe(10_000);
+    // pesan media memakai posisi susulan
+    const msg = mediaMessage(new Map([[3, { ...base, playing: true }]]), 5300);
+    expect(msg.sessions[0].position_ms).toBe(10_300);
+  });
+
+  it("waktu ukur yang janggal dianggap sekarang", () => {
+    const ok = { title: "t", positionMs: 1 };
+    expect(sanitizeState({ ...ok, capturedAt: 9_000 }, 10_000)?.capturedAt).toBe(9_000);
+    expect(sanitizeState({ ...ok, capturedAt: 99_000 }, 10_000)?.capturedAt).toBe(10_000); // masa depan
+    expect(sanitizeState({ ...ok, capturedAt: -1e12 }, 10_000)?.capturedAt).toBe(10_000); // terlalu lama
+    expect(sanitizeState({ ...ok, capturedAt: "x" }, 10_000)?.capturedAt).toBe(10_000);
   });
 
   it("sampul terbesar dipilih", () => {

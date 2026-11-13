@@ -27,10 +27,11 @@ pub enum AiProvider {
     Groq,
     Ollama,
     ClaudeCli,
+    Jarvis,
 }
 
 impl AiProvider {
-    pub const ALL: [AiProvider; 9] = [
+    pub const ALL: [AiProvider; 10] = [
         Self::ClaudeApi,
         Self::Gemini,
         Self::DeepSeek,
@@ -40,6 +41,7 @@ impl AiProvider {
         Self::Groq,
         Self::Ollama,
         Self::ClaudeCli,
+        Self::Jarvis,
     ];
 
     /// Nama penyedia untuk ditampilkan ke pengguna.
@@ -54,6 +56,7 @@ impl AiProvider {
             Self::Groq => "Groq",
             Self::Ollama => "Ollama",
             Self::ClaudeCli => "Claude Code",
+            Self::Jarvis => "Jarvis",
         }
     }
 
@@ -61,7 +64,7 @@ impl AiProvider {
     pub fn default_model(self) -> Option<&'static str> {
         match self {
             Self::ClaudeApi => Some("claude-sonnet-5-5"),
-            Self::Ollama | Self::ClaudeCli => None,
+            Self::Ollama | Self::ClaudeCli | Self::Jarvis => None,
             other => other.openai_compatible().map(|(_, model)| model),
         }
     }
@@ -86,7 +89,7 @@ impl AiProvider {
             Self::OpenAi => "openai_api_key",
             Self::OpenRouter => "openrouter_api_key",
             Self::Groq => "groq_api_key",
-            Self::Ollama | Self::ClaudeCli => return None,
+            Self::Ollama | Self::ClaudeCli | Self::Jarvis => return None,
         })
     }
 
@@ -109,7 +112,7 @@ impl AiProvider {
                 "https://api.groq.com/openai/v1/chat/completions",
                 "llama-3.3-70b-versatile",
             ),
-            Self::ClaudeApi | Self::Ollama | Self::ClaudeCli => return None,
+            Self::ClaudeApi | Self::Ollama | Self::ClaudeCli | Self::Jarvis => return None,
         })
     }
 }
@@ -186,6 +189,9 @@ pub struct Settings {
     pub sound_enabled: bool,
     /// Cari lirik berwaktu lagu yang diputar (judul dan artis dikirim ke LRCLIB).
     pub lyrics_enabled: bool,
+    /// Geser lirik (ms). Positif = lirik tampil lebih awal (untuk lirik yang terlambat), negatif =
+    /// lebih lambat. Berlaku untuk semua lagu; selisih tetap muncul karena versi lagu di lrclib beda.
+    pub lyrics_offset_ms: i32,
     /// Alamat kalender iCal (https) untuk pengingat rapat; kosong = mati.
     pub calendar_url: String,
 }
@@ -215,11 +221,14 @@ impl Default for Settings {
             hide_on_fullscreen: true,
             sound_enabled: true,
             lyrics_enabled: true,
+            lyrics_offset_ms: 0,
             calendar_url: String::new(),
         }
     }
 }
 
+/// Batas geser lirik (ms) ke kedua arah.
+pub const MAX_LYRICS_OFFSET_MS: i32 = 5000;
 pub const MAX_BACKGROUND_BYTES: usize = 400_000;
 const BACKGROUND_MODES: [&str; 4] = ["static", "album", "time", "wallpaper"];
 
@@ -246,6 +255,9 @@ impl Settings {
         self.display_seconds = self
             .display_seconds
             .clamp(MIN_DISPLAY_SECONDS, MAX_DISPLAY_SECONDS);
+        self.lyrics_offset_ms = self
+            .lyrics_offset_ms
+            .clamp(-MAX_LYRICS_OFFSET_MS, MAX_LYRICS_OFFSET_MS);
         self.ai_model = self.ai_model.trim().chars().take(100).collect();
         self.focus_minutes = self.focus_minutes.clamp(1, MAX_FOCUS_MINUTES);
         self.break_minutes = self.break_minutes.clamp(1, MAX_BREAK_MINUTES);
@@ -275,6 +287,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn berkas_setelan_lama_dengan_kunci_yang_sudah_dihapus_tetap_terbaca() {
+        // Fitur "ambil alih HUD sistem" sudah dihapus; berkas yang masih memuat kuncinya tak boleh rusak.
+        let old = r#"{"language":"id","take_over_volume_keys":false,"lyrics_enabled":false}"#;
+        let s: Settings = serde_json::from_str(old).unwrap();
+        assert!(!s.lyrics_enabled);
+    }
+
+    #[test]
     fn sanitized_membatasi_durasi_dan_merapikan_model() {
         let s = Settings {
             display_seconds: 0,
@@ -283,6 +303,18 @@ mod tests {
         }
         .sanitized();
         assert_eq!(s.display_seconds, MIN_DISPLAY_SECONDS);
+        let far = Settings {
+            lyrics_offset_ms: 99_999,
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(far.lyrics_offset_ms, MAX_LYRICS_OFFSET_MS);
+        let early = Settings {
+            lyrics_offset_ms: -99_999,
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(early.lyrics_offset_ms, -MAX_LYRICS_OFFSET_MS);
         assert_eq!(s.ai_model.len(), 100);
         let s = Settings {
             display_seconds: 9999,

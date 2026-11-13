@@ -1,3 +1,5 @@
+// Hanya Windows yang punya registri aplikasi; di OS lain pembantunya tidak terpakai.
+#![cfg_attr(not(windows), allow(dead_code))]
 use crate::domain::ports::InstalledApps;
 use crate::domain::startup::InstalledApp;
 
@@ -137,13 +139,61 @@ fn collect() -> Vec<InstalledApp> {
     apps
 }
 
+/// Aplikasi macOS: bundel `*.app` di folder aplikasi (satu tingkat). Nama = nama bundel tanpa ".app".
+#[cfg(any(target_os = "macos", test))]
+fn scan_app_dirs(dirs: &[std::path::PathBuf]) -> Vec<InstalledApp> {
+    let mut apps = Vec::new();
+    for dir in dirs {
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            continue;
+        };
+        for entry in rd.flatten() {
+            let path = entry.path();
+            if path
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("app"))
+            {
+                let name = path.file_stem().map(|s| s.to_string_lossy().into_owned());
+                if let Some(name) = name {
+                    apps.push(InstalledApp {
+                        name,
+                        path: path.to_string_lossy().into_owned(),
+                    });
+                }
+            }
+        }
+    }
+    apps
+}
+
+#[cfg(target_os = "macos")]
+fn collect() -> Vec<InstalledApp> {
+    let mut dirs: Vec<std::path::PathBuf> = [
+        "/Applications",
+        "/Applications/Utilities",
+        "/System/Applications",
+        "/System/Applications/Utilities",
+    ]
+    .map(Into::into)
+    .to_vec();
+    if let Some(home) = std::env::var_os("HOME") {
+        dirs.push(std::path::PathBuf::from(home).join("Applications"));
+    }
+    scan_app_dirs(&dirs)
+}
+
 impl InstalledApps for RegistryApps {
     fn list(&self) -> Vec<InstalledApp> {
         #[cfg(windows)]
         {
             tidy(collect(), |p| std::path::Path::new(p).is_file())
         }
-        #[cfg(not(windows))]
+        #[cfg(target_os = "macos")]
+        {
+            // `.app` adalah folder, bukan berkas.
+            tidy(collect(), |p| std::path::Path::new(p).exists())
+        }
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             Vec::new()
         }
@@ -153,6 +203,27 @@ impl InstalledApps for RegistryApps {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bundel_app_dipindai_dan_berkas_lain_diabaikan() {
+        let dir = std::env::temp_dir().join(format!("isla-apps-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("Safari.app")).unwrap();
+        std::fs::create_dir_all(dir.join("Install macOS Tahoe.app")).unwrap();
+        std::fs::create_dir_all(dir.join("Catatan")).unwrap();
+        std::fs::write(dir.join("readme.txt"), "x").unwrap();
+        let apps = scan_app_dirs(&[dir.clone(), dir.join("tidak-ada")]);
+        let names: Vec<&str> = apps.iter().map(|a| a.name.as_str()).collect();
+        assert!(names.contains(&"Safari") && names.contains(&"Install macOS Tahoe"));
+        assert_eq!(apps.len(), 2);
+        // pemasang macOS tersaring oleh tidy()
+        let tidy_names: Vec<String> = tidy(apps, |p| std::path::Path::new(p).exists())
+            .into_iter()
+            .map(|a| a.name)
+            .collect();
+        assert_eq!(tidy_names, vec!["Safari".to_string()]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn path_exe_diambil_dari_nilai_ikon() {

@@ -12,8 +12,12 @@ use serde_json::{Value, json};
 use tungstenite::handshake::server::{ErrorResponse, Request, Response};
 use tungstenite::{Message, WebSocket};
 
-use crate::domain::bridge::{BridgeCommand, is_extension_origin};
+use crate::domain::bridge::{
+    BridgeCommand, BrowserMedia, MAX_BROWSER_SESSIONS, is_extension_origin, sanitize_media,
+    tab_of_session,
+};
 use crate::domain::error::BridgeError;
+use crate::domain::model::MediaCommand;
 use crate::domain::ports::{BridgeHandler, BrowserBridge};
 
 /// Ekstensi mencoba port-port ini berurutan; satu yang bebas dipakai aplikasi.
@@ -50,9 +54,43 @@ fn is_idle(e: &tungstenite::Error) -> bool {
 fn command_json(cmd: &BridgeCommand) -> String {
     match cmd {
         BridgeCommand::SetRate(rate) => json!({ "type": "set_rate", "rate": rate }),
-        BridgeCommand::Search(query) => json!({ "type": "search", "query": query }),
+        BridgeCommand::MediaControl { tab_id, action } => json!({
+            "type": "media_control",
+            "id": crate::domain::bridge::session_id(*tab_id),
+            "action": match action {
+                MediaCommand::Previous => "previous",
+                MediaCommand::TogglePlay => "toggle",
+                MediaCommand::Next => "next",
+            },
+        }),
     }
     .to_string()
+}
+
+/// Pesan `media` dari ekstensi -> daftar sesi yang sah (maks `MAX_BROWSER_SESSIONS`); entri rusak
+/// dilewati. Data ini tidak dipercaya, jadi semuanya lewat `sanitize_media`.
+pub(crate) fn parse_media(msg: &Value) -> Vec<BrowserMedia> {
+    let Some(list) = msg.get("sessions").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    list.iter()
+        .filter_map(|s| {
+            let text = |k: &str| s.get(k).and_then(Value::as_str).unwrap_or("");
+            let num = |k: &str| s.get(k).and_then(Value::as_f64).unwrap_or(0.0);
+            let tab_id = tab_of_session(text("id"))?;
+            sanitize_media(
+                tab_id,
+                text("title"),
+                text("artist"),
+                s.get("playing").and_then(Value::as_bool).unwrap_or(false),
+                num("position_ms"),
+                num("duration_ms"),
+                s.get("rate").and_then(Value::as_f64).unwrap_or(1.0),
+                text("artwork"),
+            )
+        })
+        .take(MAX_BROWSER_SESSIONS)
+        .collect()
 }
 
 fn send_json(ws: &mut WebSocket<TcpStream>, value: &Value) -> bool {
@@ -113,13 +151,14 @@ impl WsBridge {
             let _ = old.tx.send(Outgoing::Close);
         }
         handler.connection_changed(true);
-        Self::pump(&mut ws, &rx);
+        Self::pump(&mut ws, &rx, handler.as_ref());
         let _ = ws.close(None);
         let mut slot = self.client();
         // Yang sudah digantikan sambungan baru tidak boleh mematikan status.
         if slot.as_ref().is_some_and(|c| c.id == id) {
             *slot = None;
             drop(slot);
+            handler.media(Vec::new());
             handler.connection_changed(false);
         }
     }
@@ -162,7 +201,7 @@ impl WsBridge {
     }
 
     /// Kirim perintah antrean, balas `ping` agar service worker MV3 tetap hidup.
-    fn pump(ws: &mut WebSocket<TcpStream>, rx: &Receiver<Outgoing>) {
+    fn pump(ws: &mut WebSocket<TcpStream>, rx: &Receiver<Outgoing>, handler: &dyn BridgeHandler) {
         loop {
             loop {
                 match rx.try_recv() {
@@ -177,10 +216,15 @@ impl WsBridge {
             }
             match ws.read() {
                 Ok(Message::Text(t)) => {
-                    let ping = serde_json::from_str::<Value>(t.as_str())
-                        .is_ok_and(|v| v.get("type").and_then(Value::as_str) == Some("ping"));
-                    if ping && !send_json(ws, &json!({ "type": "pong" })) {
-                        return;
+                    let msg = serde_json::from_str::<Value>(t.as_str()).unwrap_or_default();
+                    match msg.get("type").and_then(Value::as_str) {
+                        Some("ping") => {
+                            if !send_json(ws, &json!({ "type": "pong" })) {
+                                return;
+                            }
+                        }
+                        Some("media") => handler.media(parse_media(&msg)),
+                        _ => {}
                     }
                 }
                 Ok(Message::Close(_)) => return,
@@ -234,6 +278,45 @@ mod tests {
         fn connection_changed(&self, connected: bool) {
             self.events.lock().unwrap().push(connected);
         }
+    }
+
+    #[test]
+    fn pesan_media_diurai_dibatasi_dan_entri_rusak_dilewati() {
+        let msg = json!({"type": "media", "sessions": [
+            {"id": "browser:5", "title": "Lagu", "artist": "Band", "playing": true,
+             "position_ms": 1500.0, "duration_ms": 200000.0, "rate": 1.0,
+             "artwork": "https://i.ytimg.com/a.jpg"},
+            {"id": "tab:9", "title": "Salah id"},
+            {"id": "browser:6", "title": "   "},
+            {"id": "browser:7", "title": "Tanpa angka"},
+        ]});
+        let got = parse_media(&msg);
+        assert_eq!(got.len(), 2);
+        assert_eq!(
+            (got[0].tab_id, got[0].playing, got[0].position_ms),
+            (5, true, 1500)
+        );
+        assert_eq!((got[1].tab_id, got[1].duration_ms), (7, 0));
+        let many: Vec<Value> = (0..30)
+            .map(|i| json!({"id": format!("browser:{i}"), "title": "x"}))
+            .collect();
+        assert_eq!(
+            parse_media(&json!({"sessions": many})).len(),
+            MAX_BROWSER_SESSIONS
+        );
+        assert!(parse_media(&json!({"sessions": "bukan daftar"})).is_empty());
+    }
+
+    #[test]
+    fn perintah_kontrol_media_menjadi_json_untuk_ekstensi() {
+        let v: Value = serde_json::from_str(&command_json(&BridgeCommand::MediaControl {
+            tab_id: 12,
+            action: MediaCommand::TogglePlay,
+        }))
+        .unwrap();
+        assert_eq!(v["type"], "media_control");
+        assert_eq!(v["id"], "browser:12");
+        assert_eq!(v["action"], "toggle");
     }
 
     type Client = WebSocket<tungstenite::stream::MaybeTlsStream<TcpStream>>;
@@ -292,8 +375,8 @@ mod tests {
         let mut b = connect(port, Some(ORIGIN)).unwrap();
         say(&mut b, json!({"type": "hello", "token": "tok"}));
         assert_eq!(hear(&mut b), json!({"type": "ready"}));
-        bridge.send(&BridgeCommand::Search("lofi".into())).unwrap();
-        assert_eq!(hear(&mut b), json!({"type": "search", "query": "lofi"}));
+        bridge.send(&BridgeCommand::SetRate(1.5)).unwrap();
+        assert_eq!(hear(&mut b), json!({"type": "set_rate", "rate": 1.5}));
         thread::sleep(Duration::from_millis(300));
         assert_eq!(*handler.events.lock().unwrap(), vec![true, true]);
 

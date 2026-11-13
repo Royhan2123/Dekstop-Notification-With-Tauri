@@ -152,7 +152,7 @@ impl HealthService {
         if let Some(b) = s.brightness {
             text.push_str(&format!(" · {bright} {b}%"));
         }
-        self.island.dispatch(IslandAction::Notice(text));
+        self.island.dispatch(IslandAction::UserNotice(text));
         Ok(())
     }
 

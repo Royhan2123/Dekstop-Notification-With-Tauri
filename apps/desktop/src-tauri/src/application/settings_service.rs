@@ -281,7 +281,11 @@ mod tests {
         let f = fixture();
         assert_eq!(
             f.svc.ready_providers().unwrap(),
-            [AiProvider::Ollama, AiProvider::ClaudeCli]
+            [
+                AiProvider::Ollama,
+                AiProvider::ClaudeCli,
+                AiProvider::Jarvis
+            ]
         );
         f.svc
             .set_api_key(AiProvider::Gemini, "AIza-contoh")
@@ -295,7 +299,8 @@ mod tests {
                 AiProvider::ClaudeApi,
                 AiProvider::Gemini,
                 AiProvider::Ollama,
-                AiProvider::ClaudeCli
+                AiProvider::ClaudeCli,
+                AiProvider::Jarvis
             ]
         );
     }

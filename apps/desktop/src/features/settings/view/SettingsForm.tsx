@@ -8,6 +8,7 @@ import { PomodoroSettings } from "../../pomodoro/view/PomodoroSettings";
 import { LinkSettings } from "../../link/view/LinkSettings";
 import { HealthSettings } from "../../health/view/HealthSettings";
 import { AiBrainPicker } from "./AiBrainPicker";
+import { JarvisBrain } from "./JarvisBrain";
 import { ReviewSettings } from "./ReviewSettings";
 import { ThemeSettings } from "../../theme/view/ThemeSettings";
 import { CalendarSettings } from "../../calendar/view/CalendarSettings";
@@ -94,6 +95,8 @@ export function SettingsForm() {
       <GithubSettings />
 
       <AiBrainPicker />
+
+      <JarvisBrain />
 
       <ReviewSettings />
 

@@ -66,6 +66,23 @@ impl QuickAskService {
         });
     }
 
+    /// Tanya dan tunggu jawabannya (tanpa menggerakkan pulau); jawaban masuk riwayat seperti biasa.
+    /// Dipakai uji otomatis lewat IPC.
+    pub fn ask_now(&self, question: &str) -> Result<String, String> {
+        let q: String = question.trim().chars().take(MAX_QUESTION_CHARS).collect();
+        if q.is_empty() {
+            return Err("pertanyaan kosong".into());
+        }
+        let by = self.by_label();
+        let phase = self.answer(&q);
+        self.record(&q, &by, &phase);
+        match phase {
+            AskPhase::Done(answer) => Ok(answer),
+            AskPhase::Failed(e) => Err(e),
+            _ => Err("tidak ada jawaban".into()),
+        }
+    }
+
     /// Riwayat chat, dari yang terlama ke terbaru.
     pub fn history(&self) -> Result<Vec<ChatTurn>, ChatError> {
         self.chat.list()
@@ -234,6 +251,17 @@ mod tests {
         assert_eq!(svc.answer("hai"), AskPhase::Done("halo: hai".into()));
         let (svc, _island, _rt) = fx(Err("mati".into()));
         assert!(matches!(svc.answer("hai"), AskPhase::Failed(m) if m.contains("mati")));
+    }
+
+    #[test]
+    fn ask_now_menjawab_mencatat_riwayat_dan_menolak_kosong() {
+        let (svc, _island, _rt) = fx(Ok("halo".into()));
+        assert_eq!(svc.ask_now(" hai "), Ok("halo: hai".to_string()));
+        assert_eq!(svc.history().unwrap().len(), 1);
+        assert!(svc.ask_now("   ").is_err());
+        let (svc, _island, _rt) = fx(Err("mati".into()));
+        assert!(svc.ask_now("hai").unwrap_err().contains("mati"));
+        assert!(svc.history().unwrap().is_empty());
     }
 
     #[test]

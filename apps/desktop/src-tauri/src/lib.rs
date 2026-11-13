@@ -4,6 +4,8 @@ pub mod domain;
 pub mod infrastructure;
 pub mod interface;
 
+#[cfg(target_os = "macos")]
+use tauri::Manager;
 use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{Builder, collect_commands, collect_events};
@@ -11,9 +13,7 @@ use tauri_specta::{Builder, collect_commands, collect_events};
 use interface::commands::ask::{
     ai_active, ai_models, ai_test, ask_clear, ask_history, ask_open, ask_submit,
 };
-use interface::commands::bridge::{
-    bridge_pair, bridge_paired, bridge_search, bridge_set_rate, bridge_unpair,
-};
+use interface::commands::bridge::{bridge_pair, bridge_paired, bridge_set_rate, bridge_unpair};
 use interface::commands::calendar::calendar_next;
 use interface::commands::clipboard::{clipboard_clear, clipboard_copy, clipboard_list};
 use interface::commands::disk::{disk_drives, disk_reveal, disk_scan, disk_status};
@@ -22,8 +22,9 @@ use interface::commands::github::{
 };
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
-    dev_simulate, island_click, island_dismiss, island_hitbox, island_hover, island_notice,
-    island_set_dnd, island_show_media, island_snapshot,
+    approval_decide, dev_simulate, island_click, island_dismiss, island_hitbox, island_hover,
+    island_notice, island_set_dnd, island_show_media, island_snapshot, jarvis_ai_get,
+    jarvis_ai_set, jarvis_ai_test, jarvis_installed, jarvis_start,
 };
 use interface::commands::lyrics::lyrics_fetch;
 use interface::commands::media::{media_control, media_cycle};
@@ -62,6 +63,12 @@ fn specta_builder() -> Builder<tauri::Wry> {
             island_hover,
             island_click,
             island_dismiss,
+            approval_decide,
+            jarvis_ai_get,
+            jarvis_ai_set,
+            jarvis_ai_test,
+            jarvis_installed,
+            jarvis_start,
             island_show_media,
             island_hitbox,
             island_set_dnd,
@@ -116,7 +123,6 @@ fn specta_builder() -> Builder<tauri::Wry> {
             bridge_paired,
             bridge_unpair,
             bridge_set_rate,
-            bridge_search,
             pomodoro_status,
             pomodoro_start,
             pomodoro_stop,
@@ -154,7 +160,13 @@ pub fn run() {
         )
         .expect("gagal membuat bindings.ts");
 
-    tauri::Builder::default()
+    #[allow(unused_mut)]
+    let mut app_builder = tauri::Builder::default();
+    #[cfg(target_os = "macos")]
+    {
+        app_builder = app_builder.plugin(tauri_nspanel::init());
+    }
+    app_builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         // Argumen ini membedakan start otomatis Windows dari peluncuran biasa (menjalankan daftar startup).
@@ -177,9 +189,25 @@ pub fn run() {
         })
         .setup(move |app| {
             builder.mount_events(app);
+            // macOS: tanpa ikon Dock dan terlihat di semua Space (termasuk di atas app layar penuh),
+            // kalau tidak pulau hanya muncul di Desktop biasa.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             bootstrap::assemble(app);
+            bootstrap::start_jarvis_if_chosen(app);
+            #[cfg(target_os = "macos")]
+            if let Some(island) = app.get_webview_window("island") {
+                let _ = island.set_visible_on_all_workspaces(true);
+                interface::window::island_window::float_over_fullscreen(&island);
+            }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, event| {
+            // Jarvis yang dijalankan Isla ikut mati saat Isla keluar.
+            if matches!(event, tauri::RunEvent::Exit) {
+                infrastructure::ai::jarvis_runner::stop();
+            }
+        });
 }

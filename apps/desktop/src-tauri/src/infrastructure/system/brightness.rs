@@ -101,6 +101,28 @@ mod wmi {
     }
 }
 
+/// Kecerahan layar internal macOS dari `ioreg -rc AppleBacklightDisplay`, baris
+/// `"brightness"={"max"=1024,"min"=0,"value"=858}`. Kunci lain yang mirip (`linear-brightness`,
+/// `brightness-probe`) sengaja dilewati: yang dicari diawali tanda kutip. Mac Apple Silicon dan layar
+/// eksternal tidak punya node ini, jadi hasilnya `None`.
+#[cfg(any(target_os = "macos", test))]
+fn parse_ioreg_brightness(out: &str) -> Option<u8> {
+    let start = out.find("\"brightness\"={")? + "\"brightness\"={".len();
+    let body = &out[start..out[start..].find('}')? + start];
+    let field = |name: &str| -> Option<f64> {
+        let key = format!("\"{name}\"=");
+        // `"max"=` bisa muncul di awal atau tengah; ambil angka setelah tanda sama dengan.
+        let i = body.find(&key)? + key.len();
+        let num: String = body[i..]
+            .chars()
+            .take_while(|c| c.is_ascii_digit() || *c == '.')
+            .collect();
+        num.parse().ok()
+    };
+    let (value, max) = (field("value")?, field("max")?);
+    (max > 0.0).then(|| (value / max * 100.0).round().clamp(0.0, 100.0) as u8)
+}
+
 impl BrightnessReader for SystemBrightness {
     fn read(&self) -> Option<u8> {
         #[cfg(windows)]
@@ -124,7 +146,15 @@ impl BrightnessReader for SystemBrightness {
             let (now, max) = (read("brightness")?, read("max_brightness")?);
             (max > 0).then(|| (now * 100 / max).min(100) as u8)
         }
-        #[cfg(not(any(windows, target_os = "linux")))]
+        #[cfg(target_os = "macos")]
+        {
+            let out = std::process::Command::new("ioreg")
+                .args(["-rc", "AppleBacklightDisplay"])
+                .output()
+                .ok()?;
+            parse_ioreg_brightness(&String::from_utf8_lossy(&out.stdout))
+        }
+        #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
         None
     }
 }
@@ -132,6 +162,24 @@ impl BrightnessReader for SystemBrightness {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ioreg_kecerahan_diurai_dan_kunci_mirip_dilewati() {
+        let out = r#""IODisplayParameters" = {"linear-brightness"={"min"=0,"max"=906,"value"=386},"brightness-probe"={"min"=0,"max"=1024,"value"=111},"brightness"={"max"=1024,"min"=0,"value"=858},"brightness-fade"={"min"=0,"max"=1023,"value"=0}}"#;
+        assert_eq!(parse_ioreg_brightness(out), Some(84)); // 858 / 1024
+        let full = r#""brightness"={"max"=100,"min"=0,"value"=100}"#;
+        assert_eq!(parse_ioreg_brightness(full), Some(100));
+        assert_eq!(parse_ioreg_brightness(""), None);
+        // hanya kunci mirip, tanpa "brightness" polos
+        assert_eq!(
+            parse_ioreg_brightness(r#""linear-brightness"={"max"=906,"min"=0,"value"=386}"#),
+            None
+        );
+        assert_eq!(
+            parse_ioreg_brightness(r#""brightness"={"max"=0,"min"=0,"value"=5}"#),
+            None
+        );
+    }
 
     #[test]
     fn membaca_kecerahan_tidak_crash_dan_dalam_rentang() {

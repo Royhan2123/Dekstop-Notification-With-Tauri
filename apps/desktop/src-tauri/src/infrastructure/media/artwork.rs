@@ -28,6 +28,30 @@ fn shrink(img: &DynamicImage, max_side: u32) -> Option<String> {
     ))
 }
 
+const FETCH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+const MAX_DOWNLOAD_BYTES: u64 = 2 * 1024 * 1024;
+
+/// Unduh sampul dari URL https (batas waktu 3 dtk, maks 2 MB) lalu olah. `None` bila gagal.
+/// URL berasal dari ekstensi/pemutar yang tidak sepenuhnya dipercaya, jadi hanya https.
+pub fn fetch(url: &str) -> Option<Artwork> {
+    use std::io::Read;
+    if !url.starts_with("https://") {
+        return None;
+    }
+    let resp = reqwest::blocking::Client::builder()
+        .timeout(FETCH_TIMEOUT)
+        .build()
+        .ok()?
+        .get(url)
+        .send()
+        .ok()?
+        .error_for_status()
+        .ok()?;
+    let mut bytes = Vec::new();
+    resp.take(MAX_DOWNLOAD_BYTES).read_to_end(&mut bytes).ok()?;
+    process(&bytes)
+}
+
 /// `None` bila format tidak dikenali (hanya JPEG dan PNG).
 pub fn process(bytes: &[u8]) -> Option<Artwork> {
     let img = image::load_from_memory(bytes).ok()?;

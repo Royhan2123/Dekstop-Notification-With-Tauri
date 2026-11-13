@@ -1,4 +1,4 @@
-use super::state::{AskPhase, VolumeInfo};
+use super::state::{Approval, AskPhase, VoicePhase, VolumeInfo};
 use crate::domain::model::{HealthAlert, MediaInfo, ReviewId, ReviewReport};
 
 pub enum IslandAction {
@@ -7,6 +7,9 @@ pub enum IslandAction {
     ReviewFinished(ReviewId, ReviewReport),
     HealthAlert(HealthAlert),
     Notice(String),
+    /// Pemberitahuan atas permintaan pengguna sendiri (klik pulau saat idle): tidak ditahan Jangan
+    /// Ganggu. Kalau ikut ditahan, pulau tak bisa dibuka lagi untuk mematikan Jangan Ganggu.
+    UserNotice(String),
     Hover(bool),
     Clicked,
     /// Tombol Musik di dok: tampilkan kartu musik lebar menggantikan kartu lain (bila ada lagu).
@@ -31,6 +34,10 @@ pub enum IslandAction {
     ShelfShow,
     ShelfRemove(String),
     ShelfClear,
+    /// Jarvis berganti fase (`None` = selesai/diam).
+    VoiceChanged(Option<VoicePhase>),
+    /// Jarvis minta izin; tampil sebagai kartu Setuju/Tolak (tidak ditahan Jangan Ganggu).
+    ApprovalRequested(Approval),
 }
 
 #[derive(Debug, PartialEq)]

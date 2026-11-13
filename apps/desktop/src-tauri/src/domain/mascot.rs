@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::domain::island::state::{AskPhase, Content, IslandState};
+use crate::domain::island::state::{AskPhase, Content, IslandState, VoicePhase};
 use crate::domain::model::review::Severity;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -22,6 +22,9 @@ pub fn mood_for(s: &IslandState) -> Mood {
     let music = s.media.as_ref().is_some_and(|m| m.playing);
     match s.view.content() {
         Some(Content::ReviewRunning(_)) => Mood::Thinking,
+        Some(Content::Approval(_)) => Mood::Worried,
+        Some(Content::Voice(VoicePhase::Thinking)) => Mood::Thinking,
+        Some(Content::Voice(_)) => Mood::Listening,
         Some(Content::ReviewResult(r)) if r.findings.is_empty() => Mood::Happy,
         Some(Content::ReviewResult(r))
             if r.findings.iter().any(|f| f.severity == Severity::Critical) =>

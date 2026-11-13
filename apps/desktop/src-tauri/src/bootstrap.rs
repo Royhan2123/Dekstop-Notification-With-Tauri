@@ -30,6 +30,7 @@ use crate::application::theme_service::ThemeService;
 use crate::application::volume_service::VolumeService;
 use crate::domain::bridge::clean_query;
 use crate::domain::island::action::IslandAction;
+use crate::domain::island::state::{Approval, VoicePhase};
 use crate::domain::model::review::PushRef;
 use crate::domain::ports::{ChatStore, SecretStore};
 use crate::infrastructure::ai::DefaultAiFactory;
@@ -39,7 +40,7 @@ use crate::infrastructure::git::cli_git::CliGit;
 use crate::infrastructure::git::hook::GitHookInstaller;
 use crate::infrastructure::github::GithubGraphql;
 use crate::infrastructure::lyrics::Lrclib;
-use crate::infrastructure::media::default_source;
+use crate::infrastructure::media::{artwork, default_source};
 use crate::infrastructure::security::regex_scanner::RegexScanner;
 use crate::infrastructure::storage::chat_store::{MemoryChatStore, SqliteChatStore};
 use crate::infrastructure::storage::keyring_store::KeyringStore;
@@ -67,6 +68,22 @@ use crate::interface::events::{TauriSettingsSink, TauriSnapshotSink};
 use crate::interface::ipc;
 use crate::interface::window::hit_test::{self, Hitbox};
 use crate::interface::window::settings_window;
+
+/// Pengguna memilih "Jarvis" sebagai otak AI → nyalakan Jarvis di latar bila sudah terpasang.
+/// Tidak terpasang atau sudah menyala = tidak melakukan apa-apa (Jarvis opsional).
+pub fn start_jarvis_if_chosen(app: &App) {
+    use crate::domain::model::settings::AiProvider;
+    use crate::infrastructure::ai::jarvis_runner;
+
+    let settings = app.state::<Arc<SettingsService>>();
+    if settings.get().ai_provider == AiProvider::Jarvis && jarvis_runner::launcher().is_some() {
+        std::thread::spawn(|| {
+            if let Err(e) = jarvis_runner::start() {
+                tracing::warn!("Jarvis tidak bisa dijalankan: {e}");
+            }
+        });
+    }
+}
 
 pub fn assemble(app: &App) {
     let handle = app.handle().clone();
@@ -104,7 +121,7 @@ pub fn assemble(app: &App) {
         settings.clone(),
     );
     app.manage(bridge.clone());
-    match ws.start(bridge) {
+    match ws.start(bridge.clone()) {
         Ok(port) => tracing::info!("Isla Link mendengarkan di 127.0.0.1:{port}"),
         Err(e) => tracing::error!("gagal membuka server Isla Link: {e}"),
     }
@@ -165,6 +182,7 @@ pub fn assemble(app: &App) {
         island.clone(),
     );
     app.manage(ask.clone());
+    let ask_for_ipc = ask.clone();
     register_ask_shortcut(app, ask);
 
     let commit = CommitService::new(
@@ -182,7 +200,30 @@ pub fn assemble(app: &App) {
             notice_island.dispatch(IslandAction::Notice(text));
         }
     });
-    if let Err(e) = ipc::serve(&ipc_file, on_push, on_notify, on_suggest) {
+    let voice_island = island.clone();
+    let on_voice: ipc::VoiceSink = Arc::new(move |phase| {
+        voice_island.dispatch(IslandAction::VoiceChanged(VoicePhase::parse(phase)));
+    });
+    let approval_island = island.clone();
+    let on_approval: ipc::ApprovalSink = Arc::new(move |id, text| {
+        approval_island.dispatch(IslandAction::ApprovalRequested(Approval {
+            id: id.into(),
+            text: text.into(),
+        }));
+    });
+    // Hanya build debug: pintu uji otomatis agar pertanyaan bisa dikirim ke Isla yang berjalan.
+    if cfg!(debug_assertions) {
+        let quick = ask_for_ipc;
+        ipc::set_ask_sink(Arc::new(move |q| quick.ask_now(q)));
+    }
+    if let Err(e) = ipc::serve(
+        &ipc_file,
+        on_push,
+        on_notify,
+        on_suggest,
+        on_voice,
+        on_approval,
+    ) {
         tracing::error!("gagal membuka jalur IPC hook: {e}");
     }
 
@@ -223,6 +264,11 @@ pub fn assemble(app: &App) {
     spawn_clipboard_watch(clipboard);
 
     let media = MediaService::new(default_source(), island);
+    media.attach_browser(
+        ws.clone(),
+        Arc::new(|url| artwork::fetch(url).map(|a| (a.data_url, a.color))),
+    );
+    bridge.attach_media(media.clone());
     app.manage(media.clone());
     media.start();
 

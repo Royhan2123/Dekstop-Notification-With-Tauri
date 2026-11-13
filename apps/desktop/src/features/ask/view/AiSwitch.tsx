@@ -14,6 +14,7 @@ const NAMES: Record<AiProvider, string> = {
   groq: "Groq",
   ollama: "Ollama",
   claude_cli: "Claude Code",
+  jarvis: "Jarvis",
 };
 
 /**

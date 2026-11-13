@@ -27,9 +27,35 @@ fn wallpaper_path() -> Option<std::path::PathBuf> {
     (len > 0).then(|| String::from_utf16_lossy(&buf[..len]).into())
 }
 
-#[cfg(not(windows))]
+/// Keluaran `osascript` -> path wallpaper. Pada macOS terbaru System Events membalas `missing value`
+/// untuk wallpaper dinamis/Aerial; itu dan apa pun yang bukan path absolut ditolak.
+#[cfg(any(target_os = "macos", test))]
+fn parse_wallpaper_output(out: &str) -> Option<std::path::PathBuf> {
+    let path = out.trim();
+    (path.starts_with('/') && !path.contains('\n')).then(|| path.into())
+}
+
+/// macOS: path wallpaper desktop utama lewat System Events (butuh izin Automation sekali).
+/// Hanya JPEG/PNG yang terbaca pengolah gambar; wallpaper dinamis (HEIC) atau yang tidak diekspos
+/// System Events menghasilkan `None`.
+#[cfg(target_os = "macos")]
 fn wallpaper_path() -> Option<std::path::PathBuf> {
-    // shortcut: wallpaper hanya dibaca di Windows; Linux/macOS menyusul bersama adapter lainnya.
+    let out = std::process::Command::new("osascript")
+        .args([
+            "-e",
+            r#"tell application "System Events" to get picture of desktop 1"#,
+        ])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    parse_wallpaper_output(&String::from_utf8_lossy(&out.stdout))
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
+fn wallpaper_path() -> Option<std::path::PathBuf> {
+    // shortcut: Linux belum didukung.
     None
 }
 
@@ -43,6 +69,17 @@ impl WallpaperSource for SystemWallpaper {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keluaran_wallpaper_macos_hanya_path_absolut_yang_diterima() {
+        assert_eq!(
+            parse_wallpaper_output("/Users/mac/Pictures/lautan.jpg\n"),
+            Some("/Users/mac/Pictures/lautan.jpg".into())
+        );
+        for bad in ["missing value", "", "   ", "lautan.jpg", "/a.jpg\n/b.jpg"] {
+            assert_eq!(parse_wallpaper_output(bad), None, "{bad:?}");
+        }
+    }
 
     #[test]
     fn membaca_wallpaper_tidak_crash() {

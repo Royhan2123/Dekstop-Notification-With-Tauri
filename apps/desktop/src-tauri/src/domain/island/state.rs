@@ -16,6 +16,44 @@ pub enum Content {
     Brightness(u8),
     /// Rak file: daftar berkas di `IslandState::shelf`.
     Shelf,
+    /// Jarvis sedang mendengarkan, berpikir, atau berbicara; tampil selama fase itu berlangsung.
+    Voice(VoicePhase),
+    /// Izin dari Jarvis (agen ingin menjalankan sesuatu): kartu dengan tombol Setuju/Tolak.
+    Approval(Approval),
+}
+
+/// Permintaan izin dari Jarvis; `id` dipakai untuk menjawab lewat API lokal Jarvis.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Approval {
+    pub id: String,
+    pub text: String,
+}
+
+/// Fase asisten suara Jarvis (dikirim lewat IPC); "diam" berarti tidak ada fase.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VoicePhase {
+    Listening,
+    Thinking,
+    Speaking,
+}
+
+impl VoicePhase {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "listening" => Some(Self::Listening),
+            "thinking" => Some(Self::Thinking),
+            "speaking" => Some(Self::Speaking),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Listening => "listening",
+            Self::Thinking => "thinking",
+            Self::Speaking => "speaking",
+        }
+    }
 }
 
 /// Batas isi rak; yang paling lama dibuang saat penuh.
@@ -67,6 +105,8 @@ pub struct IslandState {
     pub extension: bool,
     /// Path berkas di rak (terlama dulu); tetap ada walau pulau menampilkan hal lain.
     pub shelf: Vec<String>,
+    /// Fase Jarvis sekarang; ditampilkan hanya bila pulau sedang kosong atau menampilkan media/HUD.
+    pub voice: Option<VoicePhase>,
     pub token: u64,
 }
 
@@ -76,6 +116,8 @@ pub struct Ctx {
     pub auto_dismiss_ms: u64,
     pub collapse_ms: u64,
     pub hud_ms: u64,
+    /// Kartu izin tanpa jawaban ditutup setelah ini (Jarvis juga menolak sendiri).
+    pub approval_ms: u64,
 }
 
 impl Default for Ctx {
@@ -85,6 +127,7 @@ impl Default for Ctx {
             auto_dismiss_ms: 8_000,
             collapse_ms: 5_000,
             hud_ms: 1_500,
+            approval_ms: 30_000,
         }
     }
 }

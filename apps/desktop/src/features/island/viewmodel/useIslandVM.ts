@@ -49,6 +49,10 @@ export function shapeFor(s: IslandSnapshot, { chat = false }: ShapeExtras = {}):
           opacity: 1,
         };
       }
+      // Izin Jarvis: judul, teks, dan dua tombol.
+      if (s.content?.kind === "approval") {
+        return { width: EXPANDED_W, height: 118 + DOCK_H, radius: 28, opacity: 1 };
+      }
       // Quick Ask: kotak pertanyaan kecil; memanjang bila ada riwayat chat atau jawaban sedang datang.
       if (s.content?.kind === "ask") {
         const busy = s.content.detail === "done" || s.content.detail === "failed";

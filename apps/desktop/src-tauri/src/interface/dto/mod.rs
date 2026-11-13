@@ -105,6 +105,8 @@ pub enum ContentKind {
     Volume,
     Brightness,
     Shelf,
+    Voice,
+    Approval,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Type)]
@@ -349,6 +351,16 @@ impl From<&IslandState> for IslandSnapshot {
             Content::Brightness(b) => IslandContent {
                 kind: ContentKind::Brightness,
                 text: b.to_string(),
+                detail: None,
+            },
+            Content::Approval(a) => IslandContent {
+                kind: ContentKind::Approval,
+                text: a.text.clone(),
+                detail: Some(a.id.clone()),
+            },
+            Content::Voice(p) => IslandContent {
+                kind: ContentKind::Voice,
+                text: p.as_str().into(),
                 detail: None,
             },
             Content::Ask(p) => {

@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 
-use crate::domain::bridge::BridgeCommand;
+use crate::domain::bridge::{BridgeCommand, BrowserMedia};
 use crate::domain::chat::ChatTurn;
 use crate::domain::disk::DiskReport;
 use crate::domain::error::{
@@ -255,4 +255,6 @@ pub trait BridgeHandler: Send + Sync {
     fn pair(&self, origin: &str, code: &str) -> Option<String>;
     fn authenticate(&self, origin: &str, token: &str) -> bool;
     fn connection_changed(&self, connected: bool);
+    /// Daftar tab browser yang sedang memutar media (kosong = tidak ada / sambungan putus).
+    fn media(&self, _sessions: Vec<BrowserMedia>) {}
 }

@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
 
 use super::action::{Effect, IslandAction};
-use super::state::{AskPhase, Content, Ctx, IslandState, SHELF_MAX, View};
+use super::state::{AskPhase, Content, Ctx, IslandState, SHELF_MAX, View, VoicePhase};
 
 pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandState, Vec<Effect>) {
     let mut s = state.clone();
@@ -29,6 +29,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         }
         IslandAction::HealthAlert(a) => offer(&mut s, Content::HealthAlert(a), ctx, &mut fx),
         IslandAction::Notice(text) => offer(&mut s, Content::Notice(text), ctx, &mut fx),
+        IslandAction::UserNotice(text) => {
+            offer_as(&mut s, Content::Notice(text), ctx, &mut fx, false)
+        }
         IslandAction::Hover(h) => {
             s.hovered = h;
             if s.view == View::Expanded(Content::Media) {
@@ -65,7 +68,9 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
                     View::Compact(Content::Volume(_) | Content::Brightness(_)) => {
                         settle(&mut s, ctx, &mut fx)
                     }
-                    View::Expanded(ref c) if is_soft(c) => settle(&mut s, ctx, &mut fx),
+                    View::Expanded(ref c) if is_soft(c) || matches!(c, Content::Approval(_)) => {
+                        settle(&mut s, ctx, &mut fx)
+                    }
                     _ => {}
                 }
             }
@@ -94,17 +99,36 @@ pub fn reduce(state: &IslandState, action: IslandAction, ctx: &Ctx) -> (IslandSt
         IslandAction::ShelfShow => open_card(&mut s, Content::Shelf, ctx, &mut fx),
         IslandAction::ShelfRemove(p) => s.shelf.retain(|x| *x != p),
         IslandAction::ShelfClear => s.shelf.clear(),
+        IslandAction::ApprovalRequested(a) => offer(&mut s, Content::Approval(a), ctx, &mut fx),
+        IslandAction::VoiceChanged(phase) => voice_changed(&mut s, phase, ctx, &mut fx),
         IslandAction::DoNotDisturb(b) => {
             s.dnd = b;
             if b {
+                // Hanya antrean yang dibuang. Kartu yang sedang dilihat (tempat pengguna baru saja
+                // menekan tombol bulan) dibiarkan habis sendiri; menutupnya seketika terasa seperti hang.
                 s.queue.retain(|c| !is_soft(c));
-                if s.view.content().is_some_and(is_soft) {
-                    settle(&mut s, ctx, &mut fx);
-                }
             }
         }
     }
     (s, fx)
+}
+
+/// Jarvis berganti fase. Indikator hanya menumpang di pulau kosong atau media/HUD ringkas (seperti
+/// HUD), tetapi fasenya disimpan supaya muncul begitu kartu yang lebih penting selesai.
+fn voice_changed(s: &mut IslandState, phase: Option<VoicePhase>, ctx: &Ctx, fx: &mut Vec<Effect>) {
+    s.voice = phase;
+    let free = matches!(
+        s.view,
+        View::Idle
+            | View::Compact(
+                Content::Media | Content::Volume(_) | Content::Brightness(_) | Content::Voice(_)
+            )
+    );
+    match phase {
+        Some(p) if free => show(s, Content::Voice(p), ctx, fx),
+        None if matches!(s.view, View::Compact(Content::Voice(_))) => settle(s, ctx, fx),
+        _ => {}
+    }
 }
 
 /// Kartu yang dibuka sengaja lewat dok atau pintasan (Tanya AI, Rak): menggantikan kartu buatan pengguna
@@ -152,7 +176,12 @@ fn is_soft(c: &Content) -> bool {
 
 /// Tampilkan `c` bila lebih penting dari yang sedang tampil; kalau tidak, antrikan.
 fn offer(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
-    if s.dnd && is_soft(&c) {
+    offer_as(s, c, ctx, fx, true);
+}
+
+/// `respect_dnd = false` untuk konten yang diminta pengguna sendiri.
+fn offer_as(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>, respect_dnd: bool) {
+    if respect_dnd && s.dnd && is_soft(&c) {
         return;
     }
     match s.view.content().cloned() {
@@ -173,9 +202,11 @@ fn enqueue(s: &mut IslandState, c: Content, ctx: &Ctx) {
 
 fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
     s.token += 1;
-    if is_soft(&c) {
+    if is_soft(&c) || matches!(c, Content::Approval(_)) {
         let ms = if matches!(c, Content::Volume(_) | Content::Brightness(_)) {
             ctx.hud_ms
+        } else if matches!(c, Content::Approval(_)) {
+            ctx.approval_ms
         } else {
             ctx.auto_dismiss_ms
         };
@@ -185,7 +216,8 @@ fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
         Content::Media
         | Content::ReviewRunning(_)
         | Content::Volume(_)
-        | Content::Brightness(_) => View::Compact(c),
+        | Content::Brightness(_)
+        | Content::Voice(_) => View::Compact(c),
         _ => View::Expanded(c),
     };
 }
@@ -194,7 +226,9 @@ fn show(s: &mut IslandState, c: Content, ctx: &Ctx, fx: &mut Vec<Effect>) {
 fn settle(s: &mut IslandState, ctx: &Ctx, fx: &mut Vec<Effect>) {
     if s.queue.is_empty() {
         s.token += 1;
-        s.view = if s.media.is_some() {
+        s.view = if let Some(p) = s.voice {
+            View::Compact(Content::Voice(p))
+        } else if s.media.is_some() {
             View::Compact(Content::Media)
         } else {
             View::Idle
@@ -304,6 +338,28 @@ mod tests {
         assert_eq!(s.view, View::Idle);
         let (s, _) = run(s, IslandAction::ReviewStarted(ReviewId(1)));
         assert_eq!(s.view, View::Compact(Content::ReviewRunning(ReviewId(1))));
+    }
+
+    #[test]
+    fn dnd_menahan_notice_otomatis_tapi_tidak_klik_pengguna() {
+        let (s, _) = run(IslandState::default(), IslandAction::DoNotDisturb(true));
+        let (s, _) = run(s, IslandAction::Notice("otomatis".into()));
+        assert_eq!(s.view, View::Idle, "pemberitahuan otomatis ditahan");
+        let (s, _) = run(s, IslandAction::UserNotice("klik saya".into()));
+        assert_eq!(
+            s.view,
+            View::Expanded(Content::Notice("klik saya".into())),
+            "klik pengguna harus tetap membuka pulau, kalau tidak Jangan Ganggu tak bisa dimatikan"
+        );
+    }
+
+    #[test]
+    fn menyalakan_dnd_tidak_menutup_kartu_yang_sedang_tampil() {
+        let (s, _) = run(IslandState::default(), IslandAction::Notice("halo".into()));
+        let before = s.view.clone();
+        let (s, _) = run(s, IslandAction::DoNotDisturb(true));
+        assert_eq!(s.view, before);
+        assert!(s.dnd);
     }
 
     #[test]
@@ -476,5 +532,65 @@ mod tests {
         );
         assert!(s.fullscreen);
         assert_eq!(s.view, View::Idle);
+    }
+
+    #[test]
+    fn suara_menumpang_di_pulau_kosong_dan_hilang_saat_selesai() {
+        let (s, _) = run(
+            IslandState::default(),
+            IslandAction::VoiceChanged(Some(VoicePhase::Listening)),
+        );
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Listening)));
+        let (s, fx) = run(s, IslandAction::VoiceChanged(Some(VoicePhase::Speaking)));
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Speaking)));
+        assert!(fx.is_empty(), "fase suara tidak punya timer");
+        let (s, _) = run(s, IslandAction::VoiceChanged(None));
+        assert_eq!(s.view, View::Idle);
+    }
+
+    #[test]
+    fn suara_kembali_ke_media_dan_tidak_menimpa_kartu_penting() {
+        let (s, _) = run(IslandState::default(), IslandAction::MediaChanged(media()));
+        let (s, _) = run(s, IslandAction::VoiceChanged(Some(VoicePhase::Thinking)));
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Thinking)));
+        let (s, _) = run(s, IslandAction::VoiceChanged(None));
+        assert_eq!(s.view, View::Compact(Content::Media));
+
+        // Kartu penting sedang tampil: fase disimpan, tampilan tidak berubah.
+        let (s, _) = run(s, health());
+        let (s, _) = run(s, IslandAction::VoiceChanged(Some(VoicePhase::Speaking)));
+        assert!(matches!(s.view, View::Expanded(Content::HealthAlert(_))));
+        // Setelah kartu selesai, indikator muncul bila Jarvis masih aktif.
+        let (s, _) = run(s, IslandAction::Dismissed);
+        assert_eq!(s.view, View::Compact(Content::Voice(VoicePhase::Speaking)));
+    }
+
+    fn approval() -> IslandAction {
+        IslandAction::ApprovalRequested(crate::domain::island::state::Approval {
+            id: "a1".into(),
+            text: "Jarvis ingin menjalankan perintah: ls".into(),
+        })
+    }
+
+    #[test]
+    fn kartu_izin_menimpa_yang_lain_dan_tidak_ditahan_jangan_ganggu() {
+        let (s, _) = run(IslandState::default(), IslandAction::DoNotDisturb(true));
+        let (s, fx) = run(s, approval());
+        assert!(matches!(s.view, View::Expanded(Content::Approval(_))));
+        assert_eq!(fx.len(), 1, "kartu izin punya timer sendiri");
+        // Notifikasi biasa tidak menimpa; antre di belakang kartu izin.
+        let (s, _) = run(s, IslandAction::Notice("x".into()));
+        assert!(matches!(s.view, View::Expanded(Content::Approval(_))));
+    }
+
+    #[test]
+    fn kartu_izin_tanpa_jawaban_tertutup_oleh_timer_dan_dismiss_menutup() {
+        let (s, fx) = run(IslandState::default(), approval());
+        let Effect::StartTimer { token, ms } = fx[0];
+        assert_eq!(ms, Ctx::default().approval_ms);
+        let (after, _) = run(s.clone(), IslandAction::Timeout(token));
+        assert_eq!(after.view, View::Idle);
+        let (after, _) = run(s, IslandAction::Dismissed);
+        assert_eq!(after.view, View::Idle);
     }
 }

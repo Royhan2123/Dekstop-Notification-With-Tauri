@@ -41,21 +41,17 @@ fn endpoint() -> Result<Endpoint, AiError> {
     serde_json::from_slice(&bytes).map_err(|_| unavailable())
 }
 
-/// Jarvis punya persona dan alatnya sendiri, jadi petunjuk sistem Isla digabung ke pertanyaan.
+/// Jarvis punya persona dan alatnya sendiri. Petunjuk sistem Isla dikirim terpisah (`system`) agar
+/// tidak ikut dihitung saat Jarvis memilih model: kalau digabung, pertanyaan pendek dianggap rumit.
 pub struct JarvisClient;
 
 impl AiClient for JarvisClient {
     fn complete(&self, system: &str, user: &str) -> Result<String, AiError> {
         let ep = endpoint()?;
-        let text = if system.trim().is_empty() {
-            user.to_string()
-        } else {
-            format!("{system}\n\n{user}")
-        };
         let req = http()?
             .post(format!("http://127.0.0.1:{}/v1/ask", ep.port))
             .bearer_auth(&ep.token)
-            .json(&json!({ "text": text }));
+            .json(&json!({ "text": user, "system": system }));
         let v: Value = call(req, "Jarvis")?;
         v.get("reply")
             .and_then(Value::as_str)

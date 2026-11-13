@@ -27,6 +27,41 @@ export const commands = {
       else return { status: "error", error: e as any };
     }
   },
+  async jarvisAiGet(): Promise<Result<JarvisAi, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("jarvis_ai_get") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  /**
+   * Ganti penyedia AI Jarvis (berlaku seketika). Memilih penyedia online = izin eksplisit pengguna.
+   */
+  async jarvisAiSet(
+    provider: string,
+    apiKey: string | null,
+    apiBase: string | null,
+    fastModel: string | null,
+  ): Promise<Result<JarvisAi, string>> {
+    try {
+      return {
+        status: "ok",
+        data: await TAURI_INVOKE("jarvis_ai_set", { provider, apiKey, apiBase, fastModel }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async jarvisAiTest(): Promise<Result<string, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("jarvis_ai_test") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
   async islandShowMedia(): Promise<void> {
     await TAURI_INVOKE("island_show_media");
   },
@@ -705,6 +740,17 @@ export type HealthSummaryDto = {
   days: DayUsageDto[];
 };
 export type InstalledAppDto = { name: string; path: string };
+/**
+ * Setelan AI Jarvis sekarang (tanpa kunci; hanya `has_key`).
+ */
+export type JarvisAi = {
+  provider: string;
+  providers: string[];
+  api_base: string;
+  fast_model: string;
+  smart_model: string;
+  has_key: boolean;
+};
 export type IslandContent = { kind: ContentKind; text: string; detail: string | null };
 export type IslandMode = "hidden" | "idle" | "compact" | "expanded";
 export type IslandSnapshot = {

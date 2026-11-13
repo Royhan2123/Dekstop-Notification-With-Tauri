@@ -23,7 +23,8 @@ use interface::commands::github::{
 use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     approval_decide, dev_simulate, island_click, island_dismiss, island_hitbox, island_hover,
-    island_notice, island_set_dnd, island_show_media, island_snapshot,
+    island_notice, island_set_dnd, island_show_media, island_snapshot, jarvis_ai_get,
+    jarvis_ai_set, jarvis_ai_test,
 };
 use interface::commands::lyrics::lyrics_fetch;
 use interface::commands::media::{media_control, media_cycle};
@@ -63,6 +64,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
             island_click,
             island_dismiss,
             approval_decide,
+            jarvis_ai_get,
+            jarvis_ai_set,
+            jarvis_ai_test,
             island_show_media,
             island_hitbox,
             island_set_dnd,

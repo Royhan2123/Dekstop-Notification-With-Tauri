@@ -75,6 +75,43 @@ pub fn decide_approval(id: &str, allow: bool) -> Result<(), AiError> {
     call(req, "Jarvis").map(|_| ())
 }
 
+/// Setelan AI Jarvis (`/v1/ai`): penyedia otak Jarvis sendiri (Ollama lokal atau API online).
+/// Kunci API hanya dikirim ke Jarvis (loopback) dan tidak pernah dibaca kembali.
+pub fn ai_get() -> Result<Value, AiError> {
+    let ep = endpoint()?;
+    let req = http()?
+        .get(format!("http://127.0.0.1:{}/v1/ai", ep.port))
+        .bearer_auth(&ep.token);
+    call(req, "Jarvis")
+}
+
+pub fn ai_set(body: &Value) -> Result<Value, AiError> {
+    let ep = endpoint()?;
+    let req = http()?
+        .put(format!("http://127.0.0.1:{}/v1/ai", ep.port))
+        .bearer_auth(&ep.token)
+        .json(body);
+    call(req, "Jarvis")
+}
+
+/// Satu pertanyaan uji ke penyedia aktif Jarvis; `Err` berisi alasan yang aman ditampilkan.
+pub fn ai_test() -> Result<String, AiError> {
+    let ep = endpoint()?;
+    let req = http()?
+        .post(format!("http://127.0.0.1:{}/v1/ai/test", ep.port))
+        .bearer_auth(&ep.token);
+    let v = call(req, "Jarvis")?;
+    if v.get("ok").and_then(Value::as_bool) == Some(true) {
+        Ok(v.get("reply")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string())
+    } else {
+        let why = v.get("error").and_then(Value::as_str).unwrap_or("gagal");
+        Err(AiError::Unavailable(why.to_string()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

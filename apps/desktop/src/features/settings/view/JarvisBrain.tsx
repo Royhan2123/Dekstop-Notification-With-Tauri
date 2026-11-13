@@ -1,0 +1,129 @@
+import { useEffect, useState } from "react";
+import { useT } from "../../../shared/i18n";
+import { commands } from "../../../shared/ipc";
+import type { JarvisAi } from "../../../bindings";
+
+type Check = { state: "idle" | "busy" | "ok" | "error"; text: string };
+
+/** Setelan otak Jarvis (Ollama bawaan atau API online). Kunci hanya ditulis ke Jarvis, tidak dibaca kembali. */
+export function JarvisBrain() {
+  const t = useT();
+  const [info, setInfo] = useState<JarvisAi | null>(null);
+  const [provider, setProvider] = useState("ollama");
+  const [model, setModel] = useState("");
+  const [base, setBase] = useState("");
+  const [key, setKey] = useState("");
+  const [check, setCheck] = useState<Check>({ state: "idle", text: "" });
+
+  function load(r: Awaited<ReturnType<typeof commands.jarvisAiGet>>) {
+    if (r.status === "ok") {
+      setInfo(r.data);
+      setProvider(r.data.provider);
+      setModel(r.data.provider === "ollama" ? "" : r.data.fast_model);
+      setBase(r.data.api_base);
+      setCheck({ state: "idle", text: "" });
+    } else {
+      setInfo(null);
+      setCheck({ state: "error", text: t("settings.jarvis.offline") });
+    }
+  }
+
+  useEffect(() => {
+    void commands.jarvisAiGet().then(load);
+  }, []);
+
+  const online = provider !== "ollama";
+
+  async function apply() {
+    setCheck({ state: "busy", text: "" });
+    const r = await commands.jarvisAiSet(
+      provider,
+      key.trim() || null,
+      online ? base.trim() || null : null,
+      online ? model.trim() || null : null,
+    );
+    if (r.status !== "ok") return setCheck({ state: "error", text: r.error });
+    setKey("");
+    setInfo(r.data);
+    const test = await commands.jarvisAiTest();
+    setCheck(
+      test.status === "ok"
+        ? {
+            state: "ok",
+            text: `${t("settings.jarvis.applied")}${test.data ? `: ${test.data}` : ""}`,
+          }
+        : { state: "error", text: test.error },
+    );
+  }
+
+  return (
+    <fieldset className="field">
+      <legend>{t("settings.jarvis")}</legend>
+      <p className="hint">{t("settings.jarvis.hint")}</p>
+      {info === null ? (
+        check.state === "error" && <span role="status">✗ {check.text}</span>
+      ) : (
+        <>
+          <label className="column">
+            {t("settings.jarvis.provider")}
+            <select value={provider} onChange={(e) => setProvider(e.currentTarget.value)}>
+              {info.providers.map((p) => (
+                <option key={p} value={p}>
+                  {p === "ollama" ? t("settings.jarvis.ollama") : p}
+                </option>
+              ))}
+            </select>
+          </label>
+          {online && (
+            <>
+              <label className="column">
+                {t("settings.jarvis.model")}
+                <input
+                  value={model}
+                  maxLength={100}
+                  onChange={(e) => setModel(e.currentTarget.value)}
+                />
+              </label>
+              {provider === "custom" && (
+                <label className="column">
+                  {t("settings.jarvis.base")}
+                  <input
+                    value={base}
+                    maxLength={200}
+                    onChange={(e) => setBase(e.currentTarget.value)}
+                  />
+                </label>
+              )}
+              <label className="column">
+                {t("settings.jarvis.key")}:{" "}
+                <strong>
+                  {info.provider === provider && info.has_key
+                    ? t("settings.jarvis.key_saved")
+                    : t("settings.jarvis.key_missing")}
+                </strong>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={key}
+                  onChange={(e) => setKey(e.currentTarget.value)}
+                />
+              </label>
+              <p className="hint">{t("settings.jarvis.online_warning")}</p>
+            </>
+          )}
+          <div className="row">
+            <button type="button" disabled={check.state === "busy"} onClick={() => void apply()}>
+              {t("settings.jarvis.apply")}
+            </button>
+            {check.state !== "idle" && (
+              <span role="status">
+                {check.state === "busy" ? "…" : check.state === "ok" ? "✓ " : "✗ "}
+                {check.text}
+              </span>
+            )}
+          </div>
+        </>
+      )}
+    </fieldset>
+  );
+}

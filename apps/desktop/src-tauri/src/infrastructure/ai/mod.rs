@@ -11,6 +11,7 @@ use crate::domain::ports::{AiClient, AiProviderFactory, SecretStore};
 
 mod claude_cli;
 pub mod jarvis;
+pub mod jarvis_runner;
 
 pub use claude_cli::ClaudeCli;
 pub use jarvis::JarvisClient;

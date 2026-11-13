@@ -24,7 +24,7 @@ use interface::commands::health::{health_peek, health_summary};
 use interface::commands::island::{
     approval_decide, dev_simulate, island_click, island_dismiss, island_hitbox, island_hover,
     island_notice, island_set_dnd, island_show_media, island_snapshot, jarvis_ai_get,
-    jarvis_ai_set, jarvis_ai_test,
+    jarvis_ai_set, jarvis_ai_test, jarvis_installed, jarvis_start,
 };
 use interface::commands::lyrics::lyrics_fetch;
 use interface::commands::media::{media_control, media_cycle};
@@ -67,6 +67,8 @@ fn specta_builder() -> Builder<tauri::Wry> {
             jarvis_ai_get,
             jarvis_ai_set,
             jarvis_ai_test,
+            jarvis_installed,
+            jarvis_start,
             island_show_media,
             island_hitbox,
             island_set_dnd,
@@ -192,6 +194,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             bootstrap::assemble(app);
+            bootstrap::start_jarvis_if_chosen(app);
             #[cfg(target_os = "macos")]
             if let Some(island) = app.get_webview_window("island") {
                 let _ = island.set_visible_on_all_workspaces(true);
@@ -199,6 +202,12 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, event| {
+            // Jarvis yang dijalankan Isla ikut mati saat Isla keluar.
+            if matches!(event, tauri::RunEvent::Exit) {
+                infrastructure::ai::jarvis_runner::stop();
+            }
+        });
 }

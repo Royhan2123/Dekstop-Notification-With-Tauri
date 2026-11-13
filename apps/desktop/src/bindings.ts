@@ -54,6 +54,23 @@ export const commands = {
       else return { status: "error", error: e as any };
     }
   },
+  /**
+   * Jarvis sudah dipasang di komputer ini (peluncurnya ada)?
+   */
+  async jarvisInstalled(): Promise<boolean> {
+    return await TAURI_INVOKE("jarvis_installed");
+  },
+  /**
+   * Nyalakan Jarvis di latar. `"running"` bila sudah menyala, `"launched"` bila baru dijalankan.
+   */
+  async jarvisStart(): Promise<Result<string, string>> {
+    try {
+      return { status: "ok", data: await TAURI_INVOKE("jarvis_start") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
   async jarvisAiTest(): Promise<Result<string, string>> {
     try {
       return { status: "ok", data: await TAURI_INVOKE("jarvis_ai_test") };

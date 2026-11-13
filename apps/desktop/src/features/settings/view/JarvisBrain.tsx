@@ -3,6 +3,14 @@ import { useT } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
 import type { JarvisAi } from "../../../bindings";
 
+const BASE = "https://raw.githubusercontent.com/Royhan2123/jarvis/main/scripts";
+/** Perintah pemasangan satu baris sesuai OS (Windows: PowerShell; lainnya: bash). */
+export function installCommand(platform = navigator.platform): string {
+  return /win/i.test(platform) && !/darwin/i.test(platform)
+    ? `irm ${BASE}/install.ps1 | iex`
+    : `curl -LsSf ${BASE}/install.sh | bash`;
+}
+
 type Check = { state: "idle" | "busy" | "ok" | "error"; text: string };
 
 /** Setelan otak Jarvis (Ollama bawaan atau API online). Kunci hanya ditulis ke Jarvis, tidak dibaca kembali. */
@@ -13,6 +21,8 @@ export function JarvisBrain() {
   const [model, setModel] = useState("");
   const [base, setBase] = useState("");
   const [key, setKey] = useState("");
+  const [installed, setInstalled] = useState<boolean | null>(null);
+  const [started, setStarted] = useState<"idle" | "busy" | "copied">("idle");
   const [check, setCheck] = useState<Check>({ state: "idle", text: "" });
 
   function load(r: Awaited<ReturnType<typeof commands.jarvisAiGet>>) {
@@ -30,9 +40,35 @@ export function JarvisBrain() {
 
   useEffect(() => {
     void commands.jarvisAiGet().then(load);
+    void commands.jarvisInstalled().then(setInstalled);
   }, []);
 
   const online = provider !== "ollama";
+
+  async function start() {
+    setStarted("busy");
+    const r = await commands.jarvisStart();
+    if (r.status !== "ok") {
+      setStarted("idle");
+      return setCheck({ state: "error", text: r.error });
+    }
+    // Jarvis butuh beberapa detik sampai API-nya siap: coba lagi sampai terhubung.
+    for (let i = 0; i < 30; i++) {
+      const g = await commands.jarvisAiGet();
+      if (g.status === "ok") {
+        setStarted("idle");
+        return load(g);
+      }
+      await new Promise((ok) => setTimeout(ok, 2000));
+    }
+    setStarted("idle");
+    setCheck({ state: "error", text: t("settings.jarvis.offline") });
+  }
+
+  async function copy() {
+    await navigator.clipboard.writeText(installCommand());
+    setStarted("copied");
+  }
 
   async function apply() {
     setCheck({ state: "busy", text: "" });
@@ -61,7 +97,26 @@ export function JarvisBrain() {
       <legend>{t("settings.jarvis")}</legend>
       <p className="hint">{t("settings.jarvis.hint")}</p>
       {info === null ? (
-        check.state === "error" && <span role="status">✗ {check.text}</span>
+        <>
+          {check.state === "error" && <span role="status">✗ {check.text}</span>}
+          {installed === false ? (
+            <div className="column">
+              <p className="hint">{t("settings.jarvis.not_installed")}</p>
+              <code>{installCommand()}</code>
+              <button type="button" onClick={() => void copy()}>
+                {started === "copied" ? t("settings.jarvis.copied") : t("settings.jarvis.copy")}
+              </button>
+            </div>
+          ) : (
+            installed && (
+              <div className="row">
+                <button type="button" disabled={started === "busy"} onClick={() => void start()}>
+                  {started === "busy" ? t("settings.jarvis.starting") : t("settings.jarvis.start")}
+                </button>
+              </div>
+            )
+          )}
+        </>
       ) : (
         <>
           <label className="column">

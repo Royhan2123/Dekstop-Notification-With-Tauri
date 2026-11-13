@@ -114,6 +114,27 @@ pub async fn jarvis_ai_set(
         .map_err(|e| e.to_string())
 }
 
+/// Jarvis sudah dipasang di komputer ini (peluncurnya ada)?
+#[tauri::command]
+#[specta::specta]
+pub fn jarvis_installed() -> bool {
+    crate::infrastructure::ai::jarvis_runner::launcher().is_some()
+}
+
+/// Nyalakan Jarvis di latar. `"running"` bila sudah menyala, `"launched"` bila baru dijalankan.
+#[tauri::command]
+#[specta::specta]
+pub async fn jarvis_start() -> Result<String, String> {
+    use crate::infrastructure::ai::jarvis_runner::{Started, start};
+    tauri::async_runtime::spawn_blocking(start)
+        .await
+        .map_err(|e| e.to_string())?
+        .map(|s| match s {
+            Started::AlreadyRunning => "running".to_string(),
+            Started::Launched => "launched".to_string(),
+        })
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn jarvis_ai_test() -> Result<String, String> {

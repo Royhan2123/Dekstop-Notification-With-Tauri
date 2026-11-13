@@ -69,6 +69,22 @@ use crate::interface::ipc;
 use crate::interface::window::hit_test::{self, Hitbox};
 use crate::interface::window::settings_window;
 
+/// Pengguna memilih "Jarvis" sebagai otak AI → nyalakan Jarvis di latar bila sudah terpasang.
+/// Tidak terpasang atau sudah menyala = tidak melakukan apa-apa (Jarvis opsional).
+pub fn start_jarvis_if_chosen(app: &App) {
+    use crate::domain::model::settings::AiProvider;
+    use crate::infrastructure::ai::jarvis_runner;
+
+    let settings = app.state::<Arc<SettingsService>>();
+    if settings.get().ai_provider == AiProvider::Jarvis && jarvis_runner::launcher().is_some() {
+        std::thread::spawn(|| {
+            if let Err(e) = jarvis_runner::start() {
+                tracing::warn!("Jarvis tidak bisa dijalankan: {e}");
+            }
+        });
+    }
+}
+
 pub fn assemble(app: &App) {
     let handle = app.handle().clone();
     let data_dir = app

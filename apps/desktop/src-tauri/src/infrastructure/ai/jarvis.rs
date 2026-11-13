@@ -145,4 +145,49 @@ mod tests {
         let err = decide_approval("tidak-ada", true).unwrap_err().to_string();
         assert!(err.contains("404"), "{err}");
     }
+
+    /// Pertanyaan yang sama persis dengan jalur "Tanya AI" Isla (penyedia Jarvis → `/v1/ask`).
+    /// Hanya pertanyaan baca-saja: tidak mengubah memori atau komputer pengguna.
+    #[test]
+    #[ignore = "butuh Jarvis dan Ollama berjalan"]
+    fn jarvis_asli_menjawab_beberapa_pertanyaan_lewat_jalur_isla() {
+        let cases: [(&str, &[&str]); 6] = [
+            ("Apa ibu kota Jepang?", &["tokyo", "tokio"]),
+            ("Berapa 12 kali 12?", &["144", "seratus empat puluh empat"]),
+            ("Siapa namamu?", &["jarvis"]),
+            (
+                "Terjemahkan ke bahasa Inggris: selamat pagi",
+                &["good morning"],
+            ),
+            ("What is the capital of France?", &["paris"]),
+            ("Jam berapa sekarang?", &["jam", "pukul"]),
+        ];
+        let mut gagal = Vec::new();
+        for (tanya, kata) in cases {
+            let t = std::time::Instant::now();
+            let reply = JarvisClient
+                .complete("", tanya)
+                .unwrap_or_else(|e| e.to_string());
+            println!("[{:>5.1}s] {tanya} -> {reply}", t.elapsed().as_secs_f32());
+            if !kata.iter().any(|k| reply.to_lowercase().contains(k)) {
+                gagal.push(format!("{tanya} -> {reply}"));
+            }
+        }
+        assert!(gagal.is_empty(), "jawaban tak sesuai: {gagal:#?}");
+    }
+
+    /// Setelan AI Jarvis lewat API (yang dipakai bagian "Otak Jarvis" di Setelan Isla).
+    #[test]
+    #[ignore = "butuh Jarvis berjalan"]
+    fn jarvis_asli_setelan_ai_terbaca_tanpa_kunci_dan_bisa_diuji() {
+        let v = ai_get().unwrap();
+        assert_eq!(v["provider"], "ollama");
+        assert!(v["providers"].as_array().unwrap().len() >= 5);
+        assert!(!v.to_string().contains("api_key"));
+        assert!(!ai_test().unwrap().is_empty());
+        // penyedia online tanpa kunci ditolak (422) dan tidak mengubah apa pun
+        let err = ai_set(&json!({"provider": "openai", "fast_model": "m"})).unwrap_err();
+        assert!(err.to_string().contains("422"), "{err}");
+        assert_eq!(ai_get().unwrap()["provider"], "ollama");
+    }
 }

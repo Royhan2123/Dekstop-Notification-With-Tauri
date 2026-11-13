@@ -39,6 +39,9 @@ struct Request {
     /// Permintaan izin dari Jarvis (kartu Setuju/Tolak).
     #[serde(default)]
     approval: Option<ApprovalRequest>,
+    /// Pertanyaan untuk Tanya AI (hanya build debug; dipakai uji uji-coba otomatis).
+    #[serde(default)]
+    ask: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -60,6 +63,15 @@ pub type VoiceSink = Arc<dyn Fn(&str) + Send + Sync>;
 /// Permintaan izin Jarvis: (id, teks).
 pub type ApprovalSink = Arc<dyn Fn(&str, &str) + Send + Sync>;
 /// Saran pesan commit untuk sebuah repo, atau teks galat untuk pengguna.
+/// Tanya AI tanpa jendela: pertanyaan -> jawaban atau teks galat.
+pub type AskSink = Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
+static ASK: std::sync::OnceLock<AskSink> = std::sync::OnceLock::new();
+
+/// Pasang penerima pertanyaan IPC. Tanpa ini, permintaan `ask` ditolak.
+pub fn set_ask_sink(sink: AskSink) {
+    let _ = ASK.set(sink);
+}
+
 pub type Suggester = Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
 
 /// Buka pendengar di port acak dan tulis `ipc_file`; tiap sambungan dilayani thread sendiri
@@ -120,6 +132,19 @@ fn serve_one(
     if req.token != token {
         return Ok(());
     }
+    if let Some(q) = &req.ask {
+        let res = match ASK.get() {
+            Some(f) => f(q),
+            None => Err("Tanya lewat IPC tidak tersedia".to_string()),
+        };
+        let res = Response {
+            allow: res.is_ok(),
+            message: res.unwrap_or_else(|e| e),
+        };
+        let mut out = serde_json::to_vec(&res)?;
+        out.push(b'\n');
+        return (&stream).write_all(&out);
+    }
     if let Some(a) = &req.approval {
         approval(&a.id, &a.text);
         return (&stream).write_all(b"{\"allow\":true,\"message\":\"\"}\n");
@@ -175,6 +200,7 @@ pub fn ask(ipc_file: &Path, repo: &str, refs: Vec<String>) -> Option<Response> {
         notify: None,
         commit_message: false,
         voice: None,
+        ask: None,
         approval: None,
     })
 }
@@ -188,6 +214,7 @@ pub fn commit_message(ipc_file: &Path, repo: &str) -> Option<Response> {
         notify: None,
         commit_message: true,
         voice: None,
+        ask: None,
         approval: None,
     })
 }
@@ -201,6 +228,7 @@ pub fn notify(ipc_file: &Path, text: &str) -> bool {
         notify: Some(text.into()),
         commit_message: false,
         voice: None,
+        ask: None,
         approval: None,
     })
     .is_some()
@@ -378,6 +406,7 @@ mod tests {
             notify: None,
             commit_message: false,
             voice: Some("listening".into()),
+            ask: None,
             approval: None,
         });
         assert!(ok.is_some_and(|r| r.allow));
@@ -409,6 +438,7 @@ mod tests {
             notify: None,
             commit_message: false,
             voice: None,
+            ask: None,
             approval: Some(ApprovalRequest {
                 id: "a1".into(),
                 text: "Jarvis ingin menjalankan: ls".into(),
@@ -420,5 +450,78 @@ mod tests {
             vec![("a1".to_string(), "Jarvis ingin menjalankan: ls".to_string())]
         );
         let _ = std::fs::remove_file(file);
+    }
+
+    fn ask_request(token: String, q: &str) -> Request {
+        Request {
+            token,
+            repo: String::new(),
+            refs: Vec::new(),
+            notify: None,
+            commit_message: false,
+            voice: None,
+            ask: Some(q.into()),
+            approval: None,
+        }
+    }
+
+    /// Satu-satunya tes yang memasang penerima `ask` (penyimpanannya global per proses).
+    #[test]
+    fn ask_lewat_ipc_diteruskan_ke_penerima_dan_galat_ditandai() {
+        set_ask_sink(Arc::new(|q| {
+            if q == "gagal" {
+                Err("model mati".into())
+            } else {
+                Ok(format!("jawab: {q}"))
+            }
+        }));
+        let file = temp_file();
+        serve(
+            &file,
+            Arc::new(|_, _| Verdict::Allow),
+            Arc::new(|_| {}),
+            no_suggest(),
+            Arc::new(|_| {}),
+            Arc::new(|_, _| {}),
+        )
+        .unwrap();
+        let ok = exchange(&file, |t| ask_request(t, "hai")).unwrap();
+        assert_eq!((ok.allow, ok.message.as_str()), (true, "jawab: hai"));
+        let bad = exchange(&file, |t| ask_request(t, "gagal")).unwrap();
+        assert_eq!((bad.allow, bad.message.as_str()), (false, "model mati"));
+        let _ = std::fs::remove_file(file);
+    }
+
+    /// Lima pertanyaan ke ISLA YANG SEDANG BERJALAN (build debug, otak AI = Jarvis): Isla memakai
+    /// setelan penyedianya sendiri → Jarvis → Ollama, lalu jawabannya masuk riwayat Tanya AI Isla.
+    /// Jalankan: `cargo test isla_asli -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "butuh Isla (debug, otak AI Jarvis), Jarvis dan Ollama berjalan"]
+    fn isla_asli_menjawab_lima_pertanyaan_lewat_ipc() {
+        let file = crate::infrastructure::ai::jarvis::api_file()
+            .and_then(|p| Some(p.parent()?.parent()?.join("com.royhan.isladesk/ipc.json")))
+            .expect("folder data tersedia");
+        let cases: [(&str, &[&str]); 5] = [
+            ("Apa ibu kota Indonesia?", &["jakarta"]),
+            ("Berapa 15 tambah 27?", &["42", "empat puluh dua"]),
+            ("Warna langit saat cerah apa?", &["biru"]),
+            ("Translate to Indonesian: good night", &["selamat malam"]),
+            ("Hewan apa yang disebut raja hutan?", &["singa"]),
+        ];
+        let mut gagal = Vec::new();
+        for (tanya, kata) in cases {
+            let t = std::time::Instant::now();
+            let r = exchange(&file, |tok| ask_request(tok, tanya))
+                .expect("Isla tidak menjawab: apakah berjalan (debug)?");
+            println!(
+                "[{:>5.1}s] {tanya} -> {}",
+                t.elapsed().as_secs_f32(),
+                r.message
+            );
+            if !r.allow || !kata.iter().any(|k| r.message.to_lowercase().contains(k)) {
+                gagal.push(format!("{tanya} -> {}", r.message));
+            }
+        }
+        assert!(gagal.is_empty(), "jawaban tak sesuai: {gagal:#?}");
     }
 }

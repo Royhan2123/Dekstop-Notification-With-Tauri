@@ -182,6 +182,7 @@ pub fn assemble(app: &App) {
         island.clone(),
     );
     app.manage(ask.clone());
+    let ask_for_ipc = ask.clone();
     register_ask_shortcut(app, ask);
 
     let commit = CommitService::new(
@@ -210,6 +211,11 @@ pub fn assemble(app: &App) {
             text: text.into(),
         }));
     });
+    // Hanya build debug: pintu uji otomatis agar pertanyaan bisa dikirim ke Isla yang berjalan.
+    if cfg!(debug_assertions) {
+        let quick = ask_for_ipc;
+        ipc::set_ask_sink(Arc::new(move |q| quick.ask_now(q)));
+    }
     if let Err(e) = ipc::serve(
         &ipc_file,
         on_push,

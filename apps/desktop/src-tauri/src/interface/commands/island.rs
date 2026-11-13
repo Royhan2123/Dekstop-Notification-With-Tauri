@@ -63,6 +63,9 @@ pub struct JarvisAi {
     pub fast_model: String,
     pub smart_model: String,
     pub has_key: bool,
+    /// Suara Jarvis: mesin (fish/piper/system/edge) dan jenis (male/female). Hanya tampilan.
+    pub voice_engine: String,
+    pub voice_gender: String,
 }
 
 fn to_jarvis_ai(v: &serde_json::Value) -> JarvisAi {
@@ -82,6 +85,16 @@ fn to_jarvis_ai(v: &serde_json::Value) -> JarvisAi {
         fast_model: s("fast_model"),
         smart_model: s("smart_model"),
         has_key: v.get("has_key").and_then(|x| x.as_bool()).unwrap_or(false),
+        voice_engine: v
+            .pointer("/voice/engine")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string(),
+        voice_gender: v
+            .pointer("/voice/gender")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string(),
     }
 }
 

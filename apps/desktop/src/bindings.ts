@@ -732,7 +732,11 @@ export type IslandSnapshotEvent = IslandSnapshot
 /**
  * Setelan AI Jarvis sekarang (tanpa kunci; hanya `has_key`).
  */
-export type JarvisAi = { provider: string; providers: string[]; api_base: string; fast_model: string; smart_model: string; has_key: boolean }
+export type JarvisAi = { provider: string; providers: string[]; api_base: string; fast_model: string; smart_model: string; has_key: boolean; 
+/**
+ * Suara Jarvis: mesin (fish/piper/system/edge) dan jenis (male/female). Hanya tampilan.
+ */
+voice_engine: string; voice_gender: string }
 export type Language = "id" | "en"
 export type LyricLineDto = { ms: number; text: string }
 export type MediaCommandDto = "previous" | "toggle_play" | "next"

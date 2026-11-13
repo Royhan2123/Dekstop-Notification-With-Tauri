@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useT } from "../../../shared/i18n";
 import { commands } from "../../../shared/ipc";
 import type { AiProvider } from "../../../bindings";
-import { JarvisBrain } from "./JarvisBrain";
 import { useSettingsVM } from "../viewmodel/useSettingsVM";
 
 const PROVIDERS: AiProvider[] = [
@@ -166,7 +165,6 @@ export function AiBrainPicker() {
           </div>
         )}
       </fieldset>
-      {provider === "jarvis" && <JarvisBrain />}
     </>
   );
 }

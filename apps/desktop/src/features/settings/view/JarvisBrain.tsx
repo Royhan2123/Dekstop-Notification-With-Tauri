@@ -11,6 +11,17 @@ export function installCommand(platform = navigator.platform): string {
     : `curl -LsSf ${BASE}/install.sh | bash`;
 }
 
+const ENGINE = {
+  fish: "settings.jarvis.engine.fish",
+  piper: "settings.jarvis.engine.piper",
+  system: "settings.jarvis.engine.system",
+  edge: "settings.jarvis.engine.edge",
+} as const;
+const GENDER = {
+  male: "settings.jarvis.gender.male",
+  female: "settings.jarvis.gender.female",
+} as const;
+
 type Check = { state: "idle" | "busy" | "ok" | "error"; text: string };
 
 /** Setelan otak Jarvis (Ollama bawaan atau API online). Kunci hanya ditulis ke Jarvis, tidak dibaca kembali. */
@@ -96,6 +107,21 @@ export function JarvisBrain() {
     <fieldset className="field">
       <legend>{t("settings.jarvis")}</legend>
       <p className="hint">{t("settings.jarvis.hint")}</p>
+      <p role="status">
+        {info === null ? "○ " : "● "}
+        <strong>{info === null ? t("settings.jarvis.off") : t("settings.jarvis.on")}</strong>
+        {info !== null && info.voice_engine && (
+          <>
+            {" · "}
+            {t("settings.jarvis.voice")}:{" "}
+            {info.voice_engine in ENGINE
+              ? t(ENGINE[info.voice_engine as keyof typeof ENGINE])
+              : info.voice_engine}
+            {info.voice_gender &&
+              `, ${info.voice_gender in GENDER ? t(GENDER[info.voice_gender as keyof typeof GENDER]) : info.voice_gender}`}
+          </>
+        )}
+      </p>
       {info === null ? (
         <>
           {check.state === "error" && <span role="status">✗ {check.text}</span>}
@@ -166,6 +192,7 @@ export function JarvisBrain() {
               <p className="hint">{t("settings.jarvis.online_warning")}</p>
             </>
           )}
+          <p className="hint">{t("settings.jarvis.voice_hint")}</p>
           <div className="row">
             <button type="button" disabled={check.state === "busy"} onClick={() => void apply()}>
               {t("settings.jarvis.apply")}
